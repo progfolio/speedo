@@ -229,32 +229,39 @@ Return nil if A or B is absent."
         (goto-char (point-min))
         (let ((in-progress (speedo--attempt-in-progress-p))
               ahead behind gaining losing)
-          (when-let* ((pb (speedo--run-pb))
-                      (pb-duration
+          (when-let* ((pb-splits (plist-get (speedo--run-pb) :splits))
+                      (pb-split-duration
+                       (plist-get (nth speedo--segment-index pb-splits) :duration))
+                      (pb-previous-duration
                        (speedo--splits-duration
-                        (seq-take (plist-get pb :splits)
-                                  (1+ speedo--segment-index))))
-                      (current (if in-progress
-                                   speedo--attempt-current
-                                 (car (last (plist-get speedo--data :attempts)))))
-                      (current-duration (if in-progress
-                                            (- (speedo--timestamp) (plist-get current :start))
-                                          (speedo--splits-duration (plist-get current :splits)))))
-            (setq ahead (< current-duration pb-duration)
-                  behind (> current-duration pb-duration))
-            (when-let* ((current-split (speedo--split-current))
-                        (current-duration (- (speedo--timestamp)
-                                             (plist-get current-split :start)))
-                        (pb-current-split-duration
-                         (plist-get (nth speedo--segment-index (plist-get pb :splits))
-                                    :duration)))
-              (setq gaining (and behind (< current-duration pb-current-split-duration))
-                    losing  (and ahead (> current-duration pb-current-split-duration))))
+                        (seq-take pb-splits (max speedo--segment-index 1))))
+                      (split-duration (- (speedo--timestamp)
+                                         (plist-get (speedo--split-current) :start)))
+                      (previous-duration
+                       (or (speedo--splits-duration
+                            (seq-take (plist-get
+                                       (if in-progress
+                                           speedo--attempt-current
+                                         (car (last (plist-get speedo--data :attempts))))
+                                       :splits)
+                                      (max speedo--segment-index 1)))
+                           ;;in case of first split, there is no previous duration
+                           0))
+                      (current-total (+ split-duration previous-duration))
+                      ;; we don't want to double pb-total in case of first split
+                      (pb-total (+ pb-split-duration (if (zerop speedo--segment-index)
+                                                         0
+                                                       pb-previous-duration))))
+            (setq ahead   (< current-total pb-total)
+                  behind  (> current-total pb-total)
+                  losing  (and ahead (> split-duration pb-split-duration))
+                  gaining (and behind (< split-duration pb-split-duration)))
             (when (or losing behind)
               (when-let ((current-relative (text-property-search-forward 'current-relative-timer)))
                 (put-text-property (prop-match-beginning current-relative)
                                    (prop-match-end current-relative)
-                                   'display (speedo--relative-time pb-duration current-duration)))))
+                                   'display (speedo--relative-time pb-total
+                                                                   current-total)))))
           (when-let ((timer (text-property-search-forward 'speedo-timer)))
             (put-text-property
              (prop-match-beginning timer) (prop-match-end timer)
@@ -266,7 +273,7 @@ Return nil if A or B is absent."
                           (losing  '(:inherit (speedo-losing speedo-timer)))
                           (ahead   '(:inherit (speedo-ahead speedo-timer)))
                           (behind  '(:inherit (speedo-behind speedo-timer)))
-                          (t       '(:inherit (speedo-pb speedo-timer))))))))))))
+                          (t       'speedo-timer))))))))))
 
 (defun speedo--display-run-timer ()
   "Display the run timer."
