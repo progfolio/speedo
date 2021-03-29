@@ -80,8 +80,8 @@
                                        ( :name "THREE"))
                                       :attempts ((:start 1616642685487 :splits
                                                          ((:segment "ONE" :duration 10000)
-                                                          (:segment "TWO" :duration 10000)
-                                                          (:segment "THREE" :duration 10000)))))
+                                                          (:segment "TWO" :duration 20000)
+                                                          (:segment "THREE" :duration 30000)))))
   "Mock database.")
 (defvar speedo--data (copy-tree speedo--mock-data) "Split database.")
 
