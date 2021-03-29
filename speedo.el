@@ -30,12 +30,12 @@
   :group 'speedo-faces)
 
 (defface speedo-gaining
-  '((t (:weight bold :height 1.1 :slant italic :foreground "#3EB489")))
+  '((t (:weight bold :height 1.1 :slant italic :foreground "#CD5C5C")))
   "Face for time globally behind, current split ahead of comparison."
   :group 'speedo-faces)
 
 (defface speedo-losing
-  '((t (:weight bold :height 1.1 :slant italic :foreground "#CD5C5C")))
+  '((t (:weight bold :height 1.1 :slant italic :foreground "#3EB489")))
   "Face for time globally ahead, current split behind of comparison."
   :group 'speedo-faces)
 
