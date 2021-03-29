@@ -114,6 +114,7 @@ Note that missing keywords along path are added."
 (defun speedo-load-file (&optional file)
   "Load a splits FILE."
   (interactive "Fsplits file: ")
+  (when (speedo--attempt-in-progress-p) (user-error "Cannot Load file while attempt is in progress"))
   (setq speedo--data
         (or (read (with-temp-buffer
                     (insert-file-contents file)
