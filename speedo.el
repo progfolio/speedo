@@ -45,7 +45,7 @@
   :group 'speedo-faces)
 
 (defface speedo-current-line
-  '((t (:weight ultra-bold :height 1.04 :foreground "FFF")))
+  '((t (:weight ultra-bold :height 1.04)))
   "Face for the global run timer."
   :group 'speedo-faces)
 
