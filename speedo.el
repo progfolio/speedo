@@ -392,17 +392,13 @@ IF NOSAVE is non-nil, do not cache the result."
   "Record a split for the current segment."
   (let ((current (speedo--split-current)))
     (setf current
-          (plist-put current
-                     :duration
-                     (apply #'-
-                            (list (speedo--timestamp)
-                                  (plist-get speedo--attempt-current :start)
-                                  (cl-reduce (lambda (acc segment)
-                                               (+ acc
-                                                  (or (plist-get segment :duration) 0)))
-                                             (plist-get speedo--attempt-current :splits)
-                                             :initial-value 0
-                                             :end speedo--segment-index)))))))
+          (plist-put current :duration (- (speedo--timestamp)
+                                          (plist-get current :start))))))
+
+(defun speedo--split-start ()
+  "Recrod start time of current split."
+  (let ((current (speedo--split-current)))
+    (setf current (plist-put current :start (speedo--timestamp)))))
 
 (defun speedo--attempt-end ()
   "Save the current attempt to `speedo--data'.
@@ -429,6 +425,7 @@ Reset timers."
           (when (= speedo--segment-index last) (speedo--attempt-end)))
       (speedo--attempt-init))
     (cl-incf speedo--segment-index)
+    (speedo--split-start)
     (speedo--display-ui)
     ;;split time relative to pb split
     ;;@DECOMPSE into function
