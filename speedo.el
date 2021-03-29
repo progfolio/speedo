@@ -158,26 +158,23 @@ Note that missing keywords along path are added."
                            (car (last path (1+ n))) val))))
   val)
 
-;; (defun speedo-load-file (&optional file)
-;;   "Load a splits FILE."
-;;   (interactive "Fsplits file: ")
-;;   (setq speedo--data
-;;         (or (read (with-temp-buffer
-;;                     (insert-file-contents file)
-;;                     (buffer-string)))
-;;             (error "Error loading %s" file))))
-;; (speedo-load-file "./speedo-mock-data.el")
+(defun speedo-load-file (&optional file)
+  "Load a splits FILE."
+  (interactive "Fsplits file: ")
+  (setq speedo--data
+        (or (read (with-temp-buffer
+                    (insert-file-contents file)
+                    (buffer-string)))
+            (error "Error loading %s" file))))
 
 ;;;; Timer
-(defvar speedo--time-formatter nil
+(defun speedo--sub-hour-formatter (_hours minutes seconds ms)
+  "Display MINUTES:SECONDS.MS."
+  (format "%d:%02d.%1d"  minutes seconds (/ ms 100)))
+
+(defvar speedo--time-formatter #'speedo--sub-hour-formatter
   "Function to format time from timer.
 It must accept four arguments: hours, minutes, seconds, milliseconds.")
-
-;;@TEST:
-;;@IDEA: store these settings with the splits, so loading sets them?
-(setq speedo--time-formatter (lambda (_hours minutes seconds ms)
-                               (format "%d:%02d.%1d"  minutes seconds
-                                       (/ ms 100))))
 
 (defun speedo--timestamp ()
   "Return time since unix epoch in milliseconds."
