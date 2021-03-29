@@ -601,16 +601,16 @@ Reset timers."
 (defvar speedo-mode-map (make-sparse-keymap)
   "Keymap for splits mode.")
 
-(defun speedo-kill ()
-  "Kill the `speedo-buffer'."
+(defun speedo-bury ()
+  "Bury the `speedo-buffer'."
   (interactive)
-  (kill-buffer))
+  (with-current-buffer speedo-buffer (bury-buffer)))
 
 (define-key speedo-mode-map (kbd "<kp-1>") 'speedo-next)
 (define-key speedo-mode-map (kbd "<kp-3>") 'speedo-reset)
 (define-key speedo-mode-map (kbd "<kp-8>") 'speedo-previous)
 (define-key speedo-mode-map (kbd "<kp-5>") 'speedo-mistake)
-(define-key speedo-mode-map (kbd "q") 'speedo-kill)
+(define-key speedo-mode-map (kbd "q") 'speedo-bury)
 (define-key speedo-mode-map [t] 'ignore)
 
 (define-derived-mode speedo-mode tabulated-list-mode "splits"
