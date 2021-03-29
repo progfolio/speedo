@@ -267,7 +267,6 @@ Return nil if A or B is absent."
                          ((> previous 0) 'speedo-ahead)
                          (t 'speedo-timer))))))
 
-;;current-relative-timer
 (defun speedo--insert-timers ()
   "Insert the dynamic run timers."
   (with-current-buffer speedo-buffer
@@ -347,13 +346,6 @@ If a split is missing a :duration, return nil."
 (defun speedo--attempt-in-progress-p ()
   "Return t if an attempt is in progress."
   (and speedo--attempt-current t))
-
-;;; Runs
-;;@TERMINOLOGY: A RUN is a compelete attempt
-;; (defun speedo--runs ()
-;;   "Return a list of speedruns."
-;;   (cl-remove-if (lambda (attempt) (not eplist--attempt-complete-p attempt))
-;;                 (plist-get speedo--data attempts)))
 
 (defun speedo--run-pb (&optional attempts nocache nosave)
   "Return personal best run.
@@ -619,7 +611,6 @@ Reset timers."
 
 \\{speedo-mode-map}"
   ;;have to turn off blink cursor mode, too...
-  (hl-line-mode)
   (internal-show-cursor (selected-window) nil)
   (speedo--init-ui)
   (speedo--refresh-header)
