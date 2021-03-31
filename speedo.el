@@ -183,10 +183,16 @@ Time should be accesed by views via the `speedo--timer' variable."
                                                     start))))))
   (speedo--display-run-timer))
 
-(defcustom speedo-footer-format "%timer\nprevious: %previous"
+(defcustom speedo-footer-format "%timer\n%previous"
   "The format for the speedo footer. It may contain %-escaped refrences to:
 - %timer: the global split timer.
 - %previous: the comparative value for the last split"
+  :type 'string
+  :group 'speedo)
+
+(defcustom speedo-footer-previous-format "previous: %s"
+  "Format string for the previous split time UI.
+It may contain one %-escaped reference to the previous split time."
   :type 'string
   :group 'speedo)
 
@@ -194,12 +200,10 @@ Time should be accesed by views via the `speedo--timer' variable."
   "Return propertized footer string as determined by `speedo-footer-format'."
   (let ((result speedo-footer-format))
     (dolist (escape '("timer" "previous") result)
-      (setq result (replace-regexp-in-string (concat "%" escape)
-                                             (propertize " " (intern
-                                                              (concat "speedo-"
-                                                                      escape))
-                                                         t)
-                                             result)))))
+      (setq result (replace-regexp-in-string
+                    (concat "%" escape)
+                    (propertize " " (intern (concat "speedo-" escape)) t)
+                    result)))))
 
 (defun speedo--insert-footer ()
   "Insert footer below tabulated list."
