@@ -402,7 +402,7 @@ Reset timers."
   (setq speedo--data (plist-put speedo--data :attempts
                                 (append (plist-get speedo--data :attempts)
                                         (list (copy-tree speedo--attempt-current)))))
-  (message "run saved.")
+  (message "attempt ended")
   (setq speedo--attempt-current nil)
   (speedo--run-pb nil 'nocache)
   (setq tabulated-list-entries #'speedo--list-last-attempt)
