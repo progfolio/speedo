@@ -492,46 +492,45 @@ Reset timers."
   (let* ((index 0)
          (pb (speedo--run-pb))
          (pb-splits (plist-get pb :splits)))
-    (mapcar (lambda (segment)
-              (let ((name (plist-get segment :name))
-                    (current (= index speedo--segment-index)))
-                (prog1
-                    `(,index
-                      ;;@OPTIMIZE: just check current once and construct the full array
-                      [,(if current
-                            (propertize name 'face 'speedo-current-line)
-                          name)
-                       ,(let ((s (or (when pb
-                                       (speedo--relative-time
-                                        (speedo--splits-duration (seq-take pb-splits (1+ index)))
-                                        (speedo--splits-duration
-                                         (seq-take (plist-get speedo--attempt-current :splits)
-                                                   (1+ index)))))
-                                     speedo-text-place-holder)))
-                          (if current
-                              (propertize s 'current-relative-timer t
-                                          'face '(:inherit (speedo-current-line speedo-comparison-line)))
-                            s))
-                       ,(let ((s (or (when-let ((current (speedo--split-time-relative
-                                                          speedo--attempt-current index)))
-                                       (speedo--format-ms current))
-                                     (when-let ((pb (speedo--split-time-relative pb index)))
-                                       (propertize (speedo--format-ms pb) 'face 'speedo-comparison-line))
-                                     speedo-text-place-holder)))
-                          (if current (propertize s 'current-segment-timer t
-                                                  'face '(:inherit (speedo-current-line speedo-comparison-line)))
-                            s))
-                       ])
-                  (setq index (1+ index)))))
-            (plist-get speedo--data :segments))))
-
-;;@DECOMPOSE: previous split compared to pb split relative
-;; (speedo--relative-time
-;;  (plist-get (nth index pb-splits) :duration)
-;;  (plist-get
-;;   (nth index
-;;        (plist-get speedo--attempt-current :splits))
-;;   :duration))
+    (mapcar
+     (lambda (segment)
+       (let ((name (plist-get segment :name))
+             (current (= index speedo--segment-index))
+             (speedo--time-formatter (lambda (_h m s ms)
+                                       (format "%02d:%02d" m (if (> ms 500)
+                                                                 (1+ s)
+                                                               s)))))
+         (prog1
+             (list
+              index
+              (vector
+               (if current (propertize name 'face 'speedo-current-line) name)
+               (let* ((speedo--time-formatter nil)
+                      (s (or (when pb
+                               (speedo--relative-time
+                                (speedo--splits-duration
+                                 (seq-take pb-splits (1+ index)))
+                                (speedo--splits-duration
+                                 (seq-take (plist-get speedo--attempt-current :splits)
+                                           (1+ index)))))
+                             speedo-text-place-holder)))
+                 (if current
+                     (propertize
+                      s
+                      'current-relative-timer t
+                      'face '(:inherit (speedo-current-line speedo-comparison-line)))
+                   s))
+               (let ((s (or (when-let ((current (speedo--split-time-relative
+                                                 speedo--attempt-current index)))
+                              (speedo--format-ms current))
+                            (when-let ((pb (speedo--split-time-relative pb index)))
+                              (propertize (speedo--format-ms pb) 'face 'speedo-comparison-line))
+                            speedo-text-place-holder)))
+                 (if current (propertize s 'current-segment-timer t
+                                         'face '(:inherit (speedo-current-line speedo-comparison-line)))
+                   s))))
+           (setq index (1+ index)))))
+     (plist-get speedo--data :segments))))
 
 (defun speedo--list-last-attempt ()
   "Return a list last attempt's splits for UI."
@@ -569,29 +568,29 @@ Reset timers."
 (defun speedo--refresh-header ()
   "Refresh the header."
   (setq tabulated-list-format
-        `[(,(propertize "Akogare Mario World 100%%" 'face
+        (vector
+         `(,(propertize "Akogare Mario World 100%%" 'face
                         '(:height 1.2 :weight bold :foreground "green" :extend t))
            25)
-          ,(let* ((attempts (plist-get speedo--data :attempts))
-                  (complete (length (cl-remove-if-not #'speedo--attempt-complete-p attempts)))
-                  (total (+ (length attempts) (if (speedo--attempt-in-progress-p) 1 0))))
-             (list (if (zerop total)
-                       ""
-                     (format " %d/%d %0.2f%%%%" complete total
-                             (* 100 (/ complete (float total)))))
-                   9))
-          ("" 1)
-          ])
+         (let* ((attempts (plist-get speedo--data :attempts))
+                (complete (length (cl-remove-if-not #'speedo--attempt-complete-p attempts)))
+                (total (+ (length attempts) (if (speedo--attempt-in-progress-p) 1 0))))
+           (list (if (zerop total)
+                     ""
+                   (format " %d/%d %d%%%%" complete total
+                           (* 100 (/ complete (float total)))))
+                 9))
+         '("" 1)))
   (tabulated-list-init-header))
-
-(defvar speedo-mode-map (make-sparse-keymap)
-  "Keymap for speedo mode.")
 
 (defun speedo-bury ()
   "Bury the `speedo-buffer'."
   (interactive)
-  (with-current-buffer speedo-buffer (bury-buffer)))
+  (with-current-buffer speedo-buffer
+    (internal-show-cursor (selected-window) t) ;;show hidden cursor
+    (bury-buffer)))
 
+(defvar speedo-mode-map (make-sparse-keymap) "Keymap for speedo mode.")
 (define-key speedo-mode-map (kbd "<kp-1>") 'speedo-next)
 (define-key speedo-mode-map (kbd "<kp-3>") 'speedo-reset)
 (define-key speedo-mode-map (kbd "<kp-8>") 'speedo-previous)
