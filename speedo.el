@@ -478,14 +478,22 @@ Reset timers."
         (message "mistake recorded"))
     (user-error "No run in progress")))
 
+(defun speedo--clear ()
+  "Clear the last attempts times from UI."
+  (with-current-buffer speedo-buffer
+    (setq tabulated-list-entries #'speedo--list-splits)
+    (speedo--display-ui)))
+
 (defun speedo-reset ()
-  "Reset the current split."
+  "Reset the current attempt if it is in progress.
+If no attempt is in progress, clear the UI times."
   (interactive)
-  (unless (speedo--attempt-in-progress-p) (user-error "No attempt in progress"))
-  (speedo--attempt-end)
-  (setq tabulated-list-entries #'speedo--list-last-attempt
-        speedo--segment-index -1)
-  (speedo--display-ui))
+  (if (not (speedo--attempt-in-progress-p))
+      (speedo--clear)
+    (speedo--attempt-end)
+    (setq tabulated-list-entries #'speedo--list-last-attempt
+          speedo--segment-index -1)
+    (speedo--display-ui)))
 
 (defcustom speedo-text-place-holder "⸺"
   "Placeholder text used when no data is available for a field."
@@ -521,7 +529,7 @@ Reset timers."
               (vector
                (if current (propertize name 'face 'speedo-current-line) name)
                (let* ((speedo--time-formatter nil)
-                      (s (or (when pb
+                      (s (or (when (and pb (speedo--attempt-in-progress-p))
                                (speedo--relative-time
                                 (speedo--splits-duration
                                  (seq-take pb-splits (1+ index)))
