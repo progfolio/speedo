@@ -19,33 +19,37 @@
   :group 'speedo
   :group 'faces)
 
+(defface speedo-emphasis
+  '((t (:weight bold :slant italic :height 1.1)))
+  "Face for emphasized information.")
+
 (defface speedo-behind
-  '((t (:weight bold :height 1.1 :slant italic :foreground "red")))
+  '((t (:inherit speedo-emphasis :foreground "red")))
   "Face for time behind comparison."
   :group 'speedo-faces)
 
 (defface speedo-ahead
-  '((t (:weight bold :height 1.1 :slant italic :foreground "green")))
+  '((t (:inherit speedo-emphasis :foreground "green")))
   "Face for time ahead of comparison."
   :group 'speedo-faces)
 
 (defface speedo-gaining
-  '((t (:weight bold :height 1.1 :slant italic :foreground "#CD5C5C")))
+  '((t (:inherit speedo-emphasis :foreground "#CD5C5C")))
   "Face for time globally behind, current split ahead of comparison."
   :group 'speedo-faces)
 
 (defface speedo-losing
-  '((t (:weight bold :height 1.1 :slant italic :foreground "#3EB489")))
+  '((t (:inherit speedo-emphasis :foreground "#3EB489")))
   "Face for time globally ahead, current split behind of comparison."
   :group 'speedo-faces)
 
 (defface speedo-pb
-  '((t (:weight bold :height 1.1 :slant italic :foreground "gold")))
+  '((t (:inherit speedo-emphasis :foreground "gold")))
   "Face for time ahead of comparison."
   :group 'speedo-faces)
 
 (defface speedo-current-line
-  '((t (:weight ultra-bold :height 1.04)))
+  '((t (:weight ultra-bold)))
   "Face for the global run timer."
   :group 'speedo-faces)
 
