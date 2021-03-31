@@ -69,6 +69,13 @@
   :type 'symbol
   :group 'speedo)
 
+;;@INCOMPLETE: What's the appropriate default value here?
+;; nil? make a dir in emacs-user-dir?
+(defcustom speedo-directory default-directory
+  "Default directory to search for and save splits."
+  :type 'directory
+  :group 'speedo)
+
 ;;; Variables
 
 (defvar speedo-comparison speedo-default-comparison
@@ -111,15 +118,20 @@ Note that missing keywords along path are added."
                            (car (last path (1+ n))) val))))
   val)
 
+;;@INCOMPLETE: protect against overwriting speedo--data before it is written to disk.
+;; Should prompt user.
 (defun speedo-load-file (&optional file)
   "Load a splits FILE."
-  (interactive "Fsplits file: ")
+  (interactive (list (read-file-name "Splits file: " speedo-directory)))
   (when (speedo--attempt-in-progress-p) (user-error "Cannot Load file while attempt is in progress"))
   (setq speedo--data
-        (or (read (with-temp-buffer
-                    (insert-file-contents file)
-                    (buffer-string)))
-            (error "Error loading %s" file))))
+        (or (prog1
+                (read (with-temp-buffer
+                        (insert-file-contents file)
+                        (buffer-string)))
+              (message "Loaded splits file %S" file))
+            (error "Error loading %s" file)))
+  (speedo-open))
 
 ;;;; Timer
 (defun speedo--sub-hour-formatter (_hours minutes seconds ms)
