@@ -10,7 +10,7 @@
 
 ;;; Custom Options
 (defgroup speedo nil
-  "Splits: speedrunning split timer."
+  "Speedo: lightweight split timer."
   :group 'applications
   :prefix "speedo-")
 
@@ -572,7 +572,7 @@ Reset timers."
   (tabulated-list-init-header))
 
 (defvar speedo-mode-map (make-sparse-keymap)
-  "Keymap for splits mode.")
+  "Keymap for speedo mode.")
 
 (defun speedo-bury ()
   "Bury the `speedo-buffer'."
@@ -586,7 +586,7 @@ Reset timers."
 (define-key speedo-mode-map (kbd "q") 'speedo-bury)
 (define-key speedo-mode-map [t] 'ignore)
 
-(define-derived-mode speedo-mode tabulated-list-mode "splits"
+(define-derived-mode speedo-mode tabulated-list-mode "speedo"
   "Major mode for speedrun split timer.
 
 \\{speedo-mode-map}"
