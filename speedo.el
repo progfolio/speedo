@@ -135,7 +135,8 @@ Note that missing keywords along path are added."
                         (buffer-string)))
               (message "Loaded splits file %S" file))
             (error "Error loading %s" file)))
-  (speedo-open))
+  (speedo)
+  (speedo--display-ui))
 
 ;;;; Timer
 (defun speedo--sub-hour-formatter (_hours minutes seconds ms)
@@ -616,12 +617,13 @@ Reset timers."
   :type 'string
   :group 'speedo)
 
-(defun speedo-open ()
+(defun speedo ()
   "Open the splits buffer."
   (interactive)
   (switch-to-buffer (get-buffer-create speedo-buffer))
-  (unless (derived-mode-p 'speedo)
-    (speedo-mode)))
+  (set-window-dedicated-p (selected-window) t)
+  (when speedo-hide-cursor (speedo--hide-cursor))
+  (unless (derived-mode-p 'speedo-mode) (speedo-mode)))
 
 (provide 'speedo)
 
