@@ -55,7 +55,7 @@
   :group 'speedo-faces)
 
 (defface speedo-timer
-  '((t (:weight bold :foreground "blue" :height 1.5)))
+  '((t (:weight bold :foreground "#5555FF" :height 1.5)))
   "Face for the global run timer."
   :group 'speedo-faces)
 
