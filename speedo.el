@@ -396,6 +396,26 @@ Reset timers."
   (cancel-timer speedo--ui-timer-object))
 
 ;;; Commands
+(defun speedo--insert-previous-split-time ()
+  "Insert previous split relative time in UI."
+  (when (> speedo--segment-index 0) ; there is no previous for the first split
+    (save-excursion
+      (goto-char (point-min))
+      (with-silent-modifications
+        (when-let* ((ui (text-property-search-forward 'speedo-previous))
+                    (pb (speedo--run-pb))
+                    (previous (1- speedo--segment-index)))
+          (put-text-property
+           (prop-match-beginning ui) (prop-match-end ui)
+           'display (format speedo-footer-previous-format
+                            (speedo--relative-time
+                             (plist-get
+                              (nth previous (plist-get pb :splits))
+                              :duration)
+                             (plist-get
+                              (nth previous (plist-get speedo--attempt-current :splits))
+                              :duration)))))))))
+
 (defun speedo-next ()
   "Start the next segment or a new attempt."
   (interactive)
@@ -408,22 +428,7 @@ Reset timers."
     (cl-incf speedo--segment-index)
     (speedo--split-start)
     (speedo--display-ui)
-    ;;split time relative to pb split
-    ;;@DECOMPSE into function
-    (save-excursion
-      (goto-char (point-min))
-      (with-silent-modifications
-        (when-let* ((ui (text-property-search-forward 'speedo-previous))
-                    (pb (speedo--run-pb))
-                    (previous (1- speedo--segment-index)))
-          (put-text-property (prop-match-beginning ui) (prop-match-end ui)
-                             'display (speedo--relative-time
-                                       (plist-get
-                                        (nth previous (plist-get pb :splits))
-                                        :duration)
-                                       (plist-get
-                                        (nth previous (plist-get speedo--attempt-current :splits))
-                                        :duration))))))
+    (speedo--insert-previous-split-time)
     (speedo--refresh-header)
     (unless (speedo--attempt-in-progress-p) (speedo--insert-timers))
     (forward-line speedo--segment-index)))
