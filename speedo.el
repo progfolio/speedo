@@ -53,6 +53,10 @@
   "Face for the global run timer."
   :group 'speedo-faces)
 
+(defface speedo-hl-line
+  '((t (:background "#202060" :extend t)))
+  "Face for highlighted line.")
+
 (defface speedo-comparison-line
   '((t (:weight light)))
   "Face for the global run timer."
@@ -66,6 +70,16 @@
 (defcustom speedo-buffer "*speedo*"
   "Buffer to display splits."
   :type 'string
+  :group 'speedo)
+
+(defcustom speedo-hide-cursor t
+  "If non-nil, hide the cursor in `speedo-buffer'."
+  :type 'boolean
+  :group 'speedo)
+
+(defcustom speedo-highlight-line t
+  "If non-nil, highlight the current UI line."
+  :type 'boolean
   :group 'speedo)
 
 (defcustom speedo-default-comparison 'personal-best
@@ -599,12 +613,29 @@ Reset timers."
 (define-key speedo-mode-map (kbd "q") 'speedo-bury)
 (define-key speedo-mode-map [t] 'ignore)
 
+(defun speedo--hide-cursor ()
+  "Hide cursor in `speedo-buffer'."
+  ;;@FIX: I don't like this solution because it necessitates
+  ;; a dedicated window. It'd be better to hide the cursor conditionally
+  ;; only in the `speedo-buffer', but apparently evil-mode mucks this up.
+  (internal-show-cursor (selected-window) nil))
+
+(defun speedo--show-cursor ()
+  "Show cursor in `speedo-buffer'."
+  (internal-show-cursor (selected-window) t))
+
 (define-derived-mode speedo-mode tabulated-list-mode "speedo"
   "Major mode for speedrun split timer.
 
 \\{speedo-mode-map}"
-  ;;have to turn off blink cursor mode, too...
-  (internal-show-cursor (selected-window) nil)
+  (when speedo-hide-cursor
+    (when (bound-and-true-p blink-cursor-mode) (blink-cursor-mode -1))
+    (speedo--hide-cursor)
+    (add-hook 'quit-window-hook #'speedo--show-cursor nil 'local))
+  (when speedo-highlight-line
+    (face-remap-set-base 'hl-line nil)
+    (face-remap-add-relative 'hl-line 'speedo-hl-line)
+    (hl-line-mode))
   (speedo--init-ui)
   (speedo--refresh-header)
   (speedo--display-ui))
