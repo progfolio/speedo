@@ -105,20 +105,21 @@
   "Current comparison for current run.")
 
 ;;@TEST: remove hardcoded data eventually
-(defvar speedo--mock-data '(:segments (( :name "ONE")
-                                       ( :name "TWO")
-                                       ( :name "THREE"))
-                                      :attempts ((:start 1616642685487 :splits
-                                                         ((:segment "ONE" :duration 10000)
-                                                          (:segment "TWO" :duration 20000)
-                                                          (:segment "THREE" :duration 30000)))))
+(defvar speedo--mock-data '( :title "My Test Game"
+                             :category "Any%"
+                             :segments (( :name "ONE")
+                                        ( :name "TWO")
+                                        ( :name "THREE"))
+                             :attempts ((:start 1616642685487 :splits
+                                                ((:segment "ONE" :duration 10000)
+                                                 (:segment "TWO" :duration 20000)
+                                                 (:segment "THREE" :duration 30000)))))
   "Mock database.")
 (defvar speedo--data (copy-tree speedo--mock-data) "Split database.")
 
 (defvar speedo--segment-index -1 "Index of the current segment.")
 
 ;;; Functions
-
 (defun speedo--plist-get* (plist &rest path)
   "Return PLIST value along key PATH.
 PATH is a list of keywords which are nested within one another.
@@ -155,6 +156,7 @@ Note that missing keywords along path are added."
               (message "Loaded splits file %S" file))
             (error "Error loading %s" file)))
   (speedo)
+  (speedo--refresh-header)
   (speedo--display-ui))
 
 ;;;; Timer
@@ -597,9 +599,15 @@ If no attempt is in progress, clear the UI times."
   "Refresh the header."
   (setq tabulated-list-format
         (vector
-         `(,(propertize "Akogare Mario World 100%%" 'face
-                        '(:height 1.2 :weight bold :foreground "green" :extend t))
-           25)
+         (let ((title (or (plist-get speedo--data :title) ""))
+               (category (or (replace-regexp-in-string
+                              "%" "%%"
+                              (plist-get speedo--data :category) ""))))
+           (list
+            (propertize (format "%s %s" title category)
+                        'face
+                        '(:height 1.1 :weight bold :foreground "green" :extend t))
+            (+ (length title) (length category) 1)))
          (let* ((attempts (plist-get speedo--data :attempts))
                 (complete (length (cl-remove-if-not #'speedo--attempt-complete-p attempts)))
                 (total (+ (length attempts) (if (speedo--attempt-in-progress-p) 1 0))))
@@ -607,7 +615,7 @@ If no attempt is in progress, clear the UI times."
                      ""
                    (format " %d/%d %d%%%%" complete total
                            (* 100 (/ complete (float total)))))
-                 9))
+                 10))
          '("" 1)))
   (tabulated-list-init-header))
 
