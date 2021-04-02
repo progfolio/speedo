@@ -6,6 +6,7 @@
 (require 'cl-lib)
 (require 'seq)
 (require 'tabulated-list)
+(require 'face-remap)
 (require 'text-property-search)
 
 ;;; Custom Options
@@ -19,8 +20,12 @@
   :group 'speedo
   :group 'faces)
 
+(defface speedo-default
+  '((t (:family "Hermit" :height 1.0)))
+  "Face for emphasized information.")
+
 (defface speedo-emphasis
-  '((t (:weight bold :slant italic :height 1.1)))
+  '((t (:weight bold :slant italic :height 1.0)))
   "Face for emphasized information.")
 
 (defface speedo-behind
@@ -644,13 +649,12 @@ If no attempt is in progress, clear the UI times."
     (face-remap-set-base 'hl-line nil)
     (face-remap-add-relative 'hl-line 'speedo-hl-line)
     (hl-line-mode))
+  (setq buffer-face-mode-face 'speedo-default)
+  (buffer-face-mode)
   (speedo--init-ui)
   (speedo--refresh-header)
   (speedo--display-ui))
 
-;;@Incomplete: make this a format string
-;; that can display different things?
-;; or reserve that for the header?
 (defcustom speedo-buffer "*speedo*"
   "Name of the splits buffer."
   :type 'string
