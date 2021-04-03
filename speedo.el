@@ -112,18 +112,7 @@
 (defvar speedo-comparison speedo-default-comparison
   "Current comparison for current run.")
 
-;;@TEST: remove hardcoded data eventually
-(defvar speedo--mock-data '( :title "My Test Game"
-                             :category "Any%"
-                             :segments (( :name "ONE")
-                                        ( :name "TWO")
-                                        ( :name "THREE"))
-                             :attempts ((:start 1616642685487 :splits
-                                                ((:segment "ONE" :duration 10000)
-                                                 (:segment "TWO" :duration 20000)
-                                                 (:segment "THREE" :duration 30000)))))
-  "Mock database.")
-(defvar speedo--data (copy-tree speedo--mock-data) "Split database.")
+(defvar speedo--data nil "Split database.")
 
 (defvar speedo--segment-index -1 "Index of the current segment.")
 
@@ -686,6 +675,7 @@ If no attempt is in progress, clear the UI times."
   (defun speedo ()
     "Open the splits buffer."
     (interactive)
+    (unless speedo--data (call-interactively #'speedo-load-file))
     (switch-to-buffer (get-buffer-create speedo-buffer))
     (set-window-dedicated-p (selected-window) t)
     (when speedo-hide-cursor (speedo--hide-cursor))
@@ -693,13 +683,4 @@ If no attempt is in progress, clear the UI times."
 
   (provide 'speedo)
 
-  ;;@TEST:
-  (defun speedo--data-reset ()
-    "Maybe reset data...doesn't always work."
-    (interactive)
-    (when speedo--ui-timer-object (cancel-timer speedo--ui-timer-object))
-    (when speedo--timer-object (cancel-timer speedo--timer-object))
-    (setq speedo--data (copy-tree speedo--mock-data)
-          speedo--attempt-current nil
-          speedo--segment-index -1))
 ;;; speedo.el ends here
