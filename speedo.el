@@ -4,9 +4,9 @@
 
 ;;; Code:
 (require 'cl-lib)
+(require 'face-remap)
 (require 'seq)
 (require 'tabulated-list)
-(require 'face-remap)
 (require 'text-property-search)
 
 ;;; Custom Options
@@ -631,53 +631,51 @@ If no attempt is in progress, clear the UI times."
                (* 100 (/ complete (float total)))))
      'face 'speedo-header-game-stats)))
 
-  (defun speedo--header-game-info ()
-    "Return string with game title and category."
-    (propertize (format "%s %s"
-                        (or (plist-get speedo--data :title) "")
-                        (or (replace-regexp-in-string
-                             "%" "%%"
-                             (plist-get speedo--data :category) "")))
-                'face 'speedo-header-game-info))
+(defun speedo--header-game-info ()
+  "Return string with game title and category."
+  (propertize (format "%s %s"
+                      (or (plist-get speedo--data :title) "")
+                      (or (replace-regexp-in-string
+                           "%" "%%"
+                           (plist-get speedo--data :category) "")))
+              'face 'speedo-header-game-info))
 
-  (defun speedo--refresh-header ()
-    "Refresh the header."
-    (setq tabulated-list-format
-          (vector
-           (let ((info (speedo--header-game-info))) (list info (length info)))
-           (list (speedo--header-attempt-ratio) 10)
-           ;; This column ignored for now.
-           '("" 1)))
-    (tabulated-list-init-header))
+(defun speedo--refresh-header ()
+  "Refresh the header."
+  (setq tabulated-list-format
+        (vector
+         (let ((info (speedo--header-game-info))) (list info (length info)))
+         (list (speedo--header-attempt-ratio) 10)
+         ;; This column ignored for now.
+         '("" 1)))
+  (tabulated-list-init-header))
 
-  (defun speedo-bury ()
-    "Bury the `speedo-buffer'."
-    (interactive)
-    (with-current-buffer speedo-buffer
-      (internal-show-cursor (selected-window) t) ;;show hidden cursor
-      (bury-buffer)))
+(defun speedo-bury ()
+  "Bury the `speedo-buffer'."
+  (interactive)
+  (with-current-buffer speedo-buffer
+    (internal-show-cursor (selected-window) t) ;;show hidden cursor
+    (bury-buffer)))
 
-  (defvar speedo-mode-map (make-sparse-keymap) "Keymap for speedo mode.")
-  (define-key speedo-mode-map (kbd "<kp-1>") 'speedo-next)
-  (define-key speedo-mode-map (kbd "<kp-3>") 'speedo-reset)
-  (define-key speedo-mode-map (kbd "<kp-8>") 'speedo-previous)
-  (define-key speedo-mode-map (kbd "<kp-5>") 'speedo-mistake)
-  (define-key speedo-mode-map (kbd "q") 'speedo-bury)
-  (define-key speedo-mode-map [t] 'ignore)
+(defvar speedo-mode-map (make-sparse-keymap) "Keymap for speedo mode.")
+(define-key speedo-mode-map (kbd "<kp-1>") 'speedo-next)
+(define-key speedo-mode-map (kbd "<kp-3>") 'speedo-reset)
+(define-key speedo-mode-map (kbd "<kp-8>") 'speedo-previous)
+(define-key speedo-mode-map (kbd "<kp-5>") 'speedo-mistake)
+(define-key speedo-mode-map (kbd "q") 'speedo-bury)
+(define-key speedo-mode-map [t] 'ignore)
 
-  (defun speedo--hide-cursor ()
-    "Hide cursor in `speedo-buffer'."
-    ;;@FIX: I don't like this solution because it necessitates
-    ;; a dedicated window. It'd be better to hide the cursor conditionally
-    ;; only in the `speedo-buffer', but apparently evil-mode mucks this up.
-    (internal-show-cursor (selected-window) nil))
+(defun speedo--hide-cursor ()
+  "Hide cursor in `speedo-buffer'."
+  ;;@FIX: I don't like this solution because it necessitates
+  ;; a dedicated window. It'd be better to hide the cursor conditionally
+  ;; only in the `speedo-buffer', but apparently evil-mode mucks this up.
+  (internal-show-cursor (selected-window) nil))
 
-  (defun speedo--show-cursor ()
-    "Show cursor in `speedo-buffer'."
-    (internal-show-cursor (selected-window) t))
+(defun speedo--show-cursor ()
+  "Show cursor in `speedo-buffer'."
+  (internal-show-cursor (selected-window) t))
 
-  (define-derived-mode speedo-mode tabulated-list-mode "speedo"
-    "Major mode for speedrun split timer.
 (define-derived-mode speedo-mode tabulated-list-mode "speedo"
   "Major mode for speedrun split timer.
 
