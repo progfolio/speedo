@@ -43,6 +43,16 @@
   "Face for time globally behind, current split ahead of comparison."
   :group 'speedo-faces)
 
+(defface speedo-header-game-info
+  '((t (:height 1.2 :weight ultra-bold :foreground "#DD5668" :extend t)))
+  "Face for the game title and category in the header line."
+  :group 'speedo-faces)
+
+(defface speedo-header-game-stats
+  '((t (:height 1.2 :weight bold)))
+  "Face for the attempted to completed ratio."
+  :group 'speedo-faces)
+
 (defface speedo-losing
   '((t (:inherit speedo-emphasis :foreground "#3EB489")))
   "Face for time globally ahead, current split behind of comparison."
@@ -595,96 +605,103 @@ If no attempt is in progress, clear the UI times."
   "Refresh the UI."
   (setq tabulated-list-entries #'speedo--list-splits))
 
-(defun speedo--refresh-header ()
-  "Refresh the header."
-  (setq tabulated-list-format
-        (vector
-         (let ((title (or (plist-get speedo--data :title) ""))
-               (category (or (replace-regexp-in-string
-                              "%" "%%"
-                              (plist-get speedo--data :category) ""))))
-           (list
-            (propertize (format "%s %s" title category)
-                        'face
-                        '(:height 1.1 :weight bold :foreground "green" :extend t))
-            (+ (length title) (length category) 1)))
-         (let* ((attempts (plist-get speedo--data :attempts))
-                (complete (length (cl-remove-if-not #'speedo--attempt-complete-p attempts)))
-                (total (+ (length attempts) (if (speedo--attempt-in-progress-p) 1 0))))
-           (list (if (zerop total)
-                     ""
-                   (format " %d/%d %d%%%%" complete total
-                           (* 100 (/ complete (float total)))))
-                 10))
-         '("" 1)))
-  (tabulated-list-init-header))
+(defun speedo--header-attempt-ratio ()
+  "Return a string representing the completed to total attempts."
+  (let* ((attempts (plist-get speedo--data :attempts))
+         (complete (length (cl-remove-if-not #'speedo--attempt-complete-p attempts)))
+         (total (+ (length attempts) (if (speedo--attempt-in-progress-p) 1 0))))
+    (propertize
+     (if (zerop total)
+         ""
+       (format " %d/%d %d%%%%" complete total
+               (* 100 (/ complete (float total)))))
+     'face 'speedo-header-game-stats)))
 
-(defun speedo-bury ()
-  "Bury the `speedo-buffer'."
-  (interactive)
-  (with-current-buffer speedo-buffer
-    (internal-show-cursor (selected-window) t) ;;show hidden cursor
-    (bury-buffer)))
+  (defun speedo--header-game-info ()
+    "Return string with game title and category."
+    (propertize (format "%s %s"
+                        (or (plist-get speedo--data :title) "")
+                        (or (replace-regexp-in-string
+                             "%" "%%"
+                             (plist-get speedo--data :category) "")))
+                'face 'speedo-header-game-info))
 
-(defvar speedo-mode-map (make-sparse-keymap) "Keymap for speedo mode.")
-(define-key speedo-mode-map (kbd "<kp-1>") 'speedo-next)
-(define-key speedo-mode-map (kbd "<kp-3>") 'speedo-reset)
-(define-key speedo-mode-map (kbd "<kp-8>") 'speedo-previous)
-(define-key speedo-mode-map (kbd "<kp-5>") 'speedo-mistake)
-(define-key speedo-mode-map (kbd "q") 'speedo-bury)
-(define-key speedo-mode-map [t] 'ignore)
+  (defun speedo--refresh-header ()
+    "Refresh the header."
+    (setq tabulated-list-format
+          (vector
+           (let ((info (speedo--header-game-info))) (list info (length info)))
+           (list (speedo--header-attempt-ratio) 10)
+           ;; This column ignored for now.
+           '("" 1)))
+    (tabulated-list-init-header))
 
-(defun speedo--hide-cursor ()
-  "Hide cursor in `speedo-buffer'."
-  ;;@FIX: I don't like this solution because it necessitates
-  ;; a dedicated window. It'd be better to hide the cursor conditionally
-  ;; only in the `speedo-buffer', but apparently evil-mode mucks this up.
-  (internal-show-cursor (selected-window) nil))
+  (defun speedo-bury ()
+    "Bury the `speedo-buffer'."
+    (interactive)
+    (with-current-buffer speedo-buffer
+      (internal-show-cursor (selected-window) t) ;;show hidden cursor
+      (bury-buffer)))
 
-(defun speedo--show-cursor ()
-  "Show cursor in `speedo-buffer'."
-  (internal-show-cursor (selected-window) t))
+  (defvar speedo-mode-map (make-sparse-keymap) "Keymap for speedo mode.")
+  (define-key speedo-mode-map (kbd "<kp-1>") 'speedo-next)
+  (define-key speedo-mode-map (kbd "<kp-3>") 'speedo-reset)
+  (define-key speedo-mode-map (kbd "<kp-8>") 'speedo-previous)
+  (define-key speedo-mode-map (kbd "<kp-5>") 'speedo-mistake)
+  (define-key speedo-mode-map (kbd "q") 'speedo-bury)
+  (define-key speedo-mode-map [t] 'ignore)
 
-(define-derived-mode speedo-mode tabulated-list-mode "speedo"
-  "Major mode for speedrun split timer.
+  (defun speedo--hide-cursor ()
+    "Hide cursor in `speedo-buffer'."
+    ;;@FIX: I don't like this solution because it necessitates
+    ;; a dedicated window. It'd be better to hide the cursor conditionally
+    ;; only in the `speedo-buffer', but apparently evil-mode mucks this up.
+    (internal-show-cursor (selected-window) nil))
+
+  (defun speedo--show-cursor ()
+    "Show cursor in `speedo-buffer'."
+    (internal-show-cursor (selected-window) t))
+
+  (define-derived-mode speedo-mode tabulated-list-mode "speedo"
+    "Major mode for speedrun split timer.
 
 \\{speedo-mode-map}"
-  (when speedo-hide-cursor
-    (when (bound-and-true-p blink-cursor-mode) (blink-cursor-mode -1))
-    (speedo--hide-cursor)
-    (add-hook 'quit-window-hook #'speedo--show-cursor nil 'local))
-  (when speedo-highlight-line
-    (face-remap-set-base 'hl-line nil)
-    (face-remap-add-relative 'hl-line 'speedo-hl-line)
-    (hl-line-mode))
-  (setq buffer-face-mode-face 'speedo-default)
-  (buffer-face-mode)
-  (speedo--init-ui)
-  (speedo--refresh-header)
-  (speedo--display-ui))
+    (when speedo-hide-cursor
+      (when (bound-and-true-p blink-cursor-mode) (blink-cursor-mode -1))
+      (speedo--hide-cursor)
+      (add-hook 'quit-window-hook #'speedo--show-cursor nil 'local))
+    (when speedo-highlight-line
+      (face-remap-set-base 'hl-line nil)
+      (face-remap-add-relative 'hl-line 'speedo-hl-line)
+      (hl-line-mode))
+    (setq buffer-face-mode-face 'speedo-default)
+    (buffer-face-mode)
+    (speedo--init-ui)
+    (speedo--refresh-header)
+    (speedo--display-ui))
 
-(defcustom speedo-buffer "*speedo*"
-  "Name of the splits buffer."
-  :type 'string
-  :group 'speedo)
+  (defcustom speedo-buffer "*speedo*"
+    "Name of the splits buffer."
+    :type 'string
+    :group 'speedo)
 
-(defun speedo ()
-  "Open the splits buffer."
-  (interactive)
-  (switch-to-buffer (get-buffer-create speedo-buffer))
-  (set-window-dedicated-p (selected-window) t)
-  (when speedo-hide-cursor (speedo--hide-cursor))
-  (unless (derived-mode-p 'speedo-mode) (speedo-mode)))
+  (defun speedo ()
+    "Open the splits buffer."
+    (interactive)
+    (switch-to-buffer (get-buffer-create speedo-buffer))
+    (set-window-dedicated-p (selected-window) t)
+    (when speedo-hide-cursor (speedo--hide-cursor))
+    (unless (derived-mode-p 'speedo-mode) (speedo-mode)))
 
-(provide 'speedo)
+  (provide 'speedo)
 
-;;@TEST:
-(defun speedo--data-reset ()
-  "Maybe reset data...doesn't always work."
-  (interactive)
-  (when speedo--ui-timer-object (cancel-timer speedo--ui-timer-object))
-  (when speedo--timer-object (cancel-timer speedo--timer-object))
-  (setq speedo--data (copy-tree speedo--mock-data)
-        speedo--attempt-current nil
-        speedo--segment-index -1))
+  ;;@TEST:
+  (defun speedo--data-reset ()
+    "Maybe reset data...doesn't always work."
+    (interactive)
+    (when speedo--ui-timer-object (cancel-timer speedo--ui-timer-object))
+    (when speedo--timer-object (cancel-timer speedo--timer-object))
+    (setq speedo--data (copy-tree speedo--mock-data)
+          speedo--attempt-current nil
+          speedo--segment-index -1))
 ;;; speedo.el ends here
