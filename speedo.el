@@ -87,6 +87,12 @@
   :type 'string
   :group 'speedo)
 
+(defcustom speedo-default-splits-file nil
+  "The default splits file to load when `speedo' is run.
+If it is not an absolute path, it is expanded relative to `speedo-directory'."
+  :type 'file
+  :group 'speedo)
+
 (defcustom speedo-hide-cursor t
   "If non-nil, hide the cursor in `speedo-buffer'."
   :type 'boolean
@@ -710,7 +716,9 @@ If no attempt is in progress, clear the UI times."
 (defun speedo ()
   "Open the splits buffer."
   (interactive)
-  (unless speedo--data (call-interactively #'speedo-load-file))
+  (unless speedo--data (speedo-load-file
+                        (when speedo-default-splits-file
+                          (expand-file-name speedo-default-splits-file speedo-directory))))
   (switch-to-buffer (get-buffer-create speedo-buffer))
   (set-window-dedicated-p (selected-window) t)
   (when speedo-hide-cursor (speedo--hide-cursor))
