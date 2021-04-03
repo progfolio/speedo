@@ -688,7 +688,7 @@ If no attempt is in progress, clear the UI times."
     (face-remap-set-base 'hl-line nil)
     (face-remap-add-relative 'hl-line 'speedo-hl-line)
     (hl-line-mode))
-  (add-hook 'emacs-kill-hook #'speedo--ask-to-save)
+  (add-hook 'kill-emacs-hook #'speedo--ask-to-save)
   (setq buffer-face-mode-face 'speedo-default)
   (buffer-face-mode)
   (speedo--init-ui)
