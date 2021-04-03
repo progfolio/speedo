@@ -170,6 +170,7 @@ Note that missing keywords along path are added."
             (insert-file-contents file)
             (buffer-string)))))
 
+;;;###autoload
 (defun speedo-load-file (&optional file)
   "Load a splits FILE."
   (interactive)
@@ -713,6 +714,7 @@ If no attempt is in progress, clear the UI times."
                                   speedo--data-file)))
     (speedo-save-file)))
 
+;;;###autoload
 (defun speedo ()
   "Open the splits buffer."
   (interactive)
