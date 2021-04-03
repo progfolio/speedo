@@ -113,6 +113,12 @@
   "Current comparison for current run.")
 
 (defvar speedo--data nil "Split database.")
+(defvar speedo--data-file nil "The filepath of the loaded splits database.")
+
+(defun speedo--data-modified-p ()
+  "Compare `speedo--data' to `speedo--data-file' and return t if they are not `equal'."
+  (when (and speedo--data speedo--data-file)
+    (not (equal speedo--data (speedo--read-file speedo--data-file)))))
 
 (defvar speedo--segment-index -1 "Index of the current segment.")
 
@@ -139,22 +145,43 @@ Note that missing keywords along path are added."
                            (car (last path (1+ n))) val))))
   val)
 
-;;@INCOMPLETE: protect against overwriting speedo--data before it is written to disk.
-;; Should prompt user.
+(defun speedo-save-file ()
+  "Save `speedo--data' to `speedo--data-file'."
+  (interactive)
+  (if (speedo--data-modified-p)
+      (with-temp-buffer
+        (let ((print-level nil)
+              (print-length nil))
+          (insert (pp-to-string speedo--data))
+          (write-region (point-min) (point-max) speedo--data-file)))
+    (message "(No changes need to be saved)")))
+
+(defun speedo--read-file (file)
+  "Read FILE into an elisp object."
+  ;;@FIX: we need to be more robust here.
+  (ignore-errors
+    (read (with-temp-buffer
+            (insert-file-contents file)
+            (buffer-string)))))
+
 (defun speedo-load-file (&optional file)
   "Load a splits FILE."
-  (interactive (list (read-file-name "Splits file: " speedo-directory)))
-  (when (speedo--attempt-in-progress-p) (user-error "Cannot Load file while attempt is in progress"))
-  (setq speedo--data
-        (or (prog1
-                (read (with-temp-buffer
-                        (insert-file-contents file)
-                        (buffer-string)))
-              (message "Loaded splits file %S" file))
-            (error "Error loading %s" file)))
-  (speedo)
-  (speedo--refresh-header)
-  (speedo--display-ui))
+  (interactive)
+  (let ((file (or file (read-file-name "Splits file: " speedo-directory))))
+    (when (speedo--attempt-in-progress-p) (user-error "Cannot Load file while attempt is in progress"))
+    (when (and (speedo--data-modified-p)
+               (y-or-n-p (format "%S modified, but not saved to disk. Save before loading %s? "
+                                 speedo--data-file file)))
+      (speedo-save-file))
+    (if-let ((data (speedo--read-file file)))
+        (prog1
+            (setq speedo--data data
+                  speedo--data-file file)
+          (message "Loaded splits file %S" file)
+          (speedo)
+          (speedo--refresh-header)
+          (speedo--display-ui))
+      (error "Error loading %S" file))))
 
 ;;;; Timer
 (defun speedo--sub-hour-formatter (_hours minutes seconds ms)
@@ -651,36 +678,46 @@ If no attempt is in progress, clear the UI times."
 
   (define-derived-mode speedo-mode tabulated-list-mode "speedo"
     "Major mode for speedrun split timer.
+(define-derived-mode speedo-mode tabulated-list-mode "speedo"
+  "Major mode for speedrun split timer.
 
 \\{speedo-mode-map}"
-    (when speedo-hide-cursor
-      (when (bound-and-true-p blink-cursor-mode) (blink-cursor-mode -1))
-      (speedo--hide-cursor)
-      (add-hook 'quit-window-hook #'speedo--show-cursor nil 'local))
-    (when speedo-highlight-line
-      (face-remap-set-base 'hl-line nil)
-      (face-remap-add-relative 'hl-line 'speedo-hl-line)
-      (hl-line-mode))
-    (setq buffer-face-mode-face 'speedo-default)
-    (buffer-face-mode)
-    (speedo--init-ui)
-    (speedo--refresh-header)
-    (speedo--display-ui))
+  (when speedo-hide-cursor
+    (when (bound-and-true-p blink-cursor-mode) (blink-cursor-mode -1))
+    (speedo--hide-cursor)
+    (add-hook 'quit-window-hook #'speedo--show-cursor nil 'local))
+  (when speedo-highlight-line
+    (face-remap-set-base 'hl-line nil)
+    (face-remap-add-relative 'hl-line 'speedo-hl-line)
+    (hl-line-mode))
+  (add-hook 'emacs-kill-hook #'speedo--ask-to-save)
+  (setq buffer-face-mode-face 'speedo-default)
+  (buffer-face-mode)
+  (speedo--init-ui)
+  (speedo--refresh-header)
+  (speedo--display-ui))
 
-  (defcustom speedo-buffer "*speedo*"
-    "Name of the splits buffer."
-    :type 'string
-    :group 'speedo)
+(defcustom speedo-buffer "*speedo*"
+  "Name of the splits buffer."
+  :type 'string
+  :group 'speedo)
 
-  (defun speedo ()
-    "Open the splits buffer."
-    (interactive)
-    (unless speedo--data (call-interactively #'speedo-load-file))
-    (switch-to-buffer (get-buffer-create speedo-buffer))
-    (set-window-dedicated-p (selected-window) t)
-    (when speedo-hide-cursor (speedo--hide-cursor))
-    (unless (derived-mode-p 'speedo-mode) (speedo-mode)))
+(defun speedo--ask-to-save ()
+  "Ask to save data if `speedo--data-modified-p' during `kill-emacs-hook'."
+  (when (and (speedo--data-modified-p)
+             (yes-or-no-p (format "Speedo has modified splits for %S. Save before exit? "
+                                  speedo--data-file)))
+    (speedo-save-file)))
 
-  (provide 'speedo)
+(defun speedo ()
+  "Open the splits buffer."
+  (interactive)
+  (unless speedo--data (call-interactively #'speedo-load-file))
+  (switch-to-buffer (get-buffer-create speedo-buffer))
+  (set-window-dedicated-p (selected-window) t)
+  (when speedo-hide-cursor (speedo--hide-cursor))
+  (unless (derived-mode-p 'speedo-mode) (speedo-mode)))
+
+(provide 'speedo)
 
 ;;; speedo.el ends here
