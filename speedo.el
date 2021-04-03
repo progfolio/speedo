@@ -102,9 +102,7 @@
   :type 'symbol
   :group 'speedo)
 
-;;@INCOMPLETE: What's the appropriate default value here?
-;; nil? make a dir in emacs-user-dir?
-(defcustom speedo-directory default-directory
+(defcustom speedo-directory user-emacs-directory
   "Default directory to search for and save splits."
   :type 'directory
   :group 'speedo)
