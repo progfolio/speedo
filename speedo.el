@@ -194,7 +194,8 @@ Note that missing keywords along path are added."
   (if (speedo--data-modified-p)
       (with-temp-buffer
         (let ((print-level nil)
-              (print-length nil))
+              (print-length nil)
+              (print-circle t))
           (insert (pp-to-string speedo--data))
           (write-region (point-min) (point-max) speedo--data-file)))
     (message "(No changes need to be saved)")))
