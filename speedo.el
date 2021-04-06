@@ -93,9 +93,24 @@
   :type 'string
   :group 'speedo)
 
-(defcustom speedo-default-comparison 'personal-best
+(defcustom speedo-default-comparison-standard 'personal-best
   "Default comparison for current run."
   :type 'symbol
+  :group 'speedo)
+
+(defcustom speedo-comparison-standards '(personal-best
+                                         best-segments
+                                         latest-attempt
+                                         latest-run
+                                         world-record
+                                         ;;best-split-times?
+                                         ;;average-segments
+                                         ;;median-segments
+                                         ;;balanced-pb
+                                         )
+  "List of comparison standards.
+`speedo-next-comparison' and `speedo-previous-comparsion' cycle these in order."
+  :type 'list
   :group 'speedo)
 
 (defcustom speedo-default-splits-file nil
@@ -109,10 +124,11 @@ If it is not an absolute path, it is expanded relative to `speedo-directory'."
   :type 'directory
   :group 'speedo)
 
-(defcustom speedo-footer-format "%timer\n%previous"
+(defcustom speedo-footer-format "%timer\n%previous\n\nComparing Against: %basis"
   "The format for the speedo footer. It may contain %-escaped refrences to:
 - %timer: the global split timer.
-- %previous: the comparative value for the last split"
+- %previous: the comparative value for the last split
+- %basis: the basis for comparison"
   :type 'string
   :group 'speedo)
 
@@ -139,6 +155,8 @@ It may contain one %-escaped reference to the previous split time."
 
 ;;; Variables
 (defvar speedo--attempt-current nil "The current attempt.")
+(defvar speedo--comparison-basis nil "The object to compare attempts against.")
+(defvar speedo--comparison-standard speedo-default-comparison-standard "The standard for comparison.")
 (defvar speedo--data nil "Split database.")
 (defvar speedo--data-file nil "The filepath of the loaded splits database.")
 (defvar speedo--segment-index -1 "Index of the current segment.")
@@ -149,7 +167,6 @@ It must accept four arguments: hours, minutes, seconds, milliseconds.")
 (defvar speedo--timer nil "The global timer.")
 (defvar speedo--timer-object nil "Internal timer object. Used for cancelling timer.")
 (defvar speedo--ui-timer-object nil "Display timer object.")
-(defvar speedo-comparison speedo-default-comparison "Current comparison for current run.")
 (defvar speedo-mode-map (make-sparse-keymap) "Keymap for speedo mode.")
 
 ;;; Functions
@@ -188,22 +205,20 @@ Note that missing keywords along path are added."
   (when (and speedo--data speedo--data-file)
     (not (equal speedo--data (speedo--read-file speedo--data-file)))))
 
-(defun speedo-save-file ()
-  "Save `speedo--data' to `speedo--data-file'."
-  (interactive)
-  (if (speedo--data-modified-p)
-      (with-temp-buffer
-        (let ((print-level nil)
-              (print-length nil)
-              (print-circle t))
-          (insert (pp-to-string speedo--data))
-          (write-region (point-min) (point-max) speedo--data-file)))
-    (message "(No changes need to be saved)")))
-
 ;;;; Timer
 (defun speedo--sub-hour-formatter (_hours minutes seconds ms)
   "Display MINUTES:SECONDS.MS."
   (format "%d:%02d.%1d"  minutes seconds (/ ms 100)))
+
+;;@FIX: doesn't format time correctly.
+;; (defun speedo--compact-time-formatter (hours minutes seconds ms)
+;;   "Display compact time string for HOURS MINUTES SECONDS MS."
+;;   (let* ((hours (and (> hours 0) (format "%02d" hours)))
+;;          (minutes (when (or hours (> 0 minutes)) (format "%02d" minutes)))
+;;          (seconds (format (if minutes "%02d" "%d") seconds)))
+;;     (concat hours   (when hours ":")
+;;             minutes (when minutes ":")
+;;             seconds (when ms ".") (format "%d" (/ ms 10)))))
 
 (defun speedo--timestamp ()
   "Return time since unix epoch in milliseconds."
@@ -237,6 +252,28 @@ If a split is missing a :duration, return nil."
       (cl-reduce (lambda (acc split) (+ acc (plist-get split :duration)))
                  splits :initial-value 0)
     (error nil)))
+
+(defun speedo--segment-pb (n)
+  "Return best recorded time for segment N."
+  (car
+   (seq-sort #'<
+             (delq nil
+                   (mapcar (lambda (attempt)
+                             (plist-get (nth n (plist-get attempt :splits)) :duration))
+                           (plist-get speedo--data :attempts))))))
+
+(defun speedo--best-segments ()
+  "Return list of best segments."
+  (list :start 0
+        :splits
+        (let ((index 0))
+          (mapcar (lambda (segment)
+                    (prog1
+                        (setq segment (plist-put segment
+                                                 :segment (plist-get segment :name))
+                              segment (plist-put segment :duration (speedo--segment-pb index)))
+                      (cl-incf index)))
+                  (copy-tree (plist-get speedo--data :segments))))))
 
 (defun speedo--run-pb (&optional attempts nocache nosave)
   "Return personal best run.
@@ -280,6 +317,22 @@ Return nil if A or B is absent."
                          ((> previous 0) 'speedo-ahead)
                          (t 'speedo-timer))))))
 
+(defun speedo--comparison-basis (&optional standard)
+  "Set variable `speedo--comparison-basis' to STANDARD."
+  (setq speedo--comparison-basis
+        (pcase standard
+          ('personal-best (speedo--run-pb (plist-get speedo--data :attempts) 'nocache 'nosave))
+          ('average-segments (error "Not implemented"))
+          ('balanced-pb (error "Not implemented"))
+          ('best-segments (speedo--best-segments))
+          ('best-split-times (error "Not implemented"))
+          ('latest-attempt (car (last (plist-get speedo--data :attempts))))
+          ('latest-run (car (last (cl-remove-if-not #'speedo--attempt-complete-p
+                                                    (plist-get speedo--data :attempts)))))
+          ('median-segments (error "Not implemented"))
+          ('world-record (plist-get speedo--data :world-record))
+          (_ (speedo--run-pb (plist-get speedo--data :attempts) 'nocache 'nosave)))))
+
 (defun speedo--insert-timers ()
   "Insert the dynamic run timers."
   (with-current-buffer speedo-buffer
@@ -288,12 +341,12 @@ Return nil if A or B is absent."
         (goto-char (point-min))
         (let ((in-progress (speedo--attempt-in-progress-p))
               ahead behind gaining losing)
-          (when-let* ((pb-splits (plist-get (speedo--run-pb) :splits))
-                      (pb-split-duration
-                       (plist-get (nth speedo--segment-index pb-splits) :duration))
-                      (pb-previous-duration
+          (when-let* ((basis-splits (plist-get speedo--comparison-basis :splits))
+                      (basis-split-duration
+                       (plist-get (nth speedo--segment-index basis-splits) :duration))
+                      (basis-previous-duration
                        (speedo--splits-duration
-                        (seq-take pb-splits (max speedo--segment-index 1))))
+                        (seq-take basis-splits (max speedo--segment-index 1))))
                       (split-duration (- (speedo--timestamp)
                                          (plist-get (speedo--split-current) :start)))
                       (previous-duration
@@ -307,19 +360,20 @@ Return nil if A or B is absent."
                            ;;in case of first split, there is no previous duration
                            0))
                       (current-total (+ split-duration previous-duration))
-                      ;; we don't want to double pb-total in case of first split
-                      (pb-total (+ pb-split-duration (if (zerop speedo--segment-index)
-                                                         0
-                                                       pb-previous-duration))))
-            (setq ahead   (< current-total pb-total)
-                  behind  (> current-total pb-total)
-                  losing  (and ahead (> split-duration pb-split-duration))
-                  gaining (and behind (< split-duration pb-split-duration)))
+                      ;; we don't want to double basis-total in case of first split
+                      (basis-total (+ basis-split-duration
+                                      (if (zerop speedo--segment-index)
+                                          0
+                                        basis-previous-duration))))
+            (setq ahead   (< current-total basis-total)
+                  behind  (> current-total basis-total)
+                  losing  (and ahead (> split-duration basis-split-duration))
+                  gaining (and behind (< split-duration basis-split-duration)))
             (when (or losing behind)
-              (when-let ((current-relative (text-property-search-forward 'current-relative-timer)))
+              (when-let ((current-relative (text-property-search-forward 'comparison-timer)))
                 (put-text-property (prop-match-beginning current-relative)
                                    (prop-match-end current-relative)
-                                   'display (speedo--relative-time pb-total
+                                   'display (speedo--relative-time basis-total
                                                                    current-total)))))
           (when-let ((timer (text-property-search-forward 'speedo-timer)))
             (put-text-property
@@ -354,11 +408,27 @@ Time should be accesed by views via the `speedo--timer' variable."
 (defun speedo--footer ()
   "Return propertized footer string as determined by `speedo-footer-format'."
   (let ((result speedo-footer-format))
+    ;; dynamic elements
     (dolist (escape '("timer" "previous") result)
       (setq result (replace-regexp-in-string
                     (concat "%" escape)
                     (propertize " " (intern (concat "speedo-" escape)) t)
+                    result)))
+    (dolist (escape '("basis") result)
+      (setq result (replace-regexp-in-string
+                    (concat "%" escape)
+                    (intern (concat "speedo--footer-" escape))
                     result)))))
+
+(defun speedo--footer-basis (_match)
+  "Return the footer comparison basis string."
+  (pcase speedo--comparison-standard
+    ('personal-best "Personal Best")
+    ('best-segments "Best Segments")
+    ('latest-run "Latest Run")
+    ('latest-attempt "Latest Attempt")
+    ('world-record "World Record (Calco2)")
+    (_ "Unknown")))
 
 (defun speedo--insert-footer ()
   "Insert footer below tabulated list."
@@ -371,19 +441,21 @@ Time should be accesed by views via the `speedo--timer' variable."
       (insert (speedo--footer)))))
 
 (defun speedo--display-ui ()
-  "Display the UI."
-  (tabulated-list-print)
-  (speedo--insert-footer))
+  "Display the UI (sans header)."
+  (with-current-buffer speedo-buffer
+    (tabulated-list-print)
+    (speedo--insert-footer)))
 
 (defun speedo--refresh-header ()
   "Refresh the header."
-  (setq tabulated-list-format
-        (vector
-         (let ((info (speedo--header-game-info))) (list info (length info)))
-         (list (speedo--header-attempt-ratio) 10)
-         ;; This column ignored for now.
-         '("" 1)))
-  (tabulated-list-init-header))
+  (with-current-buffer speedo-buffer
+    (setq tabulated-list-format
+          (vector
+           (let ((info (speedo--header-game-info))) (list info (length info)))
+           (list (speedo--header-attempt-ratio) 10)
+           ;; This column ignored for now.
+           '("" 1)))
+    (tabulated-list-init-header)))
 
 (defun speedo--attempt-init ()
   "Initialize a new attempt."
@@ -486,8 +558,7 @@ Reset timers."
 (defun speedo--list-splits ()
   "Return a list of splits for UI."
   (let* ((index 0)
-         (pb (speedo--run-pb))
-         (pb-splits (plist-get pb :splits)))
+         (basis-splits (plist-get speedo--comparison-basis :splits)))
     (mapcar
      (lambda (segment)
        (let ((name (plist-get segment :name))
@@ -502,10 +573,10 @@ Reset timers."
               (vector
                (if current (propertize name 'face 'speedo-current-line) name)
                (let* ((speedo--time-formatter nil)
-                      (s (or (when (and pb (speedo--attempt-in-progress-p))
+                      (s (or (when (and speedo--comparison-basis (speedo--attempt-in-progress-p))
                                (speedo--relative-time
                                 (speedo--splits-duration
-                                 (seq-take pb-splits (1+ index)))
+                                 (seq-take basis-splits (1+ index)))
                                 (speedo--splits-duration
                                  (seq-take (plist-get speedo--attempt-current :splits)
                                            (1+ index)))))
@@ -513,14 +584,14 @@ Reset timers."
                  (if current
                      (propertize
                       s
-                      'current-relative-timer t
+                      'comparison-timer t
                       'face '(:inherit (speedo-current-line speedo-comparison-line)))
                    s))
                (let ((s (or (when-let ((current (speedo--split-time-relative
                                                  speedo--attempt-current index)))
                               (speedo--format-ms current))
-                            (when-let ((pb (speedo--split-time-relative pb index)))
-                              (propertize (speedo--format-ms pb) 'face 'speedo-comparison-line))
+                            (when-let ((basis (speedo--split-time-relative speedo--comparison-basis index)))
+                              (propertize (speedo--format-ms basis) 'face 'speedo-comparison-line))
                             speedo-text-place-holder)))
                  (if current (propertize s 'current-segment-timer t
                                          'face '(:inherit (speedo-current-line speedo-comparison-line)))
@@ -644,6 +715,47 @@ If no attempt is in progress, clear the UI times."
     (internal-show-cursor (selected-window) t) ;;show hidden cursor
     (bury-buffer)))
 
+(defun speedo-save-file ()
+  "Save `speedo--data' to `speedo--data-file'."
+  (interactive)
+  (if (speedo--data-modified-p)
+      (with-temp-buffer
+        (let ((print-level nil)
+              (print-length nil)
+              (print-circle t))
+          (insert (pp-to-string speedo--data))
+          (write-region (point-min) (point-max) speedo--data-file)))
+    (message "(No changes need to be saved)")))
+
+(defun speedo--comparison-n (n)
+  "Compare against Nth relative standard in `speedo-comparison-standards'.
+Negative N cycles backward, positive forward."
+  (unless speedo--comparison-standard (user-error "No current comparison standard"))
+  (let ((next (nth (mod (+ n (cl-position speedo--comparison-standard
+                                          speedo-comparison-standards))
+                        (length speedo-comparison-standards))
+                   speedo-comparison-standards)))
+    (setq speedo--comparison-standard next)
+    (speedo--comparison-basis next))
+  (speedo--display-ui))
+
+(defun speedo-comparison-next (&optional n)
+  "Compare against Nth next standard in `speedo-comparison-standards'."
+  (interactive "p")
+  (speedo--comparison-n (or n 1)))
+
+(defun speedo-comparison-previous (&optional n)
+  "Compare against Nth next standard in `speedo-comparison-standards'."
+  (interactive "p")
+  (speedo--comparison-n (- (or n 1))))
+
+(defun speedo-comparison-default ()
+  "Compare against `speedo-default-comparison-standard'."
+  (interactive)
+  (setq speedo--comparison-standard speedo-default-comparison-standard)
+  (speedo--comparison-basis speedo-default-comparison-standard)
+  (speedo--display-ui))
+
 ;;;###autoload
 (defun speedo-load-file (&optional file)
   "Load a splits FILE."
@@ -658,6 +770,7 @@ If no attempt is in progress, clear the UI times."
         (prog1
             (setq speedo--data data
                   speedo--data-file file)
+          (speedo--comparison-basis speedo--comparison-standard)
           (message "Loaded splits file %S" file)
           (speedo)
           (speedo--refresh-header)
@@ -668,6 +781,7 @@ If no attempt is in progress, clear the UI times."
 (defun speedo ()
   "Open the splits buffer."
   (interactive)
+  (unless speedo--comparison-basis (speedo--comparison-basis speedo--comparison-standard))
   (unless speedo--data (speedo-load-file
                         (when speedo-default-splits-file
                           (expand-file-name speedo-default-splits-file speedo-directory))))
@@ -698,6 +812,9 @@ If no attempt is in progress, clear the UI times."
 ;;;; Key bindings
 (define-key speedo-mode-map (kbd "<kp-1>") 'speedo-next)
 (define-key speedo-mode-map (kbd "<kp-3>") 'speedo-reset)
+(define-key speedo-mode-map (kbd "<kp-4>") 'speedo-comparison-previous)
+(define-key speedo-mode-map (kbd "<kp-6>") 'speedo-comparison-next)
+(define-key speedo-mode-map (kbd "<kp-7>") 'speedo-comparison-default)
 (define-key speedo-mode-map (kbd "<kp-8>") 'speedo-previous)
 (define-key speedo-mode-map (kbd "<kp-5>") 'speedo-mistake)
 (define-key speedo-mode-map (kbd "q") 'speedo-bury)
