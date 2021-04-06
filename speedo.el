@@ -474,6 +474,7 @@ Time should be accesed by views via the `speedo--timer' variable."
               :splits
               (mapcar (lambda (segment) (list :segment (plist-get segment :name)))
                       (plist-get speedo--data :segments))))
+  (speedo--comparison-basis speedo--comparison-basis)
   (speedo--refresh-header)
   (speedo--timer-start))
 
@@ -535,6 +536,7 @@ Reset timers."
   "Clear the last attempts times from UI."
   (with-current-buffer speedo-buffer
     (setq speedo--review-last-run nil)
+    (speedo--comparison-basis speedo--comparison-basis)
     (speedo--display-ui)
     (speedo--insert-timers)))
 
