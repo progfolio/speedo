@@ -443,7 +443,7 @@ Time should be accesed by views via the `speedo--timer' variable."
 (defun speedo--display-ui ()
   "Display the UI (sans header)."
   (with-current-buffer speedo-buffer
-    (tabulated-list-print)
+    (tabulated-list-print 'remember-pos 'update)
     (speedo--insert-footer)))
 
 (defun speedo--refresh-header ()
@@ -665,6 +665,7 @@ Reset timers."
     (speedo--insert-previous-split-time)
     (speedo--refresh-header)
     (unless (speedo--attempt-in-progress-p) (speedo--insert-timers))
+    (goto-char (point-min))
     (forward-line speedo--segment-index)))
 
 (defun speedo-previous ()
@@ -680,9 +681,7 @@ Reset timers."
     (let ((current (speedo--split-current)))
       (setf current (plist-put current :duration nil)))
     (forward-line -1)
-    (let ((p (point)))
-      (speedo--display-ui)
-      (goto-char p))))
+      (speedo--display-ui)))
 
 (defun speedo-mistake ()
   "Record a mistake in the current split."
