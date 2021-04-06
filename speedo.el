@@ -427,7 +427,7 @@ Time should be accesed by views via the `speedo--timer' variable."
     ('best-segments "Best Segments")
     ('latest-run "Latest Run")
     ('latest-attempt "Latest Attempt")
-    ('world-record "World Record (Calco2)")
+    ('world-record "World Record")
     (_ "Unknown")))
 
 (defun speedo--insert-footer ()
