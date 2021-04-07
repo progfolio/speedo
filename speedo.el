@@ -528,7 +528,8 @@ Reset timers."
 (defun speedo--clear ()
   "Clear the last attempts times from UI."
   (with-current-buffer speedo-buffer
-    (setq speedo--review-last-run nil)
+    (setq speedo--review-last-run nil
+          speedo--timer nil)
     (speedo--comparison-basis speedo--comparison-basis)
     (speedo--display-ui)
     (speedo--insert-timers)))
