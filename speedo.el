@@ -601,21 +601,26 @@ Reset timers."
              (name (if current (propertize name 'face 'speedo-current-line) name))
              (current-face '(:inherit (speedo-current-line speedo-comparison-line)))
              (comparison
-              (let* ((s (or (when (and speedo--comparison-target
-                                       (or speedo--current-attempt
-                                           speedo--review))
-                              (speedo--relative-time
-                               (speedo--splits-duration
-                                (seq-take target-splits (1+ index)))
-                               (speedo--splits-duration
-                                (seq-take (plist-get speedo--current-attempt :splits)
-                                          (1+ index)))))
-                            speedo-text-place-holder)))
+              (let* ((s
+                      (or (when (and target-splits
+                                     (or speedo--current-attempt speedo--review))
+                            (speedo--relative-time
+                             (speedo--splits-duration (seq-take target-splits (1+ index)))
+                             (speedo--splits-duration
+                              (seq-take (plist-get (if speedo--review
+                                                       (speedo-target-last-attempt)
+                                                     speedo--current-attempt)
+                                                   :splits)
+                                        (1+ index)))))
+                          speedo-text-place-holder)))
                 (if current (propertize s 'comparison-timer t 'face current-face) s)))
              (speedo--time-formatter #'speedo--time-format-rounded)
              (split-time
               (let ((s (or (when-let ((current (speedo--split-time-relative
-                                                speedo--current-attempt index)))
+                                                (if speedo--review
+                                                    (speedo-target-last-attempt)
+                                                  speedo--current-attempt)
+                                                index)))
                              (speedo--format-ms current))
                            (when-let ((target (speedo--split-time-relative
                                                speedo--target-attempt index)))
