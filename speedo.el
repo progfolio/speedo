@@ -35,6 +35,11 @@
   "Face for time behind comparison."
   :group 'speedo-faces)
 
+(defface speedo-neutral
+  '((t (:inherit speedo-emphasis :foreground "#5555FF")))
+  "Face for time equal to comparison."
+  :group 'speedo-faces)
+
 (defface speedo-comparison-line
   '((t (:weight light)))
   "Face for the global run timer."
@@ -83,7 +88,7 @@
   :group 'speedo-faces)
 
 (defface speedo-timer
-  '((t (:weight ultra-bold :foreground "#5555FF" :height 1.5)))
+  '((t (:inherit speedo-neutral :weight ultra-bold :height 1.5)))
   "Face for the global run timer."
   :group 'speedo-faces)
 
@@ -299,7 +304,7 @@ Return nil if A or B is absent."
                   'face (cond
                          ((< previous 0) 'speedo-behind)
                          ((> previous 0) 'speedo-ahead)
-                         (t 'speedo-timer))))))
+                         (t 'speedo-neutral))))))
 
 (defun speedo-target-world-record ()
   "Return world record run."
@@ -394,7 +399,7 @@ Return nil if A or B is absent."
                                '(:inherit (speedo-pb speedo-timer)))
                               (ahead   '(:inherit (speedo-ahead speedo-timer)))
                               (behind  '(:inherit (speedo-behind speedo-timer)))
-                              (t       'speedo-timer))))))))))))
+                              (t       'speedo-neutral))))))))))))
 
 (defun speedo--display-run-timer ()
   "Display the run timer."
