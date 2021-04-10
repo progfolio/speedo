@@ -297,7 +297,7 @@ Return nil if A or B is absent."
            (sign (cond
                   ((< previous 0) "+")
                   ((> previous 0) "-")
-                  (t "")))
+                  (t " ")))
            (time (speedo--format-ms (abs previous))))
       (setq time (substring time (string-match-p "[^0:]" time)))
       (when (string-prefix-p "." time) (setq time (concat "0" time)))
