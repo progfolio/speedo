@@ -102,7 +102,8 @@
                                        (speedo-target-best-segments . "Best Segments")
                                        (speedo-target-world-record  . "World Record")
                                        (speedo-target-last-attempt  . "Last Attempt")
-                                       (speedo-target-last-run      . "Last Run"))
+                                       (speedo-target-last-run      . "Last Run")
+                                       (ignore . "None"))
   ;;best-split-times, average-segments, median-segments, balanced-pb
   "List of comparison targets. Each element is a cons cell of form:
 \\=(FN . DESCRIPTION)
