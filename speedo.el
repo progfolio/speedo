@@ -340,13 +340,12 @@ Return nil if A or B is absent."
 
 (defun speedo--insert-timers ()
   "Insert the dynamic run timers."
-  (when speedo--current-attempt
-    (with-current-buffer speedo-buffer
+  (with-current-buffer speedo-buffer
+    (when (or speedo--current-attempt speedo--review)
       (with-silent-modifications
         (save-excursion
           (goto-char (point-min))
-          (let ((last-attempt (unless speedo--current-attempt
-                                (car (last (plist-get speedo--data :attempts)))))
+          (let ((last-attempt (unless speedo--current-attempt (speedo-target-last-attempt)))
                 ahead behind gaining losing)
             (when-let* ((target-splits (plist-get speedo--target-attempt :splits))
                         (target-index (max 0
@@ -400,7 +399,7 @@ Return nil if A or B is absent."
                                '(:inherit (speedo-pb speedo-timer)))
                               (ahead   '(:inherit (speedo-ahead speedo-timer)))
                               (behind  '(:inherit (speedo-behind speedo-timer)))
-                              (t       'speedo-neutral))))))))))))
+                              (t       'speedo-timer))))))))))))
 
 (defun speedo--display-run-timer ()
   "Display the run timer."
