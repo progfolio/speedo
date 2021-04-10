@@ -437,6 +437,34 @@ Time should be accesed by views via the `speedo--timer' variable."
                        (t (signal 'wrong-type-argument `((functionp stringp) ,description)))))
                     result)))))
 
+(defun speedo--insert-previous-split-time ()
+  "Insert previous split relative time in UI."
+  (when (and (or speedo--current-attempt
+                 speedo--review)
+             speedo--target-attempt
+             ;; there is no previous for the first split
+             (> speedo--segment-index 0))
+    (save-excursion
+      (goto-char (point-min))
+      (with-silent-modifications
+        (when-let* ((ui (text-property-search-forward 'speedo-previous))
+                    (previous (1- speedo--segment-index)))
+          (put-text-property
+           (prop-match-beginning ui) (prop-match-end ui)
+           'display
+           (format speedo-footer-previous-format
+                   (speedo--relative-time
+                    (plist-get
+                     (nth previous (plist-get speedo--target-attempt :splits))
+                     :duration)
+                    (plist-get
+                     (nth previous
+                          (plist-get
+                           (or speedo--current-attempt
+                               (car (last (plist-get speedo--data :attempts))))
+                           :splits))
+                     :duration)))))))))
+
 (defun speedo--insert-footer ()
   "Insert footer below tabulated list."
   (save-excursion
@@ -445,7 +473,8 @@ Time should be accesed by views via the `speedo--timer' variable."
       (when-let ((footer (text-property-search-forward 'speedo-footer)))
         (delete-region (prop-match-beginning footer) (point-max)))
       (goto-char (point-max))
-      (insert (speedo--footer)))))
+      (insert (speedo--footer))
+      (speedo--insert-previous-split-time))))
 
 (defun speedo--display-ui ()
   "Display the UI (sans header)."
@@ -519,29 +548,6 @@ Reset timers."
   (speedo--refresh-header)
   (cancel-timer speedo--timer-object)
   (cancel-timer speedo--ui-timer-object))
-
-(defun speedo--insert-previous-split-time ()
-  "Insert previous split relative time in UI."
-  (when (and speedo--current-attempt
-             ;; there is no previous for the first split
-             (> speedo--segment-index 0))
-    (save-excursion
-      (goto-char (point-min))
-      (with-silent-modifications
-        (when-let* ((ui (text-property-search-forward 'speedo-previous))
-                    (previous (1- speedo--segment-index)))
-          (put-text-property
-           (prop-match-beginning ui) (prop-match-end ui)
-           'display (format speedo-footer-previous-format
-                            (speedo--relative-time
-                             (plist-get
-                              (nth previous
-                                   (plist-get speedo--target-attempt :splits))
-                              :duration)
-                             (plist-get
-                              (nth previous
-                                   (plist-get speedo--current-attempt :splits))
-                              :duration)))))))))
 
 (defun speedo--clear ()
   "Clear the last attempts times from UI."
@@ -654,7 +660,6 @@ Reset timers."
     (cl-incf speedo--segment-index)
     (speedo--split-start)
     (speedo--display-ui)
-    (speedo--insert-previous-split-time)
     (speedo--refresh-header)
     (unless speedo--current-attempt (speedo--insert-timers))
     (goto-char (point-min))
