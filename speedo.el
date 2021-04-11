@@ -845,6 +845,7 @@ Negative N cycles backward, positive forward."
     (if-let ((data (speedo--read-file file)))
         (prog1
             (setq speedo--review nil
+                  speedo--segment-index -1
                   speedo--data data
                   speedo--data-file file)
           (speedo--target-attempt (car speedo--comparison-target))
