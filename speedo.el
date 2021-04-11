@@ -844,7 +844,8 @@ Negative N cycles backward, positive forward."
       (speedo-save-file))
     (if-let ((data (speedo--read-file file)))
         (prog1
-            (setq speedo--data data
+            (setq speedo--review nil
+                  speedo--data data
                   speedo--data-file file)
           (speedo--target-attempt (car speedo--comparison-target))
           (message "Loaded splits file %S" file)
