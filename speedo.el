@@ -157,6 +157,7 @@ It may contain one %-escaped reference to the previous split time."
 ;;; Variables
 (defvar speedo--current-attempt nil "The current attempt.")
 (defvar speedo--target-attempt  nil "The cached target attempt.")
+(defvar speedo--best-segments nil "List of lowest durations for each segment.")
 (defvar speedo--comparison-target (car speedo-comparison-targets)
   "The current `speedo-comparison-targets' cell.")
 (defvar speedo--data nil "Split database.")
@@ -262,7 +263,12 @@ If a split is missing a :duration, return nil."
                         (plist-get (nth n (plist-get attempt :splits)) :duration))
                       (plist-get speedo--data :attempts))))))
 
-
+(defun speedo--best-segments ()
+  "Return list of best durations for each segment in `speedo--data'."
+  (let (durations)
+    (dotimes (n (length (plist-get speedo--data :segments)))
+      (setq durations (push (speedo--segment-pb n) durations)))
+    (nreverse durations)))
 
 (defun speedo--run-pb (&optional attempts nocache nosave)
   "Return personal best run.
@@ -534,6 +540,7 @@ Time should be accesed by views via the `speedo--timer' variable."
   "Initialize a new attempt."
   (setq speedo--segment-index -1
         speedo--review nil
+        speedo--best-segments (speedo--best-segments)
         speedo--current-attempt
         (list :start (speedo--timestamp)
               :splits
@@ -627,9 +634,19 @@ Reset timers."
       (let* ((segment (nth index segments))
              (name (plist-get segment :name))
              (target-splits (plist-get speedo--target-attempt :splits))
-             (current (= index speedo--segment-index))
-             (name (if current (propertize name 'face 'speedo-current-line) name))
+             (current-line (= index speedo--segment-index))
+             (name (if current-line (propertize name 'face 'speedo-current-line) name))
              (current-face '(:inherit (speedo-current-line speedo-comparison-line)))
+             (best-split
+              (when-let ((best (nth index speedo--best-segments))
+                         (segment-duration
+                          (plist-get
+                           (nth index (plist-get (if speedo--review
+                                                     (speedo-target-last-attempt)
+                                                   speedo--current-attempt)
+                                                 :splits))
+                           :duration)))
+                (< segment-duration best)))
              (comparison
               (let* ((s
                       (or (when (and target-splits
@@ -643,7 +660,8 @@ Reset timers."
                                                    :splits)
                                         (1+ index)))))
                           speedo-text-place-holder)))
-                (if current (propertize s 'comparison-timer t 'face current-face) s)))
+                (when current-line (setq s (propertize s 'comparison-timer t)))
+                (if best-split (propertize s 'face 'speedo-pb) s)))
              (speedo--time-formatter #'speedo--time-format-rounded)
              (split-time
               (let ((s (or (when-let ((current (speedo--split-time-relative
@@ -657,7 +675,7 @@ Reset timers."
                              (propertize (speedo--format-ms target)
                                          'face 'speedo-comparison-line))
                            speedo-text-place-holder)))
-                (if current (propertize s 'current-segment-timer t 'face current-face) s))))
+                (if current-line (propertize s 'current-segment-timer t 'face current-face) s))))
         (setq splits (push (list index (vector name comparison split-time)) splits))))
     (nreverse splits)))
 
