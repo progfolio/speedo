@@ -7,6 +7,7 @@
 
 ;;; Code:
 ;;;; Requirements
+(eval-when-compile (require 'subr-x))
 (require 'cl-lib)
 (require 'face-remap)
 (require 'seq)
@@ -125,11 +126,23 @@ If it is not an absolute path, it is expanded relative to `speedo-directory'."
   :type 'directory
   :group 'speedo)
 
-(defcustom speedo-footer-format "%timer\n%previous\n\nComparing Against: %target"
+(defcustom speedo-footer-format (string-join
+                                 '("%timer"
+                                   "%previous"
+                                   ""
+                                   "Comparing Against: %target"
+                                   "%mistakes")
+                                 "\n")
   "The format for the speedo footer. It may contain %-escaped refrences to:
 - %timer: the global split timer.
 - %previous: the comparative value for the last split
 - %target: the target for comparison"
+  :type 'string
+  :group 'speedo)
+
+(defcustom speedo-footer-mistakes-format "Mistakes: %s"
+  "Format string for the previous split time UI.
+It may contain one %-escaped reference to the mistake count."
   :type 'string
   :group 'speedo)
 
@@ -458,7 +471,7 @@ Time should be accesed by views via the `speedo--timer' variable."
   "Return propertized footer string as determined by `speedo-footer-format'."
   (let ((result speedo-footer-format))
     ;; dynamic elements
-    (dolist (escape '("timer" "previous") result)
+    (dolist (escape '("timer" "previous" "mistakes") result)
       (setq result (replace-regexp-in-string
                     (concat "%" escape)
                     (propertize " " (intern (concat "speedo-" escape)) t)
@@ -483,8 +496,8 @@ Time should be accesed by views via the `speedo--timer' variable."
     (save-excursion
       (goto-char (point-min))
       (with-silent-modifications
-        (when-let* ((ui (text-property-search-forward 'speedo-previous))
-                    (previous (1- speedo--segment-index)))
+        (when-let ((ui (text-property-search-forward 'speedo-previous))
+                   (previous (1- speedo--segment-index)))
           (put-text-property
            (prop-match-beginning ui) (prop-match-end ui)
            'display
@@ -501,6 +514,24 @@ Time should be accesed by views via the `speedo--timer' variable."
                            :splits))
                      :duration)))))))))
 
+(defun speedo--insert-mistakes ()
+  "Insert mistake count in the UI."
+  (when (or speedo--current-attempt speedo--review)
+    (save-excursion
+      (goto-char (point-min))
+      (with-silent-modifications
+        (when-let ((count
+                    (cl-reduce (lambda (acc split) (+ acc (length (plist-get split :mistakes))))
+                               (plist-get (if speedo--review
+                                              (speedo-target-last-attempt)
+                                            speedo--current-attempt)
+                                          :splits)
+                               :initial-value 0))
+                   (ui (text-property-search-forward 'speedo-mistakes)))
+          (when (> count 0)
+            (put-text-property (prop-match-beginning ui) (prop-match-end ui)
+                               'display (format speedo-footer-mistakes-format count))))))))
+
 (defun speedo--insert-footer ()
   "Insert footer below tabulated list."
   (save-excursion
@@ -510,6 +541,7 @@ Time should be accesed by views via the `speedo--timer' variable."
         (delete-region (prop-match-beginning footer) (point-max)))
       (goto-char (point-max))
       (insert (speedo--footer))
+      (speedo--insert-mistakes)
       (speedo--insert-previous-split-time))))
 
 (defun speedo--display-ui ()
@@ -743,6 +775,7 @@ Reset timers."
                          (append  (plist-get current :mistakes)
                                   (list (- (speedo--timestamp)
                                            (plist-get speedo--current-attempt :start))))))
+        (speedo--insert-mistakes)
         (message "mistake recorded"))
     (user-error "No run in progress")))
 
