@@ -732,6 +732,29 @@ Reset timers."
                            (plist-get speedo--data :category) "")))
               'face 'speedo-header-game-info))
 
+;;; Save/Restore Customizations
+(defun speedo--load-customizations ()
+  "Set saved customizations for the current split database."
+  (dolist (customization (plist-get speedo--data :custom))
+    (set (car customization) (cadr customization))))
+
+(defun speedo--custom-variables ()
+  "Return a list of speedo.el's custom variables"
+  (let (symbols)
+    (obarray-map (lambda (ob)
+                   (when (and (string-prefix-p "speedo" (symbol-name ob))
+                              (custom-variable-p ob))
+                     (push ob symbols)))
+                 obarray)
+    (nreverse symbols)))
+
+(defun speedo--reset-customizations ()
+  "Reset user's customizations.
+This uses saved custom values, then defaults."
+  (dolist (var (speedo--custom-variables))
+    (set var (eval (or (car (get var 'saved-value))
+                       (car (get var 'standard-value)))))))
+
 ;;; Commands
 (defun speedo-next ()
   "Start the next segment or a new attempt."
@@ -842,12 +865,15 @@ Negative N cycles backward, positive forward."
                (y-or-n-p (format "%S modified. Save before loading %s? "
                                  speedo--data-file file)))
       (speedo-save-file))
+    (with-current-buffer speedo-buffer (kill-buffer))
     (if-let ((data (speedo--read-file file)))
         (prog1
             (setq speedo--review nil
                   speedo--segment-index -1
                   speedo--data data
                   speedo--data-file file)
+          (speedo--reset-customizations)
+          (speedo--load-customizations)
           (speedo--target-attempt (car speedo--comparison-target))
           (message "Loaded splits file %S" file)
           (speedo)
