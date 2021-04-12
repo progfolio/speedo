@@ -141,15 +141,19 @@ If it is not an absolute path, it is expanded relative to `speedo-directory'."
   :group 'speedo)
 
 (defcustom speedo-footer-mistakes-format "Mistakes: %s"
-  "Format string for the previous split time UI.
-It may contain one %-escaped reference to the mistake count."
-  :type 'string
+  "Format string for the mistake counter UI.
+It may contain one %-escaped reference to the mistake count.
+It may aslo be a function which takes the count as it's sole argument and
+returns a string."
+  :type (or 'string 'function)
   :group 'speedo)
 
 (defcustom speedo-footer-previous-format "previous: %s"
   "Format string for the previous split time UI.
-It may contain one %-escaped reference to the previous split time."
-  :type 'string
+It may contain one %-escaped reference to the previous split time.
+It may aslo be a function which takes the previous split time as it's sole
+argument and returns a string."
+  :type (or 'string 'function)
   :group 'speedo)
 
 (defcustom speedo-hide-cursor t
@@ -513,6 +517,12 @@ Time should be accesed by views via the `speedo--timer' variable."
                                (car (last (plist-get speedo--data :attempts))))
                            :splits))
                      :duration)))))))))
+          (delete-region (prop-match-beginning ui) (prop-match-end ui))
+          (insert (propertize
+                   (if (functionp speedo-footer-previous-format)
+                       (funcall speedo-footer-previous-format relative-time)
+                     (format speedo-footer-previous-format relative-time))
+                   'speedo-previous t)))))))
 
 (defun speedo--insert-mistakes ()
   "Insert mistake count in the UI."
@@ -529,8 +539,12 @@ Time should be accesed by views via the `speedo--timer' variable."
                                :initial-value 0))
                    (ui (text-property-search-forward 'speedo-mistakes)))
           (when (> count 0)
-            (put-text-property (prop-match-beginning ui) (prop-match-end ui)
-                               'display (format speedo-footer-mistakes-format count))))))))
+            (delete-region (prop-match-beginning ui) (prop-match-end ui))
+            (insert (propertize
+                     (if (functionp speedo-footer-mistakes-format)
+                         (funcall speedo-footer-mistakes-format count)
+                       (format speedo-footer-mistakes-format count))
+                     'speedo-mistakes t))))))))
 
 (defun speedo--insert-footer ()
   "Insert footer below tabulated list."
