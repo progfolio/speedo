@@ -501,22 +501,23 @@ Time should be accesed by views via the `speedo--timer' variable."
       (goto-char (point-min))
       (with-silent-modifications
         (when-let ((ui (text-property-search-forward 'speedo-previous))
-                   (previous (1- speedo--segment-index)))
-          (put-text-property
-           (prop-match-beginning ui) (prop-match-end ui)
-           'display
-           (format speedo-footer-previous-format
-                   (speedo--relative-time
-                    (plist-get
-                     (nth previous (plist-get speedo--target-attempt :splits))
-                     :duration)
+                   (previous (1- speedo--segment-index))
+                   (previous-duration
                     (plist-get
                      (nth previous
                           (plist-get
                            (or speedo--current-attempt
                                (car (last (plist-get speedo--data :attempts))))
                            :splits))
-                     :duration)))))))))
+                     :duration))
+                   (relative-time
+                    (speedo--relative-time
+                     (plist-get
+                      (nth previous (plist-get speedo--target-attempt :splits))
+                      :duration)
+                     previous-duration)))
+          (when (< previous-duration (nth previous speedo--best-segments))
+            (setq relative-time (propertize relative-time 'face 'speedo-pb)))
           (delete-region (prop-match-beginning ui) (prop-match-end ui))
           (insert (propertize
                    (if (functionp speedo-footer-previous-format)
