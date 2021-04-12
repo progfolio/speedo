@@ -754,7 +754,7 @@ Reset timers."
     (set (car customization) (cadr customization))))
 
 (defun speedo--custom-variables ()
-  "Return a list of speedo.el's custom variables"
+  "Return a list of speedo.el's custom variables."
   (let (symbols)
     (obarray-map (lambda (ob)
                    (when (and (string-prefix-p "speedo" (symbol-name ob))
