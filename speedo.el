@@ -271,6 +271,18 @@ If a split is missing a :duration, return nil."
                  splits :initial-value 0)
     (error nil)))
 
+(defun speedo--attempt-ignored-p (attempt)
+  "Return t if ATTEMPT is tagged \"ignore\"."
+  (member "ignore" (plist-get attempt :tags)))
+
+(defun speedo--attempts (&optional filter)
+  "Return possibly FILTERed attempts.
+FILTER should be a function which takes an attempt and returns non-nil if the
+attempt should be disregarded.
+If nil, FILTER defaults to ignoring attempts tagged with \"ignore\"."
+  (cl-remove-if (or filter #'speedo--attempt-ignored-p)
+                (plist-get speedo--data :attempts)))
+
 (defun speedo--segment-pb (n)
   "Return best recorded time for segment N."
   (car (seq-sort
@@ -278,7 +290,7 @@ If a split is missing a :duration, return nil."
         (delq nil
               (mapcar (lambda (attempt)
                         (plist-get (nth n (plist-get attempt :splits)) :duration))
-                      (plist-get speedo--data :attempts))))))
+                      (speedo--attempts))))))
 
 (defun speedo--best-segments ()
   "Return list of best durations for each segment in `speedo--data'."
@@ -291,7 +303,7 @@ If a split is missing a :duration, return nil."
   "Return personal best run.
 If NOCACHE is non-nil, recalculate from ATTEMPTS.
 IF NOSAVE is non-nil, do not cache the result."
-  (let ((attempts (or attempts (plist-get speedo--data :attempts))))
+  (let ((attempts (or attempts (speedo--attempts))))
     (if nocache
         (when-let ((index
                     (cl-position
@@ -332,11 +344,12 @@ Return nil if A or B is absent."
 
 (defun speedo-target-world-record ()
   "Return world record run."
-  (plist-get speedo--data :world-record))
+  (car (speedo--attempts (lambda (attempt)
+                           (not (member "world record" (plist-get attempt :tags)))))))
 
 (defun speedo-target-personal-best ()
   "Return personal best run from `speedo--data'."
-  (speedo--run-pb (plist-get speedo--data :attempts) 'nocache 'nosave))
+  (speedo--run-pb (speedo--attempts) 'nocache 'nosave))
 
 (defun speedo-target-best-segments ()
   "Return synthesized attempt with best times for each segment."
@@ -354,13 +367,11 @@ Return nil if A or B is absent."
 
 (defun speedo-target-last-attempt ()
   "Return last attempt."
-  (car (last (plist-get speedo--data :attempts))))
+  (car (last (speedo--attempts))))
 
 (defun speedo-target-last-run ()
   "Return last complete attempt."
-  (car (last (cl-remove-if-not #'speedo--attempt-complete-p
-                               (plist-get speedo--data :attempts)))))
-
+  (car (last (cl-remove-if-not #'speedo--attempt-complete-p (speedo--attempts)))))
 
 (defun speedo--attempt-in-progress-timer ()
   "Display the timer string while an attempt is in progress."
@@ -503,8 +514,7 @@ Time should be accesed by views via the `speedo--timer' variable."
                     (plist-get
                      (nth previous
                           (plist-get
-                           (or speedo--current-attempt
-                               (car (last (plist-get speedo--data :attempts))))
+                           (or speedo--current-attempt (speedo-target-last-attempt))
                            :splits))
                      :duration))
                    (relative-time
@@ -725,7 +735,7 @@ Reset timers."
 
 (defun speedo--header-attempt-ratio ()
   "Return a string representing the completed to total attempts."
-  (let* ((attempts (plist-get speedo--data :attempts))
+  (let* ((attempts (speedo--attempts))
          (complete (length (cl-remove-if-not #'speedo--attempt-complete-p attempts)))
          (total (+ (length attempts) (if speedo--current-attempt 1 0))))
     (propertize
