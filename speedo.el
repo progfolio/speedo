@@ -129,7 +129,6 @@ If it is not an absolute path, it is expanded relative to `speedo-directory'."
 (defcustom speedo-footer-format (string-join
                                  '("%timer"
                                    "%previous"
-                                   ""
                                    "Comparing Against: %target"
                                    "%mistakes")
                                  "\n")
