@@ -880,12 +880,14 @@ Negative N cycles backward, positive forward."
                (y-or-n-p (format "%S modified. Save before loading %s? "
                                  speedo--data-file file)))
       (speedo-save-file))
-    (with-current-buffer speedo-buffer (kill-buffer))
+    (with-current-buffer (get-buffer-create speedo-buffer)
+      (kill-buffer))
     (if-let ((data (speedo--read-file file)))
         (prog1
             (setq speedo--review nil
                   speedo--segment-index -1
                   speedo--data data
+                  speedo--comparison-target (car speedo-comparison-targets)
                   speedo--data-file file)
           (speedo--reset-customizations)
           (speedo--load-customizations)
@@ -904,7 +906,10 @@ Negative N cycles backward, positive forward."
   (unless speedo--data (speedo-load-file
                         (when speedo-default-splits-file
                           (expand-file-name speedo-default-splits-file speedo-directory))))
-  (switch-to-buffer (get-buffer-create speedo-buffer))
+  (funcall (if (string= (buffer-name (current-buffer)) speedo-buffer)
+               #'switch-to-buffer
+             #'switch-to-buffer-other-window)
+           (get-buffer-create speedo-buffer))
   (set-window-dedicated-p (selected-window) t)
   (when speedo-hide-cursor (speedo--hide-cursor))
   (unless (derived-mode-p 'speedo-mode) (speedo-mode)))
