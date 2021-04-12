@@ -363,7 +363,7 @@ Return nil if A or B is absent."
 
 
 (defun speedo--attempt-in-progress-timer ()
-  "Return the timer string while an attempt is in progress."
+  "Display the timer string while an attempt is in progress."
   (let (ahead behind gaining losing)
     (when-let* ((target-splits (plist-get speedo--target-attempt :splits))
                 (target-index (max 0 (min speedo--segment-index (1- (length target-splits)))))
@@ -373,7 +373,7 @@ Return nil if A or B is absent."
                  (speedo--splits-duration
                   (seq-take target-splits (max target-index 1))))
                 (split-duration (- (speedo--timestamp)
-                                   (plist-get (speedo--split-current) :start)))
+                                   (plist-get (speedo--current-split) :start)))
                 (previous-duration
                  (or (speedo--splits-duration
                       (seq-take
@@ -416,9 +416,6 @@ Return nil if A or B is absent."
 
 (defun speedo--review-timer ()
   "Display the timer during a run review."
-  ;; get last attempt duration
-  ;; compare to target duration
-  ;; new face for incomplete duration?
   (when-let ((ui (text-property-search-forward 'speedo-timer)))
     (let* ((last-attempt (speedo-target-last-attempt))
            (last-splits (plist-get last-attempt :splits))
@@ -444,8 +441,8 @@ Return nil if A or B is absent."
                                                 speedo-timer)))))
       (put-text-property (prop-match-beginning ui) (prop-match-end ui) 'display timer))))
 
-(defun speedo--insert-timers ()
-  "Insert the dynamic run timers."
+(defun speedo--display-timers ()
+  "Display UI timers."
   (with-current-buffer speedo-buffer
     (with-silent-modifications
       (save-excursion
@@ -458,7 +455,7 @@ Return nil if A or B is absent."
 (defun speedo--display-run-timer ()
   "Display the run timer."
   (when speedo--ui-timer-object (cancel-timer speedo--ui-timer-object))
-  (setq speedo--ui-timer-object (run-with-timer 0 0.1 #'speedo--insert-timers)))
+  (setq speedo--ui-timer-object (run-with-timer 0 0.1 #'speedo--display-timers)))
 
 (defun speedo--timer-start ()
   "Star the timer. Time is updated in milliseconds every tenth of a seocond.
@@ -490,7 +487,7 @@ Time should be accesed by views via the `speedo--timer' variable."
                        (t (signal 'wrong-type-argument `((functionp stringp) ,description)))))
                     result)))))
 
-(defun speedo--insert-previous-split-time ()
+(defun speedo--footer-previous-split-time ()
   "Insert previous split relative time in UI."
   (when (and (or speedo--current-attempt
                  speedo--review)
@@ -525,7 +522,7 @@ Time should be accesed by views via the `speedo--timer' variable."
                      (format speedo-footer-previous-format relative-time))
                    'speedo-previous t)))))))
 
-(defun speedo--insert-mistakes ()
+(defun speedo--footer-mistakes ()
   "Insert mistake count in the UI."
   (when (or speedo--current-attempt speedo--review)
     (save-excursion
@@ -548,7 +545,7 @@ Time should be accesed by views via the `speedo--timer' variable."
                      'speedo-mistakes t))))))))
 
 (defun speedo--insert-footer ()
-  "Insert footer below tabulated list."
+  "Insert footer below splits."
   (save-excursion
     (with-silent-modifications
       (goto-char (point-min))
@@ -556,8 +553,8 @@ Time should be accesed by views via the `speedo--timer' variable."
         (delete-region (prop-match-beginning footer) (point-max)))
       (goto-char (point-max))
       (insert (speedo--footer))
-      (speedo--insert-mistakes)
-      (speedo--insert-previous-split-time))))
+      (speedo--footer-mistakes)
+      (speedo--footer-previous-split-time))))
 
 (defun speedo--display-ui ()
   "Display the UI (sans header)."
@@ -603,20 +600,20 @@ Time should be accesed by views via the `speedo--timer' variable."
   (cl-every (lambda (split) (plist-get split :duration))
             (plist-get attempt :splits)))
 
-(defun speedo--split-current ()
+(defun speedo--current-split ()
   "Return the current split from `speedo--current-attempt'."
   (nth speedo--segment-index (plist-get speedo--current-attempt :splits)))
 
 (defun speedo--split-end ()
   "Record a split for the current segment."
-  (let ((current (speedo--split-current)))
+  (let ((current (speedo--current-split)))
     (setf current
           (plist-put current :duration (- (speedo--timestamp)
                                           (plist-get current :start))))))
 
 (defun speedo--split-start ()
   "Recrod start time of current split."
-  (let ((current (speedo--split-current)))
+  (let ((current (speedo--current-split)))
     (setf current (plist-put current :start (speedo--timestamp)))))
 
 (defun speedo--attempt-end ()
@@ -640,7 +637,7 @@ Reset timers."
           speedo--timer nil)
     (speedo--target-attempt (car speedo--comparison-target))
     (speedo--display-ui)
-    (speedo--insert-timers)))
+    (speedo--display-timers)))
 
 (defun speedo--hide-cursor ()
   "Hide cursor in `speedo-buffer'."
@@ -784,7 +781,7 @@ This uses saved custom values, then defaults."
     (speedo--split-start)
     (speedo--display-ui)
     (speedo--refresh-header)
-    (unless speedo--current-attempt (speedo--insert-timers))
+    (unless speedo--current-attempt (speedo--display-timers))
     (goto-char (point-min))
     (forward-line speedo--segment-index)))
 
@@ -795,10 +792,10 @@ This uses saved custom values, then defaults."
     (unless speedo--current-attempt (user-error "No attempt in progress"))
     (when (= speedo--segment-index 0) (user-error "No previous segment"))
     ;; clear out attempt data for this split and the previous
-    (let ((current (speedo--split-current)))
+    (let ((current (speedo--current-split)))
       (setf current (plist-put current :duration nil)))
     (cl-decf speedo--segment-index)
-    (let ((current (speedo--split-current)))
+    (let ((current (speedo--current-split)))
       (setf current (plist-put current :duration nil)))
     (forward-line -1)
     (speedo--display-ui)))
@@ -807,13 +804,13 @@ This uses saved custom values, then defaults."
   "Record a mistake in the current split."
   (interactive)
   (if speedo--current-attempt
-      (let ((current (speedo--split-current)))
+      (let ((current (speedo--current-split)))
         (setf current
               (plist-put current :mistakes
                          (append  (plist-get current :mistakes)
                                   (list (- (speedo--timestamp)
                                            (plist-get speedo--current-attempt :start))))))
-        (speedo--insert-mistakes)
+        (speedo--footer-mistakes)
         (message "mistake recorded"))
     (user-error "No run in progress")))
 
@@ -857,7 +854,7 @@ Negative N cycles backward, positive forward."
                    speedo-comparison-targets)))
     (speedo--target-attempt (car next)))
   (speedo--display-ui)
-  (speedo--insert-timers))
+  (speedo--display-timers))
 
 (defun speedo-comparison-next (&optional n)
   "Compare against Nth next standard in `speedo-comparison-targets'."
