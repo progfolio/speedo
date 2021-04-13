@@ -258,13 +258,13 @@ It is called with hours, minutes, seconds, milliseconds."
          (n (/ n 1000))
          (seconds (mod n 60))
          (minutes (mod (/ n 60) 60))
-         (hours (mod (/ n  (* 60 60)) 60))
-         (formatter
-          (or speedo--time-formatter
-              (lambda (hours minutes seconds milliseconds)
-                (format "%02d:%02d:%02d.%1d" hours minutes seconds
-                        (/ milliseconds 100))))))
-    (funcall formatter hours minutes seconds milliseconds)))
+         ;; Don't use mod here because we don't care about
+         ;; diving any farther than "hours"
+         ;; using mod to check would truncate the hours
+         ;; in cases where hours % 60 = 0
+         (hours (/ n  (* 60 60))))
+    (funcall (or speedo--time-formatter #'speedo-short-time)
+             hours minutes seconds milliseconds)))
 
 (defun speedo--splits-duration (splits)
   "Return duration of SPLITS in ms.
