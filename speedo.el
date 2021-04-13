@@ -400,7 +400,8 @@ Return nil if A or B is absent."
                 (target-total (+ target-split-duration
                                  (if (zerop speedo--segment-index)
                                      0
-                                   target-previous-duration))))
+                                   target-previous-duration)))
+                (speedo--time-formatter #'speedo--sub-hour-formatter))
       (setq ahead   (< current-total target-total)
             behind  (> current-total target-total)
             losing  (and ahead (> split-duration target-split-duration))
