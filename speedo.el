@@ -236,15 +236,14 @@ Note that missing keywords along path are added."
   "Display MINUTES:SECONDS.MS."
   (format "%d:%02d.%1d"  minutes seconds (/ ms 100)))
 
-;;@FIX: doesn't format time correctly.
-;; (defun speedo--compact-time-formatter (hours minutes seconds ms)
-;;   "Display compact time string for HOURS MINUTES SECONDS MS."
-;;   (let* ((hours (and (> hours 0) (format "%02d" hours)))
-;;          (minutes (when (or hours (> 0 minutes)) (format "%02d" minutes)))
-;;          (seconds (format (if minutes "%02d" "%d") seconds)))
-;;     (concat hours   (when hours ":")
-;;             minutes (when minutes ":")
-;;             seconds (when ms ".") (format "%d" (/ ms 10)))))
+;;@INCOMPLETE: still not ready, ms times may be to fine grained for refresh rate of timer...
+(defun speedo--compact-time-formatter (h m s ms)
+  "Return shortest time string."
+  (concat
+   (cond ((> h 0) (format "%d:%02d:%02d" h m s))
+         ((> m 0) (format "%d:%02d" m s))
+         (t (format "%d" s)))
+   (when (> ms 0) (format ".%03d" ms))))
 
 (defun speedo--timestamp (&optional time)
   "Return TIME since unix epoch in milliseconds."
