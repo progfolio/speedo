@@ -144,7 +144,7 @@ If it is not an absolute path, it is expanded relative to `speedo-directory'."
   :type 'string
   :group 'speedo)
 
-(defcustom speedo-footer-mistakes-format "Mistakes: %s"
+(defcustom speedo-footer-mistakes-format #'speedo-footer-colorized-mistakes
   "Format string for the mistake counter UI.
 It may contain one %-escaped reference to the mistake count.
 It may aslo be a function which takes the count as it's sole argument and
@@ -535,6 +535,20 @@ Time should be accesed by views via the `speedo--timer' variable."
                        (funcall speedo-footer-previous-format relative-time)
                      (format speedo-footer-previous-format relative-time))
                    'speedo-previous t)))))))
+
+(defun speedo-footer-colorized-mistakes (count)
+  "Return mistake COUNT colorized by comparison to target attempt."
+  (let ((target (cl-reduce (lambda (acc split)
+                             (+ acc (or (length (plist-get split :mistakes)) 0)))
+                           (plist-get speedo--target-attempt :splits)
+                           :initial-value 0)))
+    (format "Mistakes: %s"
+            (propertize (number-to-string count)
+                        'face
+                        (cond
+                         ((< count target) 'speedo-ahead)
+                         ((> count target) 'speedo-behind)
+                         (t 'speedo-gaining))))))
 
 (defun speedo--footer-mistakes ()
   "Insert mistake count in the UI."
