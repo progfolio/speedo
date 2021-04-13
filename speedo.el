@@ -115,6 +115,11 @@ in the UI footer.
   :type 'list
   :group 'speedo)
 
+(defcustom speedo-confirm-evaluate t
+  "If non-nil, confirm evaluation of `:custom` `speedo--data'."
+  :type 'boolean
+  :group 'speedo)
+
 (defcustom speedo-default-splits-file nil
   "The default splits file to load when `speedo' is run.
 If it is not an absolute path, it is expanded relative to `speedo-directory'."
@@ -755,9 +760,16 @@ Reset timers."
 
 ;;; Save/Restore Customizations
 (defun speedo--load-customizations ()
-  "Set saved customizations for the current split database."
-  (dolist (customization (plist-get speedo--data :custom))
-    (set (car customization) (cadr customization))))
+  "Execute `:custom` section of `speedo--data'.
+If `speedo-confirm-evaluate' is non-nil, confirm before evaluation."
+  (when-let ((customizations (plist-get speedo--data :custom))
+             (permission (if speedo-confirm-evaluate
+                             (yes-or-no-p (format (concat "Evaluate :custom section of %s? "
+                                                          "This may contain arbitrary elisp. "
+                                                          "You should inspect it before executing.")
+                                                  speedo--data-file))
+                           t)))
+    (eval (append '(progn) customizations))))
 
 (defun speedo--custom-variables ()
   "Return a list of speedo.el's custom variables."
@@ -773,8 +785,9 @@ Reset timers."
   "Reset user's customizations.
 This uses saved custom values, then defaults."
   (dolist (var (speedo--custom-variables))
-    (set var (eval (or (car (get var 'saved-value))
-                       (car (get var 'standard-value)))))))
+    (set var (if-let ((member (plist-member (symbol-plist var) 'saved-value)))
+                 (caadr member)
+               (eval (car (get var 'standard-value)))))))
 
 ;;; Commands
 (defun speedo-next ()
@@ -896,13 +909,15 @@ Negative N cycles backward, positive forward."
                   speedo--comparison-target (car speedo-comparison-targets)
                   speedo--data-file file)
           (speedo--reset-customizations)
-          (speedo--load-customizations)
-          (speedo--target-attempt (car speedo--comparison-target))
-          (message "Loaded splits file %S" file)
-          (speedo)
-          (speedo--refresh-header)
-          (speedo--display-ui))
-      (error "Error loading %S" file))))
+          (unwind-protect
+              (condition-case-unless-debug err
+                  (speedo--load-customizations)
+                ((error) (message "Error loading %s :custom data: %S" speedo--data-file err)))
+            (speedo--target-attempt (car speedo--comparison-target))
+            (speedo)
+            (speedo--refresh-header)
+            (speedo--display-ui)))
+      (error "Could not load: %S. Malformed?" file))))
 
 ;;;###autoload
 (defun speedo ()
