@@ -161,9 +161,9 @@ argument and returns a string."
   :group 'speedo)
 
 (defcustom speedo-footer-live-segment-format "Live Segment: %s"
-  "Format string for the live segment split time UI.
-It may contain one %-escaped reference to the relative time comparing the current segment's time to the
-target's time for that segement. "
+  "Format string for live segment split time UI.
+It may contain one %-escaped reference to the relative time comparing the
+current segment's time to the target's time for that segement."
   :type 'string
   :group 'speedo)
 
@@ -245,7 +245,7 @@ Note that missing keywords along path are added."
 
 ;;@INCOMPLETE: still not ready, ms times may be to fine grained for refresh rate of timer...
 (defun speedo--compact-time-formatter (h m s ms)
-  "Return shortest time string."
+  "Return shortest time string from H M S MS."
   (concat
    (cond ((> h 0) (format "%d:%02d:%02d" h m s))
          ((> m 0) (format "%d:%02d" m s))
@@ -270,7 +270,7 @@ It is called with hours, minutes, seconds, milliseconds."
          ;; using mod to check would truncate the hours
          ;; in cases where hours % 60 = 0
          (hours (/ n  (* 60 60))))
-    (funcall (or speedo--time-formatter #'speedo-short-time)
+    (funcall (or speedo--time-formatter #'speedo--compact-time-formatter)
              hours minutes seconds milliseconds)))
 
 (defun speedo--splits-duration (splits)
