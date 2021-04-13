@@ -140,7 +140,9 @@ If it is not an absolute path, it is expanded relative to `speedo-directory'."
   "The format for the speedo footer. It may contain %-escaped refrences to:
 - %timer: the global split timer.
 - %previous: the comparative value for the last split
-- %target: the target for comparison"
+- %target: the target for comparison
+- %mistakes: count of recorded mistakes for current attempt
+- %play-time: total play time of all attempts"
   :type 'string
   :group 'speedo)
 
@@ -272,6 +274,17 @@ It is called with hours, minutes, seconds, milliseconds."
          (hours (/ n  (* 60 60))))
     (funcall (or speedo--time-formatter #'speedo--compact-time-formatter)
              hours minutes seconds milliseconds)))
+
+(defun speedo-total-play-time ()
+  "Return sum of recorded attempt's durations as timestamp."
+(let ((speedo--time-formatter #'speedo--compact-time-formatter))
+  (speedo--format-ms
+   (apply #'+
+          (flatten-tree
+           (mapcar (lambda (attempt)
+                     (mapcar (lambda (split) (or (plist-get split :duration) 0))
+                             (plist-get attempt :splits)))
+                   (speedo--attempts)))))))
 
 (defun speedo--splits-duration (splits)
   "Return duration of SPLITS in ms.
@@ -610,7 +623,9 @@ Time should be accesed by views via the `speedo--timer' variable."
   "Refresh the header."
   (with-current-buffer speedo-buffer
     (setq header-line-format
-          (list (speedo--header-game-info) (speedo--header-attempt-ratio)))))
+          (list (speedo--header-game-info) (speedo--header-attempt-ratio) " "
+                '(:propertize (:eval (replace-regexp-in-string "\\(?:\\.[^z-a]*\\)" "" (speedo-total-play-time)))
+                              face speedo-header-game-info)))))
 
 (defun speedo--target-attempt (fn)
   "Set and return variable `speedo--target-attempt' to result of FN."
