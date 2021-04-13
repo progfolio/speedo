@@ -593,13 +593,8 @@ Time should be accesed by views via the `speedo--timer' variable."
 (defun speedo--refresh-header ()
   "Refresh the header."
   (with-current-buffer speedo-buffer
-    (setq tabulated-list-format
-          (vector
-           (let ((info (speedo--header-game-info))) (list info (length info)))
-           (list (speedo--header-attempt-ratio) 10)
-           ;; This column ignored for now.
-           '("" 1)))
-    (tabulated-list-init-header)))
+    (setq header-line-format
+          (list (speedo--header-game-info) (speedo--header-attempt-ratio)))))
 
 (defun speedo--target-attempt (fn)
   "Set and return variable `speedo--target-attempt' to result of FN."
@@ -930,6 +925,7 @@ Negative N cycles backward, positive forward."
             (speedo--target-attempt (car speedo--comparison-target))
             (speedo)
             (speedo--refresh-header)
+            (speedo--ui-init)
             (speedo--display-ui)))
       (error "Could not load: %S. Malformed?" file))))
 
@@ -949,6 +945,22 @@ Negative N cycles backward, positive forward."
   (when speedo-hide-cursor (speedo--hide-cursor))
   (unless (derived-mode-p 'speedo-mode) (speedo-mode)))
 
+(defun speedo--ui-init ()
+  "Initialize format of the UI."
+  (setq tabulated-list-format
+        ;;@INCOMPLETE: widths of columns should be defcustoms
+        (vector
+         ;; Find longest segment name and give it proper width
+         (list
+          "Segment"
+          (floor
+           (* 1.2
+              (car (seq-sort #'>
+                             (mapcar (lambda (segment) (length (plist-get segment :name)))
+                                     (plist-get speedo--data :segments)))))))
+         '("Comparison" 10)
+         '("Time" 25))))
+
 (define-derived-mode speedo-mode tabulated-list-mode "speedo"
   "Major mode for speedrun split timer.
 
@@ -966,6 +978,7 @@ Negative N cycles backward, positive forward."
         tabulated-list-entries #'speedo--ui-splits)
   (buffer-face-mode)
   (speedo--refresh-header)
+  (speedo--ui-init)
   (speedo--display-ui))
 
 ;;;; Key bindings
