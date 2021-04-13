@@ -152,12 +152,19 @@ returns a string."
   :type (or 'string 'function)
   :group 'speedo)
 
-(defcustom speedo-footer-previous-format "previous: %s"
+(defcustom speedo-footer-previous-format "Previous Segment: %s"
   "Format string for the previous split time UI.
 It may contain one %-escaped reference to the previous split time.
 It may aslo be a function which takes the previous split time as it's sole
 argument and returns a string."
   :type (or 'string 'function)
+  :group 'speedo)
+
+(defcustom speedo-footer-live-segment-format "Live Segment: %s"
+  "Format string for the live segment split time UI.
+It may contain one %-escaped reference to the relative time comparing the current segment's time to the
+target's time for that segement. "
+  :type 'string
   :group 'speedo)
 
 (defcustom speedo-hide-cursor t
@@ -402,16 +409,25 @@ Return nil if A or B is absent."
                                      0
                                    target-previous-duration)))
                 (speedo--time-formatter #'speedo--sub-hour-formatter))
-      (setq ahead   (< current-total target-total)
-            behind  (> current-total target-total)
-            losing  (and ahead (> split-duration target-split-duration))
-            gaining (and behind (< split-duration target-split-duration)))
-      (when (or losing behind)
-        (when-let ((current-relative (text-property-search-forward 'comparison-timer)))
-          (put-text-property (prop-match-beginning current-relative)
-                             (prop-match-end current-relative)
-                             'display (speedo--relative-time target-total
-                                                             current-total)))))
+      (let ((current-segment-behind (> split-duration target-split-duration)))
+        (setq ahead   (< current-total target-total)
+              behind  (> current-total target-total)
+              losing  (and ahead current-segment-behind)
+              gaining (and behind (< split-duration target-split-duration)))
+        (when (or losing behind)
+          (when-let ((current-relative (text-property-search-forward 'comparison-timer)))
+            (put-text-property (prop-match-beginning current-relative)
+                               (prop-match-end current-relative)
+                               'display (speedo--relative-time target-total
+                                                               current-total)))
+          (when current-segment-behind
+            (save-excursion
+              (when-let ((live-segment (text-property-search-forward 'speedo-previous)))
+                (put-text-property (prop-match-beginning live-segment)
+                                   (prop-match-end live-segment)
+                                   'display (format speedo-footer-live-segment-format
+                                                    (speedo--relative-time target-split-duration
+                                                                           split-duration)))))))))
     (when-let ((timer (text-property-search-forward 'speedo-timer)))
       (put-text-property
        (prop-match-beginning timer) (prop-match-end timer)
