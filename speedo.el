@@ -254,6 +254,42 @@ Note that missing keywords along path are added."
          (t (format "%d" s)))
    (when (> ms 0) (format ".%03d" ms))))
 
+(defun speedo--parse-time-string (time-string)
+  "Convert TIME-STRING into list of form:
+\\(milliseconds seconds minutes hours)."
+  (let ((components
+         (nreverse
+          (flatten-tree
+           (mapcar (lambda (component) (split-string component "\\."))
+                   (split-string time-string ":"))))))
+    (setq components
+          (if (string-match "\\(?:\\.\\([[:digit:]]+\\)\\)" time-string)
+              (push (* (string-to-number (concat "0." (match-string 1 time-string)))
+                       1000)
+                    (cdr components))
+            (push 0 components)))
+    (unless (= (cl-reduce (lambda (acc char)
+                            (+ acc (if (string= char ":") 1 0)))
+                          (split-string time-string "" 'omit-nulls)
+                          :initial-value 0)
+               2)
+      (setq components (append components '(0))))
+    (mapcar (lambda (component) (if (stringp component)
+                                    (string-to-number component)
+                                  component))
+            components)))
+
+(defun speedo--time-string-to-ms (time)
+  "Convert TIME to ms."
+  (let ((places '(1 1000 60000 3600000))
+        (index 0))
+    (truncate
+     (apply #'+
+            (mapcar
+             (lambda (unit)
+               (prog1 (* unit (nth index places)) (cl-incf index)))
+             (speedo--parse-time-string time))))))
+
 (defun speedo--timestamp (&optional time)
   "Return TIME since unix epoch in milliseconds."
   (+ (* 1000 (string-to-number (format-time-string "%s" time)))
