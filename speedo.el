@@ -311,16 +311,16 @@ It is called with hours, minutes, seconds, milliseconds."
     (funcall (or speedo--time-formatter #'speedo--compact-time-formatter)
              hours minutes seconds milliseconds)))
 
-(defun speedo-total-play-time ()
-  "Return sum of recorded attempt's durations as timestamp."
-(let ((speedo--time-formatter #'speedo--compact-time-formatter))
-  (speedo--format-ms
-   (apply #'+
-          (flatten-tree
-           (mapcar (lambda (attempt)
-                     (mapcar (lambda (split) (or (plist-get split :duration) 0))
-                             (plist-get attempt :splits)))
-                   (speedo--attempts)))))))
+(defun speedo-total-play-time (&optional attempts)
+  "Return sum of ATTEMPTS durations as timestamp."
+  (let ((speedo--time-formatter #'speedo--compact-time-formatter))
+    (speedo--format-ms
+     (apply #'+
+            (flatten-tree
+             (mapcar (lambda (attempt)
+                       (mapcar (lambda (split) (or (plist-get split :duration) 0))
+                               (plist-get attempt :splits)))
+                     (or attempts (speedo--attempts))))))))
 
 (defun speedo--splits-duration (splits)
   "Return duration of SPLITS in ms.
