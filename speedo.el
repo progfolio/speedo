@@ -184,6 +184,10 @@ current segment's time to the target's time for that segement."
   :type 'string
   :group 'speedo)
 
+(defcustom speedo-compact-segment-limit 10
+  "Limit of segments to display in `speedo-compact-mode'.
+Note this includes the last segment.")
+
 ;;; Variables
 (defvar speedo--current-attempt nil "The current attempt.")
 (defvar speedo--target-attempt  nil "The cached target attempt.")
@@ -1063,6 +1067,25 @@ Negative N cycles backward, positive forward."
 (define-key speedo-mode-map (kbd "<kp-5>") 'speedo-mistake)
 (define-key speedo-mode-map (kbd "q") 'speedo-bury)
 (define-key speedo-mode-map [t] 'ignore)
+
+;;;; Compact mode
+(defun speedo--compact-filter (splits)
+  "Filter SPLITS for compact mode."
+  (let* ((limit (or speedo-compact-segment-limit 10))
+         (split-count (length (plist-get speedo--data :segments)))
+         (start (min
+                 (max (- speedo--segment-index (- limit 2)) 0)
+                 (- split-count limit)))
+         (end (min (+ start (1- limit)) split-count)))
+    (append (cl-subseq splits start end)
+            (when (< end split-count) (last splits)))))
+
+(define-minor-mode speedo-compact-mode
+  "Minor mode to display a compacted list of splits."
+  :lighter " spc"
+  (if speedo-compact-mode
+      (advice-add 'speedo--ui-splits :filter-return #'speedo--compact-filter)
+    (advice-remove 'speedo--ui-splits #'speedo--compact-filter)))
 
 (provide 'speedo)
 ;;; speedo.el ends here
