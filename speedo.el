@@ -865,6 +865,13 @@ This uses saved custom values, then defaults."
                  (caadr member)
                (eval (car (get var 'standard-value)))))))
 
+(defun speedo--goto-index ()
+  "Move point to segment assoicated with `speedo--segment-index'."
+  (when (< speedo--segment-index (length (plist-get speedo--data :segments)))
+    (goto-char (point-min))
+    (while (not (= (if-let ((id (tabulated-list-get-id))) id -100) speedo--segment-index))
+      (forward-line))))
+
 ;;; Commands
 (defun speedo-next ()
   "Start the next segment or a new attempt."
@@ -880,8 +887,7 @@ This uses saved custom values, then defaults."
     (speedo--display-ui)
     (speedo--refresh-header)
     (unless speedo--current-attempt (speedo--display-timers))
-    (goto-char (point-min))
-    (forward-line speedo--segment-index)))
+    (speedo--goto-index)))
 
 (defun speedo-previous ()
   "Select the previous segment."
@@ -895,7 +901,7 @@ This uses saved custom values, then defaults."
     (cl-decf speedo--segment-index)
     (let ((current (speedo--current-split)))
       (setf current (plist-put current :duration nil)))
-    (forward-line -1)
+    (speedo--goto-index)
     (speedo--display-ui)))
 
 (defun speedo-mistake ()
