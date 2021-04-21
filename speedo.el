@@ -762,7 +762,7 @@ Reset timers."
 (defun speedo--ui-splits ()
   "Return a list of splits for UI."
   (let* ((segments (plist-get speedo--data :segments))
-         (segment-count (length (plist-get speedo--data :segments)))
+         (segment-count (length segments))
          splits)
     (dotimes (index segment-count)
       (let* ((segment (nth index segments))
