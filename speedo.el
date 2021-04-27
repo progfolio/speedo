@@ -1082,8 +1082,8 @@ Negative N cycles backward, positive forward."
 (define-key speedo-mode-map (kbd "<kp-6>") 'speedo-comparison-next)
 (define-key speedo-mode-map (kbd "<kp-8>") 'speedo-previous)
 (define-key speedo-mode-map (kbd "<kp-5>") 'speedo-mistake)
-(define-key speedo-mode-map (kbd "q") 'speedo-bury)
-(define-key speedo-mode-map (kbd "c") 'speedo-compact-mode)
+(define-key speedo-mode-map (kbd "q")      'speedo-bury)
+(define-key speedo-mode-map (kbd "c")      'speedo-compact-mode)
 
 ;;;; Compact mode
 (defun speedo--compact-filter (splits)
