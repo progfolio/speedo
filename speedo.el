@@ -668,15 +668,30 @@ Time should be accesed by views via the `speedo--timer' variable."
                 '(:propertize (:eval (replace-regexp-in-string "\\(?:\\.[^z-a]*\\)" "" (speedo-total-play-time)))
                               face speedo-header-game-info)))))
 
-(defun speedo--target-attempt (fn)
-  "Set and return variable `speedo--target-attempt' to result of FN."
+(defvar speedo--target-attempts nil "Cache for target attempts.")
+(defun speedo--target-attempt (fn &optional cache)
+  "Set and return variable `speedo--target-attempt' to result of FN.
+If CACHE is non-nil, use the cache."
   (let ((target (or (assoc fn speedo-comparison-targets)
                     (error "Unrecognized comparison target"))))
-    (setq speedo--comparison-target target
-          speedo--target-attempt (funcall (car target)))))
+    (if cache
+        (if-let ((member (plist-member speedo--target-attempts fn)))
+            (setq speedo--target-attempt (cadr member)
+                  speedo--comparison-target target)
+          ;;calculate if the target has not been cached yet.
+          (speedo--target-attempt fn))
+      (let ((result (funcall fn)))
+        (setq speedo--target-attempts (plist-put speedo--target-attempts fn result))
+        (setq speedo--comparison-target target
+              speedo--target-attempt result)))))
 
 (defun speedo--attempt-init ()
   "Initialize a new attempt."
+  ;; cache target attempts
+  ;; We let-bind speedo--comparison-target here, so the user's value is not changed.
+  (let (speedo--comparison-target)
+  (dolist (target speedo-comparison-targets)
+    (speedo--target-attempt (car target))))
   (setq speedo--segment-index -1
         speedo--review nil
         speedo--best-segments (speedo--best-segments)
@@ -729,7 +744,8 @@ Reset timers."
   "Clear the last attempts times from UI."
   (with-current-buffer speedo-buffer
     (setq speedo--review nil
-          speedo--timer nil)
+          speedo--timer nil
+          speedo--target-attempts nil)
     (speedo--target-attempt (car speedo--comparison-target))
     (speedo--display-ui)
     (speedo--display-timers)))
@@ -961,7 +977,7 @@ Negative N cycles backward, positive forward."
                                  -1))
                         (length speedo-comparison-targets))
                    speedo-comparison-targets)))
-    (speedo--target-attempt (car next)))
+    (speedo--target-attempt (car next) 'cache))
   (speedo--display-ui)
   (speedo--display-timers))
 
