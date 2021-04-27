@@ -1088,8 +1088,8 @@ Negative N cycles backward, positive forward."
 ;;;; Compact mode
 (defun speedo--compact-filter (splits)
   "Filter SPLITS for compact mode."
-  (let* ((limit (or speedo-compact-segment-limit 10))
-         (split-count (length (plist-get speedo--data :segments)))
+  (let* ((split-count (length (plist-get speedo--data :segments)))
+         (limit (min (or speedo-compact-segment-limit 10) split-count))
          (start (min
                  (max (- speedo--segment-index (- limit 2)) 0)
                  (- split-count limit)))
