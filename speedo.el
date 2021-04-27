@@ -1102,7 +1102,9 @@ Negative N cycles backward, positive forward."
   :lighter " spc"
   (if speedo-compact-mode
       (advice-add 'speedo--ui-splits :filter-return #'speedo--compact-filter)
-    (advice-remove 'speedo--ui-splits #'speedo--compact-filter)))
+    (advice-remove 'speedo--ui-splits #'speedo--compact-filter))
+  (speedo--display-ui)
+  (speedo--display-timers))
 
 (provide 'speedo)
 ;;; speedo.el ends here
