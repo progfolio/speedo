@@ -185,8 +185,9 @@ current segment's time to the target's time for that segement."
   :group 'speedo)
 
 (defcustom speedo-compact-segment-limit 10
-  "Limit of segments to display in `speedo-compact-mode'.
-Note this includes the last segment.")
+  "Limit of segments to display in command `speedo-compact-mode'.
+Note this includes the last segment."
+  :type 'interger)
 
 ;;; Variables
 (defvar speedo--current-attempt nil "The current attempt.")
