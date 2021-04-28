@@ -1015,6 +1015,26 @@ sacrificing performance at runtime."
                             split))
                         (plist-get attempt :splits)))))))
 
+(defun speedo--format-database ()
+  "Format the database for easier human reading."
+  (emacs-lisp-mode)
+  (let ((transformations
+         ;;eol-properties
+         '(("\\(?::[[:alpha:]]+$\\)" . (lambda () (replace-match "\n\\&")))
+           ;;join-lines
+           ("\\(?::\\(?:\\(?:mistake\\|run\\|tag\\)s\\)\\)" .
+            (lambda () (forward-line) (join-line)))
+           ;;data list indentation
+           ("\\(?:(:\\)" . (lambda () (replace-match "( :")))))
+        (empty-lines "\\(?:^[[:space:]]*$\\)"))
+    (goto-char (point-min))
+    (dolist (transformation transformations)
+      (save-excursion
+        (while (re-search-forward (car transformation) nil 'noerror)
+          (funcall (cdr transformation)))))
+    (flush-lines empty-lines)
+    (indent-region (point-min) (point-max))))
+
 (defun speedo-save-file ()
   "Save `speedo--data' to `speedo--data-file'."
   (interactive)
@@ -1024,6 +1044,7 @@ sacrificing performance at runtime."
               (print-length nil)
               (print-circle nil))
           (insert (pp-to-string (speedo--convert-data speedo--data 'human)))
+          (speedo--format-database)
           (write-region (point-min) (point-max) speedo--data-file)))
     (message "(No changes need to be saved)")))
 
