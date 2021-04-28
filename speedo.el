@@ -788,7 +788,8 @@ Reset timers."
              (yes-or-no-p
               (format "Speedo has modified splits for %S. Save before exit? "
                       speedo--data-file)))
-    (speedo-save-file)))
+    ;; Force because we've already checked if the data has been modified
+    (speedo-save-file 'force)))
 
 (defun speedo--split-time-relative (attempt n)
   "Return ATTEMPT's Nth split time relative to start."
@@ -1041,15 +1042,17 @@ sacrificing performance at runtime."
     (flush-lines empty-lines)
     (indent-region (point-min) (point-max))))
 
-(defun speedo-save-file ()
-  "Save `speedo--data' to `speedo--data-file'."
-  (interactive)
-  (if (speedo--data-modified-p)
+(defun speedo-save-file (&optional force)
+  "Save `speedo--data' to `speedo--data-file'.
+If FORCE is non-nil, save without checking if data has been modified."
+  (interactive "P")
+  (if (or force (speedo--data-modified-p))
       (with-temp-buffer
         (let ((print-level nil)
               (print-length nil)
               (print-circle nil))
           (insert (pp-to-string (speedo--convert-data speedo--data 'human)))
+          (add-file-local-variable-prop-line 'mode 'emacs-lisp)
           (speedo--format-database)
           (write-region (point-min) (point-max) speedo--data-file)))
     (message "(No changes need to be saved)")))
