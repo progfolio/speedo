@@ -232,6 +232,15 @@ Note that missing keywords along path are added."
                            (car (last path (1+ n))) val))))
   val)
 
+(defun speedo--plist-remove (plist &rest keys)
+  "Return a copy of PLIST with KEYS removed.
+This is different from setting KEYS to nil."
+  (let (result)
+    (dolist (keyword (nreverse (cl-remove-if-not #'keywordp plist)) result)
+      (unless (member keyword keys)
+        (setq result (push (plist-get plist keyword) result))
+        (setq result (push keyword result))))))
+
 (defun speedo--read-file (file)
   "Read FILE into an elisp object."
   ;;@FIX: we need to be more robust here.
@@ -250,15 +259,7 @@ Note that missing keywords along path are added."
   "Display MINUTES:SECONDS.MS."
   (format "%d:%02d.%1d"  minutes seconds (/ ms 100)))
 
-;;@INCOMPLETE: still not ready, ms times may be to fine grained for refresh rate of timer...
-(defun speedo--compact-time-formatter (h m s ms)
-  "Return shortest time string from H M S MS."
-  (concat
-   (cond ((> h 0) (format "%d:%02d:%02d" h m s))
-         ((> m 0) (format "%d:%02d" m s))
-         (t (format "%d" s)))
-   (when (> ms 0) (format ".%03d" ms))))
-
+;;@INCOMPLETE: still not ready, ms times may be too fine grained for refresh rate of timer...
 (defun speedo--parse-time-string (time-string)
   "Convert TIME-STRING into list of form:
 \\(milliseconds seconds minutes hours)."
@@ -295,10 +296,28 @@ Note that missing keywords along path are added."
                (prog1 (* unit (nth index places)) (cl-incf index)))
              (speedo--parse-time-string time))))))
 
+(defun speedo--ms-to-date (ms)
+  "Convert MS into human readable date string."
+  (format-time-string "%Y-%m-%d %H:%M:%S" (seconds-to-time (/ ms 1000.0))))
+
+(defun speedo--date-to-ms (date)
+  "Convert ISO 8601 DATE string to milliseconds."
+  (* 1000
+     (string-to-number
+      (format-time-string "%s" (date-to-time date)))))
+
 (defun speedo--timestamp (&optional time)
   "Return TIME since unix epoch in milliseconds."
   (+ (* 1000 (string-to-number (format-time-string "%s" time)))
      (string-to-number (format-time-string "%3N" time))))
+
+(defun speedo--compact-time-formatter (h m s ms)
+  "Return shortest time string from H M S MS."
+  (concat
+   (cond ((> h 0) (format "%d:%02d:%02d" h m s))
+         ((> m 0) (format "%d:%02d" m s))
+         (t (format "%d" s)))
+   (when (> ms 0) (format ".%03d" ms))))
 
 (defun speedo--format-ms (n)
   "Format N milliseconds with `speedo-time-formatter'.
@@ -690,8 +709,8 @@ If CACHE is non-nil, use the cache."
   ;; cache target attempts
   ;; We let-bind speedo--comparison-target here, so the user's value is not changed.
   (let (speedo--comparison-target)
-  (dolist (target speedo-comparison-targets)
-    (speedo--target-attempt (car target))))
+    (dolist (target speedo-comparison-targets)
+      (speedo--target-attempt (car target))))
   (setq speedo--segment-index -1
         speedo--review nil
         speedo--best-segments (speedo--best-segments)
@@ -729,16 +748,20 @@ If CACHE is non-nil, use the cache."
 (defun speedo--attempt-end ()
   "Save the current attempt to `speedo--data'.
 Reset timers."
-  (setq speedo--data (plist-put speedo--data :attempts
-                                (append (plist-get speedo--data :attempts)
-                                        (list (copy-tree speedo--current-attempt)))))
-  (message "attempt ended")
-  (setq speedo--current-attempt nil
-        speedo--review t)
-  (speedo--run-pb nil 'nocache)
-  (speedo--refresh-header)
-  (cancel-timer speedo--timer-object)
-  (cancel-timer speedo--ui-timer-object))
+  (let* ((current (copy-tree speedo--current-attempt))
+         (cleaned (plist-put current :splits
+                             (mapcar (lambda (split) (speedo--plist-remove split :start))
+                                     (plist-get current :splits)))))
+    (setq speedo--data (plist-put speedo--data :attempts
+                                  (append (plist-get speedo--data :attempts)
+                                          (list cleaned))))
+    (message "attempt ended")
+    (setq speedo--current-attempt nil
+          speedo--review t)
+    (speedo--run-pb nil 'nocache)
+    (speedo--refresh-header)
+    (cancel-timer speedo--timer-object)
+    (cancel-timer speedo--ui-timer-object)))
 
 (defun speedo--clear ()
   "Clear the last attempts times from UI."
@@ -957,6 +980,41 @@ If no attempt is in progress, clear the UI times."
     (internal-show-cursor (selected-window) t) ;;show hidden cursor
     (bury-buffer)))
 
+(defun speedo--convert-data (data &optional human)
+  "Return a copy of converted DATA.
+If HUMAN is non-nil convert data to readable timestamps.
+Else, data is converted numerically.
+
+The aim here is to make the saved data human readable/editiable without
+sacrificing performance at runtime."
+  (let ((data (copy-tree data))
+        ;; losless formatter
+        (speedo--time-formatter #'speedo--compact-time-formatter))
+    (dolist (attempt (plist-get data :attempts) data)
+      (setq attempt
+            (plist-put attempt :start
+                       (funcall
+                        (if human #'speedo--ms-to-date #'speedo--date-to-ms)
+                        (plist-get attempt :start))))
+      (setq attempt
+            (plist-put attempt :splits
+                       (mapcar
+                        (lambda (split)
+                          (let ((duration (plist-member split :duration))
+                                (mistakes (plist-member split :mistakes))
+                                (fn (if human #'speedo--format-ms
+                                      #'speedo--time-string-to-ms)))
+                            (when duration
+                              (setq split
+                                    (plist-put split :duration
+                                               (funcall fn (plist-get split :duration)))))
+                            (when mistakes
+                              (setq split
+                                    (plist-put split :mistakes
+                                               (mapcar fn (plist-get split :mistakes)))))
+                            split))
+                        (plist-get attempt :splits)))))))
+
 (defun speedo-save-file ()
   "Save `speedo--data' to `speedo--data-file'."
   (interactive)
@@ -964,8 +1022,8 @@ If no attempt is in progress, clear the UI times."
       (with-temp-buffer
         (let ((print-level nil)
               (print-length nil)
-              (print-circle t))
-          (insert (pp-to-string speedo--data))
+              (print-circle nil))
+          (insert (pp-to-string (speedo--convert-data speedo--data 'human)))
           (write-region (point-min) (point-max) speedo--data-file)))
     (message "(No changes need to be saved)")))
 
@@ -1009,7 +1067,7 @@ Negative N cycles backward, positive forward."
         (prog1
             (setq speedo--review nil
                   speedo--segment-index -1
-                  speedo--data data
+                  speedo--data (speedo--convert-data data)
                   speedo--comparison-target (car speedo-comparison-targets)
                   speedo--data-file file)
           (speedo--reset-customizations)
