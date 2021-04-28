@@ -748,7 +748,8 @@ Reset timers."
           speedo--target-attempts nil)
     (speedo--target-attempt (car speedo--comparison-target))
     (speedo--display-ui)
-    (speedo--display-timers)))
+    (speedo--display-timers)
+    (goto-char (point-min))))
 
 (defun speedo--hide-cursor ()
   "Hide cursor in `speedo-buffer'."
