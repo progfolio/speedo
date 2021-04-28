@@ -252,7 +252,7 @@ This is different from setting KEYS to nil."
 (defun speedo--data-modified-p ()
   "Compare `speedo--data' to `speedo--data-file' and return t if they are not `equal'."
   (when (and speedo--data speedo--data-file)
-    (not (equal speedo--data (speedo--read-file speedo--data-file)))))
+    (not (equal speedo--data (speedo--convert-data (speedo--read-file speedo--data-file))))))
 
 ;;;; Timer
 (defun speedo--sub-hour-formatter (_hours minutes seconds ms)
@@ -381,6 +381,10 @@ If nil, FILTER defaults to ignoring attempts tagged with \"ignore\"."
     (dotimes (n (length (plist-get speedo--data :segments)))
       (setq durations (push (speedo--segment-pb n) durations)))
     (nreverse durations)))
+
+(defun speedo--attempt-complete-p (attempt)
+  "Return t if ATTEMPT is complete, else nil."
+  (not (plist-member attempt :reset)))
 
 (defun speedo--run-pb (&optional attempts nocache nosave)
   "Return personal best run.
@@ -724,11 +728,6 @@ If CACHE is non-nil, use the cache."
   (speedo--display-ui)
   (speedo--timer-start))
 
-(defun speedo--attempt-complete-p (attempt)
-  "Return t if ATTEMPT has a time for all segments, else nil."
-  (cl-every (lambda (split) (plist-get split :duration))
-            (plist-get attempt :splits)))
-
 (defun speedo--current-split ()
   "Return the current split from `speedo--current-attempt'."
   (nth speedo--segment-index (plist-get speedo--current-attempt :splits)))
@@ -751,7 +750,8 @@ Reset timers."
   (let* ((current (copy-tree speedo--current-attempt))
          (cleaned (plist-put current :splits
                              (mapcar (lambda (split) (speedo--plist-remove split :start))
-                                     (plist-get current :splits)))))
+                                     (cl-remove-if-not (lambda (split) (plist-get split :duration))
+                                                       (plist-get current :splits))))))
     (setq speedo--data (plist-put speedo--data :attempts
                                   (append (plist-get speedo--data :attempts)
                                           (list cleaned))))
@@ -969,6 +969,10 @@ If no attempt is in progress, clear the UI times."
   (interactive)
   (if (not speedo--current-attempt)
       (speedo--clear)
+    (setq speedo--current-attempt
+          (plist-put speedo--current-attempt :reset
+                     (- (speedo--timestamp)
+                        (plist-get speedo--current-attempt :start))))
     (speedo--attempt-end)
     (setq speedo--segment-index -1)
     (speedo--display-ui)))
@@ -988,6 +992,8 @@ Else, data is converted numerically.
 The aim here is to make the saved data human readable/editiable without
 sacrificing performance at runtime."
   (let ((data (copy-tree data))
+        (fn (if human #'speedo--format-ms
+              #'speedo--time-string-to-ms))
         ;; losless formatter
         (speedo--time-formatter #'speedo--compact-time-formatter))
     (dolist (attempt (plist-get data :attempts) data)
@@ -996,14 +1002,14 @@ sacrificing performance at runtime."
                        (funcall
                         (if human #'speedo--ms-to-date #'speedo--date-to-ms)
                         (plist-get attempt :start))))
+      (when-let ((reset (plist-member attempt :reset)))
+        (setq attempt (plist-put attempt :reset (funcall fn (plist-get attempt :reset)))))
       (setq attempt
             (plist-put attempt :splits
                        (mapcar
                         (lambda (split)
                           (let ((duration (plist-member split :duration))
-                                (mistakes (plist-member split :mistakes))
-                                (fn (if human #'speedo--format-ms
-                                      #'speedo--time-string-to-ms)))
+                                (mistakes (plist-member split :mistakes)))
                             (when duration
                               (setq split
                                     (plist-put split :duration
