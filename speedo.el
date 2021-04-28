@@ -1090,7 +1090,8 @@ Negative N cycles backward, positive forward."
     (when (and (speedo--data-modified-p)
                (y-or-n-p (format "%S modified. Save before loading %s? "
                                  speedo--data-file file)))
-      (speedo-save-file))
+      ;; Force because we just checked for modifications above
+      (speedo-save-file 'force))
     (with-current-buffer (get-buffer-create speedo-buffer)
       (kill-buffer))
     (if-let ((data (speedo--read-file file)))
