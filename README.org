@@ -1,3 +1,37 @@
-* Speedo: the lightweight Emacs Split timer 🩲
+* Speedo: An Emacs Split timer 🩲
+Speedo is a lightweight [[https://en.wikipedia.org/wiki/Speedrun][speedrun]] split timer.
 
+** DEMO                                                             :ignore:
 
+** Motivation
+I was not satisfied with the native split timer options for Linux.
+Running a split timer in a browser is an option, but caused hiccups during game play due to how CPU intensive they were.
+I also wanted record more information than the average split timer in order to develop tools to aide speed running practice.
+
+** File Format
+Speedo stores game settings and data in an elisp plist.
+This makes it easy to read and interact with programmatically.
+An example database:
+
+#+begin_src emacs-lisp :lexical t
+( :title "TITLE"
+  :category "CATEGORY"
+  :segments ((:name "One")
+             (:name "Two")
+             (:name "Three"))
+  :attempts
+  ;; a run (complete attempt)
+  (( :start "2020-01-01 00:00"
+     :splits (( :segment "One"   :duration "1:00.33")
+              ( :segment "Two"   :duration "1:33.45")
+              ( :segment "Three" :duration "2:41")))
+   ;; an incomplete attempt
+   ( :start "2020-01-01 00:00"
+     :splits (( :segment "One"   :duration "1:00.24")
+              ( :segment "Two"   :duration "2:33.08"
+                :mistakes ("2:03.35")))
+     :reset "3:25.75"))
+  :custom
+  ;; game specific customizations
+  ((setq speedo-buffer "*My Buffer Title*")))
+#+end_src
