@@ -1,4 +1,4 @@
-* Speedo: An Emacs Split timer 🩲
+* Speedo: Lightweight Emacs Split timer 🩲
 Speedo is a lightweight [[https://en.wikipedia.org/wiki/Speedrun][speedrun]] split timer.
 
 ** DEMO                                                             :ignore:
