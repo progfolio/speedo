@@ -99,6 +99,19 @@
   :type 'string
   :group 'speedo)
 
+(defcustom speedo-compact-last-split-separator ?-
+  "Separates splits and last split when symbol `speedo-compact-mode' is non-nil.
+It may be any of the following values:
+
+  - a character
+    The character is repeated across the length of the split table line.
+  - a string
+    The literal string is inserted on a line before the last split.
+  - a function
+    The function is called with no arguments and must return a string."
+  :type (or 'character 'string 'function)
+  :group 'speedo)
+
 (defcustom speedo-comparison-targets '((speedo-target-personal-best . "Personal Best")
                                        (speedo-target-best-segments . "Best Segments")
                                        (speedo-target-world-record  . "World Record")
@@ -1202,19 +1215,6 @@ Negative N cycles backward, positive forward."
          (end (min (+ start (1- limit)) split-count)))
     (append (cl-subseq splits start end)
             (when (< end split-count) (last splits)))))
-
-(defcustom speedo-compact-last-split-separator ?-
-  "Separates splits and last split when symbol `speedo-compact-mode' is non-nil.
-It may be any of the following values:
-
-  - a character
-    The character is repeated across the length of the split table line.
-  - a string
-    The literal string is inserted on a line before the last split.
-  - a function
-    The function is called with no arguments and must return a string."
-  :type (or 'character 'string 'function)
-  :group 'speedo)
 
 (defun speedo--compact-last-split-separator ()
   "Insert `speedo-compact-last-split-separator'."
