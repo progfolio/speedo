@@ -179,6 +179,18 @@ current segment's time to the target's time for that segement."
   :type 'boolean
   :group 'speedo)
 
+(defcustom speedo-pre-ui-display-hook nil
+  "Hook run just before UI display is udpated.
+`speedo-buffer' is current."
+  :type 'hook
+  :group 'speedo)
+
+(defcustom speedo-post-ui-display-hook nil
+  "Hook run after UI display is udpated.
+`speedo-buffer' is current."
+  :type 'hook
+  :group 'speedo)
+
 (defcustom speedo-text-place-holder "⸺"
   "Placeholder text used when no data is available for a field."
   :type 'string
@@ -680,8 +692,10 @@ Time should be accesed by views via the `speedo--timer' variable."
 (defun speedo--display-ui ()
   "Display the UI (sans header)."
   (with-current-buffer speedo-buffer
+    (run-hooks 'speedo-pre-ui-display-hook)
     (tabulated-list-print 'remember-pos 'update)
-    (speedo--insert-footer)))
+    (speedo--insert-footer)
+    (run-hooks 'speedo-post-ui-display-hook)))
 
 (defun speedo--refresh-header ()
   "Refresh the header."
@@ -1189,11 +1203,48 @@ Negative N cycles backward, positive forward."
     (append (cl-subseq splits start end)
             (when (< end split-count) (last splits)))))
 
+(defcustom speedo-compact-last-split-separator ?-
+  "Separates splits and last split when symbol `speedo-compact-mode' is non-nil.
+It may be any of the following values:
+
+  - a character
+    The character is repeated across the length of the split table line.
+  - a string
+    The literal string is inserted on a line before the last split.
+  - a function
+    The function is called with no arguments and must return a string."
+  :type (or 'character 'string 'function)
+  :group 'speedo)
+
+(defun speedo--compact-last-split-separator ()
+  "Insert `speedo-compact-last-split-separator'."
+  (when-let ((it speedo-compact-last-split-separator))
+    (with-current-buffer speedo-buffer
+      (save-excursion
+        (with-silent-modifications
+          (goto-char (point-max))
+          (if-let ((last (text-property-search-backward 'tabulated-list-id)))
+              (progn
+                (goto-char (1- (point)))
+                (insert "\n"
+                        (cond
+                         ;;@TODO: support repeating character
+                         ((characterp it)
+                          (make-string (- (line-end-position) (line-beginning-position))
+                                       it))
+                         ((stringp it)  it)
+                         ((functionp it) (funcall it))
+                         (t (signal 'wrong-type-error `((stringp functionp) ,it))))))
+            (error "Unable to find last split")))))))
+
 (define-minor-mode speedo-compact-mode
   "Minor mode to display a compacted list of splits."
   :lighter " spc"
   (if speedo-compact-mode
-      (advice-add 'speedo--ui-splits :filter-return #'speedo--compact-filter)
+      (progn
+        (add-hook 'speedo-post-ui-display-hook #'speedo--compact-last-split-separator)
+        (advice-add 'speedo--ui-splits :filter-return #'speedo--compact-filter))
+    (remove-hook 'speedo-post-ui-display-hook #'speedo--compact-last-split-separator)
     (advice-remove 'speedo--ui-splits #'speedo--compact-filter))
   (speedo--display-ui)
   (speedo--display-timers))
