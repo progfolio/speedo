@@ -891,7 +891,9 @@ If `speedo-confirm-evaluate' is non-nil, confirm before evaluation."
                                                           "You should inspect it before executing.")
                                                   speedo--data-file))
                            t)))
-    (eval (append '(progn) customizations))))
+    (if (stringp customizations)
+        (load (expand-file-name customizations (file-name-directory speedo--data-file)))
+      (eval (append '(progn) customizations)))))
 
 (defun speedo--custom-variables ()
   "Return a list of speedo.el's custom variables."
