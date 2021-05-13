@@ -948,6 +948,29 @@ This uses saved custom values, then defaults."
       (forward-line))))
 
 ;;; Commands
+(defun speedo-new-game (title &optional category dir &rest segments)
+  "Write new database for game with TITLE to DIR.
+DIR is optional and defaults to `speedo-directory'.
+CATEGORY and SEGMENTS are added to the DB structure if provided.
+When called interactivley, prompt for optional values."
+  (interactive "stitle: \nscategory: ")
+  (let ((file (expand-file-name
+               (replace-regexp-in-string "\\(?:[[:space:]]+\\)" "-" title)
+               (or dir speedo-directory)))
+        (index 0)
+        segment)
+    (unless (or segments (not (called-interactively-p 'interactive)))
+      (while (not (string-empty-p
+                   (setq segment (read-string (format "segment %d (empty to exit): "
+                                                      (cl-incf index))))))
+        (setq segments (push segment segments))))
+    (speedo--write-data
+     (list :title title
+           :category category
+           :segments (mapcar (lambda (segment) (list :name segment))
+                             (nreverse segments)))
+     file nil nil nil 'must-be-new)))
+
 (defun speedo-next ()
   "Start the next segment or a new attempt."
   (interactive)
@@ -1051,39 +1074,42 @@ sacrificing performance at runtime."
                             split))
                         (plist-get attempt :splits)))))))
 
-(defun speedo--format-database ()
-  "Format the database for easier human reading."
-  (emacs-lisp-mode)
-  (let ((transformations
-         ;;eol-properties
-         '(("\\(?::[[:alpha:]]+$\\)" . (lambda () (replace-match "\n\\&")))
-           ;;join-lines
-           ("\\(?::\\(?:\\(?:mistake\\|run\\|tag\\)s\\)\\)" .
-            (lambda () (forward-line) (join-line)))
-           ;;data list indentation
-           ("\\(?:(:\\)" . (lambda () (replace-match "( :")))))
-        (empty-lines "\\(?:^[[:space:]]*$\\)"))
-    (goto-char (point-min))
-    (dolist (transformation transformations)
-      (save-excursion
-        (while (re-search-forward (car transformation) nil 'noerror)
-          (funcall (cdr transformation)))))
-    (flush-lines empty-lines)
-    (indent-region (point-min) (point-max))))
+(defun speedo--write-data (data file &rest args)
+  "Write formatted DATA to FILE.
+ARGS are passed to `write-region'"
+  (with-temp-buffer
+    (let ((print-level nil)
+          (print-length nil)
+          (print-circle nil)
+          (transformations
+           ;;eol-properties
+           '(("\\(?::[[:alpha:]]+$\\)" . (lambda () (replace-match "\n\\&")))
+             ;;join-lines
+             ("\\(?::\\(?:\\(?:mistake\\|run\\|tag\\)s\\)\\)" .
+              (lambda () (forward-line) (join-line)))
+             ;;data list indentation
+             ("\\(?:(:\\)" . (lambda () (replace-match "( :")))))
+          (empty-lines "\\(?:^[[:space:]]*$\\)"))
+      (insert (pp-to-string data))
+      (add-file-local-variable-prop-line 'mode 'emacs-lisp)
+      (emacs-lisp-mode)
+      (goto-char (point-min))
+      (dolist (transformation transformations)
+        (save-excursion
+          (while (re-search-forward (car transformation) nil 'noerror)
+            (funcall (cdr transformation)))))
+      (flush-lines empty-lines)
+      (indent-region (point-min) (point-max))
+      (apply #'write-region `(,(point-min) ,(point-max) ,file ,@args)))))
 
 (defun speedo-save-file (&optional force)
   "Save `speedo--data' to `speedo--data-file'.
 If FORCE is non-nil, save without checking if data has been modified."
   (interactive "P")
   (if (or force (speedo--data-modified-p))
-      (with-temp-buffer
-        (let ((print-level nil)
-              (print-length nil)
-              (print-circle nil))
-          (insert (pp-to-string (speedo--convert-data speedo--data 'human)))
-          (add-file-local-variable-prop-line 'mode 'emacs-lisp)
-          (speedo--format-database)
-          (write-region (point-min) (point-max) speedo--data-file)))
+      (speedo--write-data
+       (speedo--convert-data speedo--data 'human)
+       speedo--data-file)
     (message "(No changes need to be saved)")))
 
 (defun speedo--nth-target (n)
