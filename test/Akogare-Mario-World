@@ -28,4 +28,5 @@
    ( :name "The Toxic Passage 1")
    ( :name "Cloon Cavern")
    ( :name "Super Koopa Hills")
-   ( :name "Bullet Promenade")))
+   ( :name "Bullet Promenade"))
+  :custom "./akogare-settings.el")
