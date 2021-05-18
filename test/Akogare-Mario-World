@@ -1,4 +1,4 @@
-;;; -*- mode: emacs-lisp; -*-
+;;; -*- mode: emacs-lisp; lexical-binding: t; -*-
 ( :title "Akogare Mario World" :category "100%"
   :segments
   ((:name "Bullet Promenade")
