@@ -830,7 +830,7 @@ Reset timers."
 
 (defun speedo--time-format-rounded (_hours minutes seconds ms)
   "Display rounded MINUTES SECONDS MS."
-  (format "%02d:%02d" minutes (round (+ seconds (/ ms 1000.0)))))
+  (format "%02d:%02d" minutes (min 59 (round (+ seconds (/ ms 1000.0))))))
 
 (defun speedo--ui-splits ()
   "Return a list of splits for UI."
