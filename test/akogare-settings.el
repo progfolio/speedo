@@ -1,3 +1,4 @@
+;; -*- lexical-binding: t; -*-
 (setq speedo-buffer "*Akogare Mario World*")
 (add-hook 'speedo-mode-hook
           (lambda ()
