@@ -708,5 +708,138 @@
         :duration "1:39.771"))
      :reset "8:54.997")
    ( :start "2021-06-01 22:42:12" :splits nil :reset "45.161")
-   ( :start "2021-06-02 11:33:42" :splits nil :reset "0.256"))
+   ( :start "2021-06-02 11:33:42" :splits nil :reset "0.256")
+   ( :start "2021-06-19 19:16:42" :splits nil :reset "26.486")
+   ( :start "2021-06-19 19:17:17" :splits nil :reset "43.720")
+   ( :start "2021-06-19 19:18:10" :splits nil :reset "2.866")
+   ( :start "2021-06-19 19:18:25" :splits nil :reset "32.300")
+   ( :start "2021-06-19 19:19:06"
+     :splits
+     (( :segment "Bullet Promenade" :duration "1:00.874")
+      ( :segment "Super Koopa Hills"
+        :mistakes ("1:18.788")
+        :duration "58.434"))
+     :reset "2:49.505")
+   ( :start "2021-06-19 19:22:06" :splits nil :reset "33.529")
+   ( :start "2021-06-19 19:22:50" :splits nil :reset "23.880")
+   ( :start "2021-06-19 19:23:29" :splits nil :reset "44.959")
+   ( :start "2021-06-19 19:24:23"
+     :splits
+     (( :segment "Bullet Promenade" :duration "1:00.248"))
+     :reset "1:32.889")
+   ( :start "2021-06-19 19:26:05" :splits nil :reset "22.093")
+   ( :start "2021-06-19 19:26:37"
+     :splits
+     (( :segment "Bullet Promenade" :duration "1:01.433"))
+     :reset "1:14.152")
+   ( :start "2021-06-19 19:28:01"
+     :splits
+     (( :segment "Bullet Promenade" :duration "1:00.579"))
+     :reset "1:32.278")
+   ( :start "2021-06-19 19:29:44"
+     :splits
+     (( :segment "Bullet Promenade" :duration "1:00.737")
+      ( :segment "Super Koopa Hills" :duration "46.538")
+      ( :segment "Cloon Cavern"
+        :mistakes ("2:00.310")
+        :duration "1:28.764")
+      ( :segment "The Toxic Passage 1"
+        :mistakes ("3:48.073")
+        :duration "45.220"))
+     :reset "4:27.052")
+   ( :start "2021-06-19 19:34:20" :splits nil :reset "26.671")
+   ( :start "2021-06-19 19:35:08"
+     :splits
+     (( :segment "Bullet Promenade" :duration "1:01.080"))
+     :reset "1:19.524")
+   ( :start "2021-06-19 19:36:37" :splits nil :reset "26.690")
+   ( :start "2021-06-19 19:37:14"
+     :splits
+     (( :segment "Bullet Promenade" :duration "1:00.846"))
+     :reset "1:18.598")
+   ( :start "2021-06-19 19:38:42" :splits nil :reset "34.425")
+   ( :start "2021-06-19 19:39:26" :splits nil :reset "43.821")
+   ( :start "2021-06-19 19:40:20" :splits nil :reset "26.186")
+   ( :start "2021-06-19 19:40:56"
+     :splits
+     (( :segment "Bullet Promenade" :duration "1:00.453"))
+     :reset "1:17.498")
+   ( :start "2021-06-19 19:42:23" :splits nil :reset "26.685")
+   ( :start "2021-06-19 19:42:59"
+     :splits
+     (( :segment "Bullet Promenade" :duration "1:00.899"))
+     :reset "1:14.857")
+   ( :start "2021-06-19 19:44:25"
+     :splits
+     (( :segment "Bullet Promenade" :duration "1:00.351")
+      ( :segment "Super Koopa Hills" :duration "46.693")
+      ( :segment "Cloon Cavern" :duration "1:24.775")
+      ( :segment "The Toxic Passage 1" :duration "34.252"))
+     :reset "4:35.981")
+   ( :start "2021-06-19 19:49:10"
+     :splits
+     (( :segment "Bullet Promenade" :duration "1:01.095"))
+     :reset "1:35.585")
+   ( :start "2021-06-19 19:50:55"
+     :splits
+     (( :segment "Bullet Promenade" :duration "1:00.713"))
+     :reset "1:34.159")
+   ( :start "2021-06-19 19:52:38"
+     :splits
+     (( :segment "Bullet Promenade" :duration "1:01.065")
+      ( :segment "Super Koopa Hills" :duration "46.638")
+      ( :segment "Cloon Cavern"
+        :mistakes ("2:08.576" "2:13.113")
+        :duration "1:37.416")
+      ( :segment "The Toxic Passage 1" :duration "34.370")
+      ( :segment "Tubba's Palace" :duration "53.020")
+      ( :segment "The Toxic Passage 2" :duration "46.943")
+      ( :segment "Shiverthorn Hollow"
+        :mistakes ("6:10.161")
+        :duration "1:23.657")
+      ( :segment "Delfino Shores 1"
+        :mistakes ("7:35.296" "7:43.738")
+        :duration "1:08.566")
+      ( :segment "Pickle's Palace" :duration "56.908")
+      ( :segment "Delfino Shores 2" :duration "59.401")
+      ( :segment "Labrys Abyss" :duration "1:36.774")
+      ( :segment "The Watcher's keep"
+        :mistakes ("12:07.373")
+        :duration "1:31.250")
+      ( :segment "Gridiron Ridge"
+        :mistakes ("13:57.386" "14:29.058" "14:45.962")
+        :duration "2:06.479")
+      ( :segment "Bridge of Moths"
+        :mistakes ("15:59.258")
+        :duration "1:10.632")
+      ( :segment "Forest of Abkhazia" :duration "1:17.371")
+      ( :segment "The Living Earth 1"
+        :mistakes ("18:01.960" "18:33.848")
+        :duration "1:02.433")
+      ( :segment "Fritzef's Palace" :duration "51.233")
+      ( :segment "The Living Earth 2"
+        :mistakes ("20:05.081" "20:15.391" "20:25.610" "20:48.235" "21:16.727")
+        :duration "2:04.744")
+      ( :segment "Grim Shade Manor"
+        :mistakes ("22:11.157")
+        :duration "1:35.226")
+      ( :segment "Ossuary Rift"
+        :mistakes ("23:44.863")
+        :duration "1:22.775")
+      ( :segment "Whynot's Lookout" :duration "1:06.724")
+      ( :segment "Underscore Burrows"
+        :mistakes ("26:35.260")
+        :duration "1:50.098")
+      ( :segment "Forgotten Acropolis" :duration "1:42.207")
+      ( :segment "The Gateway" :duration "1:24.395")
+      ( :segment "Twilight Bridge"
+        :mistakes ("31:26.950" "31:50.388" "32:30.457")
+        :duration "2:14.850")
+      ( :segment "Celestial Rex" :duration "1:08.980")
+      ( :segment "Australian Airways"
+        :mistakes ("34:32.829" "34:59.375")
+        :duration "1:51.916")
+      ( :segment "Stormcrow's Alcazar"
+        :mistakes ("36:27.146" "36:37.453" "36:47.486" "36:54.818")
+        :duration "1:35.108"))))
   :runs ( :pb 75))
