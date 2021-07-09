@@ -263,8 +263,8 @@ This is different from setting KEYS to nil."
   (let (result)
     (dolist (keyword (nreverse (cl-remove-if-not #'keywordp plist)) result)
       (unless (member keyword keys)
-        (setq result (push (plist-get plist keyword) result))
-        (setq result (push keyword result))))))
+        (push (plist-get plist keyword) result)
+        (push keyword result)))))
 
 (defun speedo--read-file (file)
   "Read FILE into an elisp object."
@@ -404,7 +404,7 @@ If nil, FILTER defaults to ignoring attempts tagged with \"ignore\"."
   "Return list of best durations for each segment in `speedo--data'."
   (let (durations)
     (dotimes (n (length (plist-get speedo--data :segments)))
-      (setq durations (push (speedo--segment-pb n) durations)))
+      (push (speedo--segment-pb n) durations))
     (nreverse durations)))
 
 (defun speedo--attempt-complete-p (attempt)
@@ -883,7 +883,7 @@ Reset timers."
                                          'face 'speedo-comparison-line))
                            speedo-text-place-holder)))
                 (if current-line (propertize s 'current-segment-timer t 'face current-face) s))))
-        (setq splits (push (list index (vector name comparison split-time)) splits))))
+        (push (list index (vector name comparison split-time)) splits)))
     (nreverse splits)))
 
 (defun speedo--header-attempt-ratio ()
@@ -963,7 +963,7 @@ When called interactivley, prompt for optional values."
       (while (not (string-empty-p
                    (setq segment (read-string (format "segment %d (empty to exit): "
                                                       (cl-incf index))))))
-        (setq segments (push segment segments))))
+        (push segment segments)))
     (speedo--write-data
      (list :title title
            :category category
