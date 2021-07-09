@@ -6,7 +6,7 @@ Speedo is a lightweight [[https://en.wikipedia.org/wiki/Speedrun][speedrun]] spl
 ** Motivation
 I was not satisfied with the native split timer options for Linux.
 Running a split timer in a browser is an option, but caused hiccups during game play due to how CPU intensive they were.
-I also wanted record more information than the average split timer in order to develop tools to aide speed running practice.
+I also wanted record more information than the average split timer in order to develop tools to aid speed running practice.
 
 ** File Format
 Speedo stores game settings and data in an elisp plist.
