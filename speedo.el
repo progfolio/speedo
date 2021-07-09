@@ -353,7 +353,7 @@ It is called with hours, minutes, seconds, milliseconds."
          (seconds (mod n 60))
          (minutes (mod (/ n 60) 60))
          ;; Don't use mod here because we don't care about
-         ;; diving any farther than "hours"
+         ;; dividing any farther than "hours"
          ;; using mod to check would truncate the hours
          ;; in cases where hours % 60 = 0
          (hours (/ n  (* 60 60))))
