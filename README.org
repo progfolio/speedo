@@ -2,7 +2,7 @@
 Speedo is a lightweight [[https://en.wikipedia.org/wiki/Speedrun][speedrun]] split timer.
 
 ** DEMO                                                             :ignore:
-
+[[https://www.youtube.com/watch?v=2ML7Du4Bq_A][https://img.youtube.com/vi/2ML7Du4Bq_A/0.jpg]]
 ** Motivation
 I was not satisfied with the native split timer options for Linux.
 Running a split timer in a browser is an option, but caused hiccups during game play due to how CPU intensive they were.
