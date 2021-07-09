@@ -266,13 +266,27 @@ This is different from setting KEYS to nil."
         (push (plist-get plist keyword) result)
         (push keyword result)))))
 
+(defun speedo--database-p (obj)
+  "Return t if OBJ is a well formed database object.
+It must be a non-empty plist with at least the following keys:
+  - :title
+  - :segments"
+  (and obj (listp obj)
+       (cl-every (lambda (requirement) (plist-member obj requirement))
+                 '(:title :segments))))
+
 (defun speedo--read-file (file)
   "Read FILE into an elisp object."
-  ;;@FIX: we need to be more robust here.
-  (ignore-errors
-    (read (with-temp-buffer
-            (insert-file-contents file)
-            (buffer-string)))))
+  (condition-case err
+      (let (obj)
+        (with-temp-buffer
+          (insert-file-contents file)
+          (goto-char (point-min))
+          (prog1
+              (setq obj (read (current-buffer)))
+            (unless (speedo--database-p obj)
+              (signal 'wrong-type-argument (list 'speedo--database-p obj))))))
+    (error (user-error "Speedo could not read %S: %S" file err))))
 
 (defun speedo--data-modified-p ()
   "Compare `speedo--data' to `speedo--data-file' and return t if they are not `equal'."
