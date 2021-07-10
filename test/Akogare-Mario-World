@@ -1,6 +1,5 @@
 ;;; -*- mode: emacs-lisp; lexical-binding: t; -*-
 ( :title "Akogare Mario World" :category "100%"
-  :config "./akogare-settings.el"
   :segments
   (( :name "Bullet Promenade")
    ( :name "Super Koopa Hills")
@@ -30,6 +29,7 @@
    ( :name "Celestial Rex")
    ( :name "Australian Airways")
    ( :name "Stormcrow's Alcazar"))
+  :config "./akogare-settings.el"
   :attempts
   (( :start "2021-05-18 16:40:24" :splits nil :reset "26.583")
    ( :start "2021-05-18 16:40:59" :splits nil :reset "23.724")

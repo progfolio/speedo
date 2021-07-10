@@ -33,5 +33,5 @@ An example database:
      :reset "3:25.75"))
   :config
   ;; game specific customizations
-  ((setq-local speedo-buffer "*My Buffer Title*")))
+  ((setq speedo-buffer "*My Buffer Title*")))
 #+end_src
