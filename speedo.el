@@ -726,10 +726,11 @@ Time should be accesed by views via the `speedo--timer' variable."
 
 (defun speedo--refresh-header ()
   "Refresh the header."
-  (setq header-line-format
-        (list (speedo--header-game-info) (speedo--header-attempt-ratio) " "
-              '(:propertize (:eval (replace-regexp-in-string "\\(?:\\.[^z-a]*\\)" "" (speedo-total-play-time)))
-                            face speedo-header-game-info))))
+  (with-current-buffer speedo-buffer
+    (setq header-line-format
+          (list (speedo--header-game-info) (speedo--header-attempt-ratio) " "
+                '(:propertize (:eval (replace-regexp-in-string "\\(?:\\.[^z-a]*\\)" "" (speedo-total-play-time)))
+                              face speedo-header-game-info)))))
 
 (defvar speedo--target-attempts nil "Cache for target attempts.")
 (defun speedo--target-attempt (fn &optional cache)
@@ -1148,18 +1149,8 @@ Negative N cycles backward, positive forward."
   (speedo--nth-target (- (or n 1))))
 
 ;;;###autoload
-(defun speedo-load-file (&optional file)
+(defun speedo--load-file (file)
   "Load a splits FILE."
-  (interactive (if speedo--current-attempt
-                   (user-error "Cannot Load file while attempt is in progress")
-                 (list (read-file-name "Splits file: " speedo-directory))))
-  (when speedo--current-attempt
-    (user-error "Cannot Load file while attempt is in progress"))
-  (when (and (speedo--data-modified-p)
-             (y-or-n-p (format "%S modified. Save before loading %s? "
-                               speedo--data-file file)))
-    ;; Force because we just checked for modifications above
-    (speedo-save-file 'force))
   (if-let ((data (speedo--read-file file)))
       (prog1
           (setq speedo--review nil
@@ -1167,28 +1158,40 @@ Negative N cycles backward, positive forward."
                 speedo--data (speedo--convert-data data)
                 speedo--comparison-target (car speedo-comparison-targets)
                 speedo--data-file file)
-        (unless (string= (buffer-name (current-buffer)) speedo-buffer)
-          (switch-to-buffer-other-window (get-buffer-create speedo-buffer)))
-        (speedo-mode)
-        (speedo--target-attempt (car speedo--comparison-target))
-        (speedo--refresh-header)
-        (speedo--ui-init)
-        (speedo--display-ui))
+        (speedo--target-attempt (car speedo--comparison-target)))
     (error "Could not load: %S. Malformed?" file)))
+
+(defun speedo-load-file (&optional file)
+  "Load a splits FILE.
+If HIDE is non-nil, do not display `speedo-buffer' after loading."
+  (interactive (if speedo--current-attempt
+                   (user-error "Cannot Load file while attempt is in progress")
+                 (list (read-file-name "Splits file: " speedo-directory))))
+  (cond
+   (speedo--current-attempt (user-error "Cannot Load file while attempt is in progress"))
+   ((and (speedo--data-modified-p)
+         (y-or-n-p (format "%S modified. Save before loading %s? "
+                           speedo--data-file file)))
+    ;; Force because we just checked for modifications above
+    (speedo-save-file 'force)))
+  (speedo--load-file file)
+  (unless (string= (buffer-name (current-buffer)) speedo-buffer)
+    (switch-to-buffer (get-buffer-create speedo-buffer)))
+  (speedo-mode))
 
 ;;;###autoload
 (defun speedo ()
   "Open the splits buffer."
   (interactive)
-  (unless speedo--data (speedo-load-file
-                        (when speedo-default-splits-file
-                          (expand-file-name speedo-default-splits-file speedo-directory))))
-  (unless speedo--comparison-target (speedo--target-attempt (car speedo--comparison-target)))
-  (unless (string= (buffer-name (current-buffer)) speedo-buffer)
-    (switch-to-buffer-other-window (get-buffer-create speedo-buffer)))
-  (set-window-dedicated-p (selected-window) t)
-  (when speedo-hide-cursor (speedo--hide-cursor))
-  (unless (derived-mode-p 'speedo-mode) (speedo-mode)))
+  (if speedo--data
+      (unless (string= (buffer-name (current-buffer)) speedo-buffer)
+        (switch-to-buffer (get-buffer-create speedo-buffer) nil)
+        (set-window-dedicated-p (selected-window) t)
+        (when speedo-hide-cursor (speedo--hide-cursor))
+        (unless (derived-mode-p 'speedo-mode) (speedo-mode)))
+    (speedo-load-file
+     (when speedo-default-splits-file
+       (expand-file-name speedo-default-splits-file speedo-directory)))))
 
 (defun speedo--ui-init ()
   "Initialize format of the UI."
