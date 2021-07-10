@@ -1,4 +1,4 @@
-;;; speedo.el --- Speedrun Timer  -*- lexical-binding: t; -*-
+;;; speedo.el --- Speedrun Timer  -*- lexical-binding: t; eval: (add-hook 'after-save-hook #'recompile nil 'local) -*-
 
 ;;; Commentary:
 ;; This is the consequence of my frustration with other Linux split timers.
