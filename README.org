@@ -31,7 +31,7 @@ An example database:
               ( :segment "Two"   :duration "2:33.08"
                 :mistakes ("2:03.35")))
      :reset "3:25.75"))
-  :custom
+  :config
   ;; game specific customizations
-  ((setq speedo-buffer "*My Buffer Title*")))
+  ((setq-local speedo-buffer "*My Buffer Title*")))
 #+end_src

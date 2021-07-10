@@ -129,7 +129,7 @@ in the UI footer.
   :group 'speedo)
 
 (defcustom speedo-confirm-evaluate t
-  "If non-nil, confirm evaluation of `:custom` `speedo--data'."
+  "If non-nil, confirm evaluation of `:config` `speedo--data'."
   :type 'boolean
   :group 'speedo)
 
@@ -922,12 +922,12 @@ Reset timers."
               'face 'speedo-header-game-info))
 
 ;;; Save/Restore Customizations
-(defun speedo--load-customizations ()
-  "Execute `:custom` section of `speedo--data'.
+(defun speedo--load-config ()
+  "Execute `:config` section of `speedo--data'.
 If `speedo-confirm-evaluate' is non-nil, confirm before evaluation."
-  (when-let ((customizations (plist-get speedo--data :custom))
+  (when-let ((customizations (plist-get speedo--data :config))
              (permission (if speedo-confirm-evaluate
-                             (yes-or-no-p (format (concat "Evaluate :custom section of %s? "
+                             (yes-or-no-p (format (concat "Evaluate :config section of %s? "
                                                           "This may contain arbitrary elisp. "
                                                           "You should inspect it before executing.")
                                                   speedo--data-file))
@@ -945,14 +945,6 @@ If `speedo-confirm-evaluate' is non-nil, confirm before evaluation."
                      (push ob symbols)))
                  obarray)
     (nreverse symbols)))
-
-(defun speedo--reset-customizations ()
-  "Reset user's customizations.
-This uses saved custom values, then defaults."
-  (dolist (var (speedo--custom-variables))
-    (set var (if-let ((member (plist-member (symbol-plist var) 'saved-value)))
-                 (caadr member)
-               (eval (car (get var 'standard-value)))))))
 
 (defun speedo--goto-index ()
   "Move point to segment assoicated with `speedo--segment-index'."
@@ -1172,11 +1164,10 @@ Negative N cycles backward, positive forward."
                   speedo--data (speedo--convert-data data)
                   speedo--comparison-target (car speedo-comparison-targets)
                   speedo--data-file file)
-          (speedo--reset-customizations)
           (unwind-protect
               (condition-case-unless-debug err
-                  (speedo--load-customizations)
-                ((error) (message "Error loading %s :custom data: %S" speedo--data-file err)))
+                  (speedo--load-config)
+                ((error) (message "Error loading %s :config data: %S" speedo--data-file err)))
             (speedo--target-attempt (car speedo--comparison-target))
             (speedo)
             (speedo--refresh-header)
