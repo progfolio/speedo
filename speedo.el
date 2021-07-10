@@ -726,11 +726,10 @@ Time should be accesed by views via the `speedo--timer' variable."
 
 (defun speedo--refresh-header ()
   "Refresh the header."
-  (with-current-buffer speedo-buffer
-    (setq header-line-format
-          (list (speedo--header-game-info) (speedo--header-attempt-ratio) " "
-                '(:propertize (:eval (replace-regexp-in-string "\\(?:\\.[^z-a]*\\)" "" (speedo-total-play-time)))
-                              face speedo-header-game-info)))))
+  (setq header-line-format
+        (list (speedo--header-game-info) (speedo--header-attempt-ratio) " "
+              '(:propertize (:eval (replace-regexp-in-string "\\(?:\\.[^z-a]*\\)" "" (speedo-total-play-time)))
+                            face speedo-header-game-info))))
 
 (defvar speedo--target-attempts nil "Cache for target attempts.")
 (defun speedo--target-attempt (fn &optional cache)
@@ -925,16 +924,21 @@ Reset timers."
 (defun speedo--load-config ()
   "Execute `:config` section of `speedo--data'.
 If `speedo-confirm-evaluate' is non-nil, confirm before evaluation."
-  (when-let ((customizations (plist-get speedo--data :config))
-             (permission (if speedo-confirm-evaluate
-                             (yes-or-no-p (format (concat "Evaluate :config section of %s? "
-                                                          "This may contain arbitrary elisp. "
-                                                          "You should inspect it before executing.")
-                                                  speedo--data-file))
-                           t)))
-    (if (stringp customizations)
-        (load (expand-file-name customizations (file-name-directory speedo--data-file)))
-      (eval (append '(progn) customizations)))))
+  (when-let* ((member (cadr (plist-member speedo--data :config)))
+              (config (if (stringp member)
+                          (with-temp-buffer
+                            (insert-file-contents
+                             (expand-file-name member
+                                               (file-name-directory speedo--data-file)))
+                            (read (format "(%s)" (buffer-string))))
+                        member))
+              (permission (if speedo-confirm-evaluate
+                              (yes-or-no-p (format (concat "Evaluate :config section of %s? "
+                                                           "This may contain arbitrary elisp. "
+                                                           "You should inspect it before executing.")
+                                                   speedo--data-file))
+                            t)))
+    (eval (append '(progn) config))))
 
 (defun speedo--custom-variables ()
   "Return a list of speedo.el's custom variables."
@@ -1146,47 +1150,42 @@ Negative N cycles backward, positive forward."
 ;;;###autoload
 (defun speedo-load-file (&optional file)
   "Load a splits FILE."
-  (interactive)
-  (let ((file (or file (read-file-name "Splits file: " speedo-directory))))
-    (when speedo--current-attempt
-      (user-error "Cannot Load file while attempt is in progress"))
-    (when (and (speedo--data-modified-p)
-               (y-or-n-p (format "%S modified. Save before loading %s? "
-                                 speedo--data-file file)))
-      ;; Force because we just checked for modifications above
-      (speedo-save-file 'force))
-    (with-current-buffer (get-buffer-create speedo-buffer)
-      (kill-buffer))
-    (if-let ((data (speedo--read-file file)))
-        (prog1
-            (setq speedo--review nil
-                  speedo--segment-index -1
-                  speedo--data (speedo--convert-data data)
-                  speedo--comparison-target (car speedo-comparison-targets)
-                  speedo--data-file file)
-          (unwind-protect
-              (condition-case-unless-debug err
-                  (speedo--load-config)
-                ((error) (message "Error loading %s :config data: %S" speedo--data-file err)))
-            (speedo--target-attempt (car speedo--comparison-target))
-            (speedo)
-            (speedo--refresh-header)
-            (speedo--ui-init)
-            (speedo--display-ui)))
-      (error "Could not load: %S. Malformed?" file))))
+  (interactive (if speedo--current-attempt
+                   (user-error "Cannot Load file while attempt is in progress")
+                 (list (read-file-name "Splits file: " speedo-directory))))
+  (when speedo--current-attempt
+    (user-error "Cannot Load file while attempt is in progress"))
+  (when (and (speedo--data-modified-p)
+             (y-or-n-p (format "%S modified. Save before loading %s? "
+                               speedo--data-file file)))
+    ;; Force because we just checked for modifications above
+    (speedo-save-file 'force))
+  (if-let ((data (speedo--read-file file)))
+      (prog1
+          (setq speedo--review nil
+                speedo--segment-index -1
+                speedo--data (speedo--convert-data data)
+                speedo--comparison-target (car speedo-comparison-targets)
+                speedo--data-file file)
+        (unless (string= (buffer-name (current-buffer)) speedo-buffer)
+          (switch-to-buffer-other-window (get-buffer-create speedo-buffer)))
+        (speedo-mode)
+        (speedo--target-attempt (car speedo--comparison-target))
+        (speedo--refresh-header)
+        (speedo--ui-init)
+        (speedo--display-ui))
+    (error "Could not load: %S. Malformed?" file)))
 
 ;;;###autoload
 (defun speedo ()
   "Open the splits buffer."
   (interactive)
-  (unless speedo--comparison-target (speedo--target-attempt (car speedo--comparison-target)))
   (unless speedo--data (speedo-load-file
                         (when speedo-default-splits-file
                           (expand-file-name speedo-default-splits-file speedo-directory))))
-  (funcall (if (string= (buffer-name (current-buffer)) speedo-buffer)
-               #'switch-to-buffer
-             #'switch-to-buffer-other-window)
-           (get-buffer-create speedo-buffer))
+  (unless speedo--comparison-target (speedo--target-attempt (car speedo--comparison-target)))
+  (unless (string= (buffer-name (current-buffer)) speedo-buffer)
+    (switch-to-buffer-other-window (get-buffer-create speedo-buffer)))
   (set-window-dedicated-p (selected-window) t)
   (when speedo-hide-cursor (speedo--hide-cursor))
   (unless (derived-mode-p 'speedo-mode) (speedo-mode)))
@@ -1211,6 +1210,9 @@ Negative N cycles backward, positive forward."
   "Major mode for speedrun split timer.
 
 \\{speedo-mode-map}"
+  (condition-case-unless-debug err
+      (speedo--load-config)
+    ((error) (message "Error loading %s :config data: %S" speedo--data-file err)))
   (when speedo-hide-cursor
     (when (bound-and-true-p blink-cursor-mode) (blink-cursor-mode -1))
     (speedo--hide-cursor)
