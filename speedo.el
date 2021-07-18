@@ -1150,7 +1150,6 @@ Negative N cycles backward, positive forward."
   (interactive "p")
   (speedo--nth-target (- (or n 1))))
 
-;;;###autoload
 (defun speedo--load-file (file)
   "Load a splits FILE."
   (if-let ((data (speedo--read-file file)))
@@ -1163,6 +1162,7 @@ Negative N cycles backward, positive forward."
         (speedo--target-attempt (car speedo--comparison-target)))
     (error "Could not load: %S. Malformed?" file)))
 
+;;;###autoload
 (defun speedo-load-file (&optional file)
   "Load a splits FILE.
 If HIDE is non-nil, do not display `speedo-buffer' after loading."
