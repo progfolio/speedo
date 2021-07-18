@@ -1,5 +1,13 @@
 ;;; speedo.el --- Speedrun Timer  -*- lexical-binding: t; eval: (add-hook 'after-save-hook #'recompile nil 'local) -*-
 
+;; Copyright (C) 2021 Nicholas Vollmer
+;; Author: Nicholas Vollmer <progfolio@protonmail.com>
+;; URL: https://github.com/progfolio/speedo
+;; Created: March 26, 2021
+;; Keywords: games
+;; Package-Requires: ((emacs "27.1"))
+;; Version: 0.0.0
+
 ;;; Commentary:
 ;; This is the consequence of my frustration with other Linux split timers.
 ;; I don't want to run an entire web browser framework and I already run Emacs.
