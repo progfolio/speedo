@@ -500,6 +500,7 @@ Return nil if A or B is absent."
   "Return last complete attempt."
   (car (last (cl-remove-if-not #'speedo--attempt-complete-p (speedo--attempts)))))
 
+;;@UI: can we use replace-region to avoid timer strings flickering?
 (defun speedo--attempt-in-progress-timer ()
   "Display the timer string while an attempt is in progress."
   (let (ahead behind gaining losing)
