@@ -119,15 +119,15 @@ It may be any of the following values:
   :type (or 'character 'string 'function)
   :group 'speedo)
 
-(defcustom speedo-comparison-targets '((speedo-target-personal-best . "Personal Best")
-                                       (speedo-target-best-segments . "Best Segments")
-                                       (speedo-target-world-record  . "World Record")
-                                       (speedo-target-last-attempt  . "Last Attempt")
-                                       (speedo-target-last-run      . "Last Run")
-                                       (ignore . "None"))
+(defcustom speedo-comparison-targets '(("Personal Best" . speedo-target-personal-best)
+                                       ("Best Segments" . speedo-target-best-segments)
+                                       ("World Record" . speedo-target-world-record)
+                                       ("Last Attempt" . speedo-target-last-attempt)
+                                       ("Last Run" . speedo-target-last-run)
+                                       ("None" . ignore))
   ;;best-split-times, average-segments, median-segments, balanced-pb
-  "List of comparison targets. Each element is a cons cell of form:
-\\=(FN . DESCRIPTION)
+  "Alist of comparison targets.
+Each element's car is a cons cell of form: \\=(FN . DESCRIPTION)
 FN is a function called with no arguments which returns an attempt.
 DESCRIPTION is either a string or a function which returns a string to display
 in the UI footer.
@@ -223,7 +223,6 @@ Note this includes the last segment."
 
 ;;; Variables
 (defvar speedo--current-attempt nil "The current attempt.")
-(defvar speedo--target-attempt  nil "The cached target attempt.")
 (defvar speedo--best-segments nil "List of lowest durations for each segment.")
 (defvar speedo--comparison-target (car speedo-comparison-targets)
   "The current `speedo-comparison-targets' cell.")
@@ -500,6 +499,24 @@ Return nil if A or B is absent."
   "Return last complete attempt."
   (car (last (cl-remove-if-not #'speedo--attempt-complete-p (speedo--attempts)))))
 
+(defvar speedo--target-attempts nil "Cache for target attempts.")
+(defvar speedo--target-attempt  nil "The cached target attempt.")
+(defun speedo--target-attempt (fn &optional cache)
+  "Set and return variable `speedo--target-attempt' to result of FN.
+If CACHE is non-nil, use the cache."
+  (let ((target (or (rassoc fn speedo-comparison-targets)
+                    (error "Unrecognized comparison target"))))
+    (if cache
+        (if-let ((member (plist-member speedo--target-attempts fn)))
+            (setq speedo--target-attempt (cadr member)
+                  speedo--comparison-target target)
+          ;;calculate if the target has not been cached yet.
+          (speedo--target-attempt fn))
+      (let ((result (funcall fn)))
+        (setq speedo--target-attempts (plist-put speedo--target-attempts fn result))
+        (setq speedo--comparison-target target
+              speedo--target-attempt result)))))
+
 ;;@UI: can we use replace-region to avoid timer strings flickering?
 (defun speedo--attempt-in-progress-timer ()
   "Display the timer string while an attempt is in progress."
@@ -629,7 +646,7 @@ Time should be accesed by views via the `speedo--timer' variable."
     (dolist (escape '("target") result)
       (setq result (replace-regexp-in-string
                     (concat "%" escape)
-                    (let ((description (cdr speedo--comparison-target)))
+                    (let ((description (car speedo--comparison-target)))
                       (cond
                        ((functionp description) (funcall description))
                        ((stringp description) description)
@@ -734,30 +751,13 @@ Time should be accesed by views via the `speedo--timer' variable."
                 '(:propertize (:eval (replace-regexp-in-string "\\(?:\\.[^z-a]*\\)" "" (speedo-total-play-time)))
                               face speedo-header-game-info)))))
 
-(defvar speedo--target-attempts nil "Cache for target attempts.")
-(defun speedo--target-attempt (fn &optional cache)
-  "Set and return variable `speedo--target-attempt' to result of FN.
-If CACHE is non-nil, use the cache."
-  (let ((target (or (assoc fn speedo-comparison-targets)
-                    (error "Unrecognized comparison target"))))
-    (if cache
-        (if-let ((member (plist-member speedo--target-attempts fn)))
-            (setq speedo--target-attempt (cadr member)
-                  speedo--comparison-target target)
-          ;;calculate if the target has not been cached yet.
-          (speedo--target-attempt fn))
-      (let ((result (funcall fn)))
-        (setq speedo--target-attempts (plist-put speedo--target-attempts fn result))
-        (setq speedo--comparison-target target
-              speedo--target-attempt result)))))
-
 (defun speedo--attempt-init ()
   "Initialize a new attempt."
   ;; cache target attempts
   ;; We let-bind speedo--comparison-target here, so the user's value is not changed.
   (let (speedo--comparison-target)
     (dolist (target speedo-comparison-targets)
-      (speedo--target-attempt (car target))))
+      (speedo--target-attempt (cdr target))))
   (setq speedo--segment-index -1
         speedo--review nil
         speedo--best-segments (speedo--best-segments)
@@ -766,7 +766,7 @@ If CACHE is non-nil, use the cache."
               :splits
               (mapcar (lambda (segment) (list :segment (plist-get segment :name)))
                       (plist-get speedo--data :segments))))
-  (speedo--target-attempt (car speedo--comparison-target))
+  (speedo--target-attempt (cdr speedo--comparison-target))
   (speedo--refresh-header)
   (speedo--display-ui)
   (speedo--timer-start))
@@ -812,7 +812,7 @@ Reset timers."
     (setq speedo--review nil
           speedo--timer nil
           speedo--target-attempts nil)
-    (speedo--target-attempt (car speedo--comparison-target))
+    (speedo--target-attempt (cdr speedo--comparison-target))
     (speedo--display-ui)
     (speedo--display-timers)
     (goto-char (point-min))))
@@ -1137,7 +1137,7 @@ Negative N cycles backward, positive forward."
                                  -1))
                         (length speedo-comparison-targets))
                    speedo-comparison-targets)))
-    (speedo--target-attempt (car next) 'cache))
+    (speedo--target-attempt (cdr next) 'cache))
   (speedo--display-ui)
   (speedo--display-timers))
 
@@ -1160,7 +1160,7 @@ Negative N cycles backward, positive forward."
                 speedo--data (speedo--convert-data data)
                 speedo--comparison-target (car speedo-comparison-targets)
                 speedo--data-file file)
-        (speedo--target-attempt (car speedo--comparison-target)))
+        (speedo--target-attempt (cdr speedo--comparison-target)))
     (error "Could not load: %S. Malformed?" file)))
 
 ;;;###autoload
