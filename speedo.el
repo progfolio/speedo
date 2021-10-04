@@ -295,7 +295,7 @@ It must be a non-empty plist with at least the following keys:
     (error (user-error "Speedo could not read %S: %S" file err))))
 
 (defun speedo--data-modified-p ()
-  "Compare `speedo--data' to `speedo--data-file' and return t if they are not `equal'."
+  "Return t if `speedo--data' and `speedo--data-file' are not `equal'."
   (when (and speedo--data speedo--data-file)
     (not (equal speedo--data (speedo--convert-data (speedo--read-file speedo--data-file))))))
 
