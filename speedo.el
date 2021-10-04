@@ -243,7 +243,7 @@ It must accept four arguments: hours, minutes, seconds, milliseconds.")
 (defun speedo--plist-get* (plist &rest path)
   "Return PLIST value along key PATH.
 PATH is a list of keywords which are nested within one another.
-e.g. (plist-get* '(:one (:two (:three t))) :one :two :three ;; t"
+e.g. (plist-get* '(:one (:two (:three t))) :one :two :three) ;; t"
   (unless (listp plist) (signal 'wrong-type-argument `(listp ,plist)))
   (while path
     (setq plist (plist-get plist (pop path))))
@@ -624,7 +624,7 @@ If CACHE is non-nil, use the cache."
   (setq speedo--ui-timer-object (run-with-timer 0 0.1 #'speedo--display-timers)))
 
 (defun speedo--timer-start ()
-  "Star the timer. Time is updated in milliseconds every tenth of a seocond.
+  "Start the timer. Time is updated in milliseconds every tenth of a seocond.
 Time should be accesed by views via the `speedo--timer' variable."
   ;;ensure only a single timer is running.
   (when speedo--timer-object (cancel-timer speedo--timer-object))
