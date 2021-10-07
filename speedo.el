@@ -1229,7 +1229,8 @@ If HIDE is non-nil, do not display `speedo-buffer' after loading."
     (hl-line-mode))
   (add-hook 'kill-emacs-hook #'speedo--ask-to-save)
   (setq buffer-face-mode-face 'speedo-default
-        tabulated-list-entries #'speedo--ui-splits)
+        tabulated-list-entries #'speedo--ui-splits
+        default-directory (file-name-directory speedo--data-file))
   (buffer-face-mode)
   (speedo--refresh-header)
   (speedo--ui-init)
