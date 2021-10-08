@@ -259,10 +259,11 @@ Note that missing keywords along path are added."
   (unless (listp plist) (signal 'wrong-type-argument `(listp ,plist)))
   (let* ((plen (length path)))
     (dotimes (n plen)
-      (setq val (plist-put (apply #'speedo--plist-get*
-                                  `(,plist ,@(butlast path (1+ n))))
+      (setq val (plist-put (let ((val (apply #'speedo--plist-get*
+                                             `(,plist ,@(butlast path (1+ n))))))
+                             (if (keywordp val) val nil))
                            (car (last path (1+ n))) val))))
-  val)
+  (if path val plist))
 
 (defun speedo--plist-remove (plist &rest keys)
   "Return a copy of PLIST with KEYS removed.
