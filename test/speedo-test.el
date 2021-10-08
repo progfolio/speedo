@@ -119,5 +119,23 @@ It must be a non-empty plist with at least the following keys:
   (should (string= (speedo--sub-hour-formatter 0 0 59 0)  "0:59.0"))
   (should (string= (speedo--sub-hour-formatter 0 59 0 0)  "59:00.0")))
 
+(ert-deftest speedo--parse-time-string ()
+  "Convert TIME-STRING into list of form: (milliseconds seconds minutes hours)."
+  :tags '(itnernal)
+  (mapc (lambda (spec)
+          (eval `(should (equal (speedo--parse-time-string ,(car spec)) ',(cadr spec)))))
+        '(("1"         (0 1 0 0))
+          ("::"        (0 0 0 0))
+          ("::::"      (0 0 0 0))
+          ("1:"        (0 0 1 0))
+          ("1::"       (0 0 0 1))
+          ("::1"       (0 1 0 0))
+          (":1:"       (0 0 1 0))
+          ("1:1:1.001" (1 1 1 1))
+          ("1:1:1.1"   (100 1 1 1))
+          ("1:1:1.999" (999 1 1 1))
+          ("1:1:90"    (0 90 1 1))
+          ("1:1.0:90"  (0 90 1 1)))))
+
 (provide 'speedo-test)
 ;;; speedo-test.el ends here

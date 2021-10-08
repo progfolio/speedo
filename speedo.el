@@ -310,26 +310,22 @@ It must be a non-empty plist with at least the following keys:
 (defun speedo--parse-time-string (time-string)
   "Convert TIME-STRING into list of form:
 \\(milliseconds seconds minutes hours)."
-  (let ((components
-         (nreverse
-          (flatten-tree
-           (mapcar (lambda (component) (split-string component "\\."))
-                   (split-string time-string ":"))))))
-    (setq components
-          (if (string-match "\\(?:\\.\\([[:digit:]]+\\)\\)" time-string)
-              (push (* (string-to-number (concat "0." (match-string 1 time-string)))
-                       1000)
-                    (cdr components))
-            (push 0 components)))
-    (unless (= (cl-reduce #'+ (split-string time-string "" 'omit-nulls)
-                          :key (lambda (c) (if (string= c ":") 1 0))
-                          :initial-value 0)
-               2)
-      (setq components (append components '(0))))
-    (mapcar (lambda (component) (if (stringp component)
-                                    (string-to-number component)
-                                  component))
-            components)))
+  (let ((result
+         (list (if (string-match "\\(?:\\([[:digit:]]\\)\\.\\([[:digit:]]*\\)$\\)"
+                                 time-string)
+                   (let ((ms (match-string 2 time-string)))
+                     (setq time-string (replace-match "\\1" nil nil time-string))
+                     (truncate (* (string-to-number (concat "0." ms)) 1000)))
+                 0)))
+        (components (nreverse (split-string time-string ":"))))
+    ;; 3 because We have ms at this point and need sec, min, hr
+    (dotimes (_ 3 (nreverse result))
+      (push (let ((el (pop components)))
+              (cond
+               ((null el) 0)
+               ((stringp el) (truncate (string-to-number el)))
+               (t el)))
+            result))))
 
 (defun speedo--time-string-to-ms (time)
   "Convert TIME to ms."
