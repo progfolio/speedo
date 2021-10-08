@@ -74,5 +74,36 @@
   (should (equal (speedo--plist-put* 2 '(:one 1) :one :two)
                  '(:one (:two 2)))))
 
+(ert-deftest speedo--plist-remove ()
+  "Return a copy of PLIST with KEYS removed."
+  :tags '(internal)
+  (let ((original '(:one 1 :two 2)))
+    (should (equal (speedo--plist-remove original) original))
+    (should (equal (speedo--plist-remove original :one) '(:two 2)))
+    (should (equal original '(:one 1 :two 2)))))
+
+(ert-deftest speedo--database-p ()
+  "Return t if OBJ is a well formed database object.
+It must be a non-empty plist with at least the following keys:
+  - :title
+  - :segments"
+  :tags '(internal)
+  (let ((db speedo-test-mock-db))
+    (should (eq (speedo--database-p db) t))
+    (should (eq (speedo--database-p '()) nil))
+    (should (eq (speedo--database-p 2) nil))
+    (should (eq (speedo--database-p '(:title)) nil))
+    (should (eq (speedo--database-p '(:segments)) nil))
+    (should (eq (speedo--database-p '(:title :segments)) nil))
+    (should (eq (speedo--database-p '(:title nil :segments)) t))))
+
+(ert-deftest speedo--read-file ()
+  "Read a valid DB file into an elisp object."
+  :tags '(internal)
+  (should-error (speedo--read-file "./nonexistant") :type 'user-error)
+  (cl-letf (((symbol-function #'insert-file-contents) (symbol-function #'insert)))
+    (should (equal (speedo--read-file "(:title nil :segments)") '(:title nil :segments)))
+    (should-error (speedo--read-file "()") :type 'user-error)))
+
 (provide 'speedo-test)
 ;;; speedo-test.el ends here
