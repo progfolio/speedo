@@ -137,5 +137,46 @@ It must be a non-empty plist with at least the following keys:
           ("1:1:90"    (0 90 1 1))
           ("1:1.0:90"  (0 90 1 1)))))
 
+(ert-deftest speedo--time-string-to-ms ()
+  "Convert TIME to ms."
+  :tags '(itnernal)
+  (mapc (lambda (spec)
+          (eval `(should (equal (speedo--time-string-to-ms ,(car spec)) ,(cadr spec)))))
+        '(("1"         1000)
+          ("::"        0)
+          ("::::"      0)
+          ("1:"        60000)
+          ("1::"       3600000)
+          ("::1"       1000)
+          (":1:"       60000)
+          ("1:1:1.001" 3661001)
+          ("0" 0))))
+
+(ert-deftest speedo--ms-to-date ()
+  "Convert MS into human readable date string"
+  :tags '(itnernal)
+  (define-advice format-time-string (:filter-args (args) "force-UTC")
+    "Force UTC so dev timezone env does not interfere with `speedo-ms-to-date' test."
+    (list (car args) (cadr args) t))
+  (unwind-protect
+      (mapc (lambda (spec)
+              (eval `(should (equal (speedo--ms-to-date ,(car spec)) ,(cadr spec)))))
+            '((0 "1970-01-01 00:00:00")
+              (1 "1970-01-01 00:00:00")
+              (1000 "1970-01-01 00:00:01")
+              (60000 "1970-01-01 00:01:00")
+              (3661001 "1970-01-01 01:01:01")))
+    (advice-remove 'format-time-string #'format-time-string@force-UTC)))
+
+(ert-deftest speedo--date-to-ms ()
+  "Convert ISO 8601 DATE string to milliseconds."
+  :tags '(itnernal)
+  (mapc (lambda (spec)
+          (eval `(should (equal (speedo--date-to-ms ,(car spec)) ,(cadr spec)))))
+        '(("1970-01-01 00:00:00+00:00" 0)
+          ("1970-01-01 00:00:01+00:00" 1000)
+          ("1970-01-01 00:01:00+00:00" 60000)
+          ("1970-01-01 01:01:01+00:00" 3661000))))
+
 (provide 'speedo-test)
 ;;; speedo-test.el ends here
