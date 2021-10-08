@@ -4,14 +4,13 @@
 #$ make -e
 EMACS = emacs
 
-#Point to path of your local emacs-buttercup install
-BUTTERCUP = ../emacs-buttercup/
 
 .PHONY: all
-all:  clean compile
+all:  clean compile check
 compile: speedo.elc
 check: speedo.elc
-	$(EMACS) -Q --batch -L . -L $(BUTTERCUP) -l buttercup -f buttercup-run-discover
+	$(EMACS) -Q --batch -L . -l ert -l ./test/speedo-test.el \
+--eval "(let ((ert-quiet t)) (ert-run-tests-batch-and-exit))"
 clean:
 	rm -f speedo.elc
 .SUFFIXES: .el .elc
