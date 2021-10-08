@@ -110,5 +110,14 @@ It must be a non-empty plist with at least the following keys:
   :tags '(stub)
   (skip-unless nil))
 
+(ert-deftest speedo--sub-hour-formatter ()
+  :tags '(itnernal)
+  (should-error (speedo--sub-hour-formatter nil nil nil nil) :type 'wrong-type-argument)
+  (should (string= (speedo--sub-hour-formatter nil 0 0 0) "0:00.0"))
+  (should (string= (speedo--sub-hour-formatter 0 0 0 0)   "0:00.0"))
+  (should (string= (speedo--sub-hour-formatter 0 0 0 100) "0:00.1"))
+  (should (string= (speedo--sub-hour-formatter 0 0 59 0)  "0:59.0"))
+  (should (string= (speedo--sub-hour-formatter 0 59 0 0)  "59:00.0")))
+
 (provide 'speedo-test)
 ;;; speedo-test.el ends here
