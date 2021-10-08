@@ -53,7 +53,8 @@
      :runs ( :pb 3)))
 
 (ert-deftest speedo--plist-get* ()
-  "it Returns VAL along PATH."
+  "It Returns VAL along PATH."
+  :tags '(internal)
   (should (eq (speedo--plist-get* '() :one) nil))
   (should (eq (speedo--plist-get* '(:one t)) nil))
   (should (eq (speedo--plist-get* '(:one t) :two) nil))
@@ -62,6 +63,7 @@
 
 (ert-deftest speedo--plist-put* ()
   "Returns a copy of PLIST with VAL set along PATH."
+  :tags '(internal)
   (should (equal (let ((original '(:one nil)))
                    (speedo--plist-put* 2 original :one :two)
                    original)
