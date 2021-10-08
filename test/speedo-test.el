@@ -105,5 +105,10 @@ It must be a non-empty plist with at least the following keys:
     (should (equal (speedo--read-file "(:title nil :segments)") '(:title nil :segments)))
     (should-error (speedo--read-file "()") :type 'user-error)))
 
+(ert-deftest speedo--data-modified-p ()
+  "Return t if `speedo--data' and `speedo--data-file' are not `equal'."
+  :tags '(stub)
+  (skip-unless nil))
+
 (provide 'speedo-test)
 ;;; speedo-test.el ends here
