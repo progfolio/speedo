@@ -24,6 +24,7 @@
 
 ;;; Code:
 (require 'speedo)
+(require 'cl-lib)
 (require 'ert)
 
 (defvar speedo-test-mock-db
