@@ -159,7 +159,7 @@ It must be a non-empty plist with at least the following keys:
   (skip-unless nil))
 
 (ert-deftest speedo--sub-hour-formatter ()
-  :tags '(itnernal)
+  :tags '(internal)
   (should-error (speedo--sub-hour-formatter nil nil nil nil) :type 'wrong-type-argument)
   (speedo-test-with-transput (should (string= (speedo--sub-hour-formatter in) out))
     (nil 0 0 0) "0:00.0"
@@ -170,7 +170,7 @@ It must be a non-empty plist with at least the following keys:
 
 (ert-deftest speedo--parse-time-string ()
   "Convert TIME-STRING into list of form: (milliseconds seconds minutes hours)."
-  :tags '(itnernal)
+  :tags '(internal)
   (speedo-test-with-transput (should (equal (speedo--parse-time-string in) out))
     "1"         '(0 1 0 0)
     "::"        '(0 0 0 0)
@@ -187,7 +187,7 @@ It must be a non-empty plist with at least the following keys:
 
 (ert-deftest speedo--time-string-to-ms ()
   "Convert TIME to ms."
-  :tags '(itnernal)
+  :tags '(internal)
   (speedo-test-with-transput (should (equal (speedo--time-string-to-ms in) out))
     "1"         1000
     "::"        0
@@ -202,7 +202,7 @@ It must be a non-empty plist with at least the following keys:
 (declare-function format-time-string@force-UTC "speedo-test") ;;pacify compiler
 (ert-deftest speedo--ms-to-date ()
   "Convert MS into human readable date string."
-  :tags '(itnernal)
+  :tags '(internal)
   (define-advice format-time-string (:filter-args (args) "force-UTC")
     "Force UTC so dev timezone does not interfere with `speedo-ms-to-date' test."
     (list (car args) (cadr args) t))
@@ -218,7 +218,7 @@ It must be a non-empty plist with at least the following keys:
 
 (ert-deftest speedo--date-to-ms ()
   "Convert ISO 8601 DATE string to milliseconds."
-  :tags '(itnernal)
+  :tags '(internal)
   (speedo-test-with-transput
     (should (equal (speedo--date-to-ms (format "1970-01-01 %s+00:00" in)) out))
     "00:00:00" 0
