@@ -20,7 +20,7 @@
 
 ;;; Commentary:
 
-;;
+;; Tests for speedo.el
 
 ;;; Code:
 (require 'speedo)
