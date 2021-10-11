@@ -52,80 +52,73 @@
          ( :segment "Three" :duration "2"))))
      :runs ( :pb 3)))
 
-(eval-and-compile
-  (defun speedo-test--replace-symbol (target form replacement &optional splice)
-    "Replace TARGET symbol in FORM with REPLACEMENT.
-If SPLICE is non-nil and REPLACEMENT is a list, it is spliced in place."
-    (let (result)
-      (while form
-        (let ((token (pop form)))
-          (cond
-           ((and token (listp token))
-            (push (speedo-test--replace-symbol target token replacement splice) result))
-           ((eq token target) (if (and splice replacement (listp replacement))
-                                  (dolist (el replacement) (push el result))
-                                (push replacement result)))
-           (t (push token result)))))
-      (nreverse result))))
+(defmacro speedo-test-template (template &rest bindings)
+  "Return a TEMPLATE with BINDINGS replaced in each.
+BINDINGS are similar to a `let*' varlist, except they are strictly paired.
+This means you must explicitly bind symbols in BINDINGS to nil.
+However, it means you needn't pair elements in parens.
+For example: (a 1 b 2 c 3).
 
-(defmacro speedo-test-given (env &rest whenthen)
-  "`eval' WHENTHEN pairs in ENV.
-Anywhere the symbol `in' appears in ENV,
-the WHEN form is spliced in.
-The entire ENV is then spliced into the `cadr' of THEN."
+References in TEMPLATE (which should not be backqouted) are replaced
+via the same rules as a backquoted list. e.g. `,` to replace, `,@` to splice
+list elements."
   (declare (indent 1))
-  (unless (cl-evenp (length whenthen))
-    (error "Uneven When Then pair given"))
-  `(progn
-     ,@(cl-loop for (wh th) on whenthen by #'cddr
-                collect (speedo-test--replace-symbol
-                         'out th
-                         (speedo-test--replace-symbol 'in env wh 'splice)))))
+  (let (body)
+    (dolist (env bindings)
+      (unless (mod (length env) 2) (error "Uneven binding list: %S" env))
+      (let (e)
+        (cl-loop for (var val) on env by #'cddr
+                 do (push (cons var (eval `(quote ,val) e)) e))
+        (push (eval (list '\` template) e) body)))
+    `(progn ,@(nreverse body))))
 
-(defmacro speedo-test-with-transput (template &rest transputs)
-  "Return test list with TRANSPUTS in TEMPLATE.
-TRANSPUTS are an input object followed by an output object.
-They are referred to in TEMPLATE by the symbols `in` and `out`."
-  (declare (indent defun))
-  `(progn
-     ,@(cl-loop
-        for (i o) on transputs by #'cddr
-        for applied = (speedo-test--replace-symbol 'in template i 'splice)
-        collect (speedo-test--replace-symbol 'out applied o))))
+(defmacro speedo-test-template* (template vars &rest bindings)
+  "Return TEMPLATEs with elements of BINDINGS destructured to VARS."
+  "For example: with VARS = (in out) BINIDNGS = (in odd-elements out even-elements)."
+  (declare (indent 1))
+  (let ((unbound (mod (length bindings) (length vars))))
+    (unless (zerop unbound) (error "Unven binding list: %S" (last bindings unbound)))
+    `(speedo-test-template ,template
+       ,@(eval `(cl-loop for ,vars on ',bindings
+                         by (lambda (l) (nthcdr ,(length vars) l))
+                         collect (apply #'append (cl-mapcar #'list ',vars (list ,@vars))))))))
+
+(defmacro speedo-test-with-transput (template &rest io)
+  "Anaphoric `speedo-test-template*' with IO bound to `in` and `out` in TEMPLATE."
+  (declare (indent 1))
+  `(speedo-test-template* ,template (in out) ,@io))
 
 (defmacro speedo-test-with-input (template &rest inputs)
-  "Retrun test list with INPUTS spliced into TEMPLATE.
-Anywhere the symbol `in` appears in the TEMPLATE it is replaced."
+  "Anaphoric `speedo-test-template*' with INPUTS bound to `in` in TEMPLATE."
   (declare (indent 1))
-  `(progn ,@(cl-loop for input in inputs collect (speedo-test--replace-symbol
-                                                  'in template input 'splice))))
+  `(speedo-test-template* ,template (in) ,@inputs))
 
 (ert-deftest speedo--plist-get* ()
   "Returns VAL along PATH."
   :tags '(internal)
-  (speedo-test-with-input (should-not (speedo--plist-get* in))
-    ('() :a)
-    ('(:b t))
+  (speedo-test-with-input (should-not (speedo--plist-get* ,@in))
+    ('()     :a)
+    ('(:b t) nil)
     ('(:c t) :d))
   (should (equal (speedo--plist-get* '(:d (:e (:f t))) :d :e :f) t)))
 
 (ert-deftest speedo--plist-put* ()
   "Returns a copy of PLIST with VAL set along PATH."
   :tags '(internal)
-  (speedo-test-with-transput (should (equal (speedo--plist-put* in) out))
-    (t nil :one :two :three)  '(:one (:two (:three t)))
-    (2 '(:one nil) :one :two) '(:one (:two 2)))
+  (speedo-test-with-transput (should (equal (speedo--plist-put* ,@in) ,out))
+    (t  nil        :one :two :three)  '(:one (:two (:three t)))
+    (2 '(:one nil) :one :two)         '(:one (:two 2)))
   (should-error (speedo--plist-put* t '(:one nil) nil)))
 
 (ert-deftest speedo--plist-remove ()
   "Return a copy of PLIST with KEYS removed."
   :tags '(internal)
   (speedo-test-with-transput (let ((original '(:one 1 :two 2)))
-                               (should (equal (speedo--plist-remove original in) out)))
-    (:not-found) original
-    (nil)        original
-    (:one)       '(:two 2)
-    ((progn (speedo--plist-remove original :one) :two)) '(:one 1)))
+                               (should (equal (speedo--plist-remove original ,in) ,out)))
+    nil        original
+    :missing   original
+    :one       '(:two 2)
+    (progn (speedo--plist-remove original :one) :two) '(:one 1)))
 
 (ert-deftest speedo--database-p ()
   "Return t if OBJ is a well formed database object.
@@ -133,17 +126,14 @@ It must be a non-empty plist with at least the following keys:
   - :title
   - :segments"
   :tags '(internal)
-  (speedo-test-with-input (should-not (speedo--database-p in))
-    (nil)
-    (2)
-    ('(:title))
-    ('(:segments))
-    ('(:title :segments)))
-  (speedo-test-with-input (let ((db speedo-test-mock-db))
-                            (ignore db) ;pacify byte compiler
-                            (should (speedo--database-p in)))
-    (db)
-    ('(:title nil :segments))))
+  (speedo-test-with-input (should-not (speedo--database-p ,in))
+    nil
+    2
+    '(:title)
+    '(:segments)
+    '(:title :segments))
+  (let ((db speedo-test-mock-db)) (should (speedo--database-p db)))
+  (should (speedo--database-p '(:title nil :segments))))
 
 (ert-deftest speedo--read-file ()
   "Read a valid DB file into an elisp object."
@@ -161,7 +151,7 @@ It must be a non-empty plist with at least the following keys:
 (ert-deftest speedo--sub-hour-formatter ()
   :tags '(internal)
   (should-error (speedo--sub-hour-formatter nil nil nil nil) :type 'wrong-type-argument)
-  (speedo-test-with-transput (should (string= (speedo--sub-hour-formatter in) out))
+  (speedo-test-with-transput (should (string= (speedo--sub-hour-formatter ,@in) ,out))
     (nil 0 0 0) "0:00.0"
     (0 0 0 0)   "0:00.0"
     (0 0 0 100) "0:00.1"
@@ -171,33 +161,33 @@ It must be a non-empty plist with at least the following keys:
 (ert-deftest speedo--parse-time-string ()
   "Convert TIME-STRING into list of form: (milliseconds seconds minutes hours)."
   :tags '(internal)
-  (speedo-test-with-transput (should (equal (speedo--parse-time-string in) out))
-    "1"         '(0 1 0 0)
-    "::"        '(0 0 0 0)
-    "::::"      '(0 0 0 0)
-    "1:"        '(0 0 1 0)
-    "1::"       '(0 0 0 1)
-    "::1"       '(0 1 0 0)
-    ":1:"       '(0 0 1 0)
-    "1:1:1.001" '(1 1 1 1)
-    "1:1:1.1"   '(100 1 1 1)
-    "1:1:1.999" '(999 1 1 1)
-    "1:1:90"    '(0 90 1 1)
-    "1:1.0:90"  '(0 90 1 1)))
+  (speedo-test-with-transput (should (equal (speedo--parse-time-string ,in) ',out))
+    "1"         (0 1 0 0)
+    "::"        (0 0 0 0)
+    "::::"      (0 0 0 0)
+    "1:"        (0 0 1 0)
+    "1::"       (0 0 0 1)
+    "::1"       (0 1 0 0)
+    ":1:"       (0 0 1 0)
+    "1:1:1.001" (1 1 1 1)
+    "1:1:1.1"   (100 1 1 1)
+    "1:1:1.999" (999 1 1 1)
+    "1:1:90"    (0 90 1 1)
+    "1:1.0:90"  (0 90 1 1)))
 
 (ert-deftest speedo--time-string-to-ms ()
   "Convert TIME to ms."
   :tags '(internal)
-  (speedo-test-with-transput (should (equal (speedo--time-string-to-ms in) out))
-    "1"         1000
+  (speedo-test-with-transput (should (equal (speedo--time-string-to-ms ,in) ,out))
     "::"        0
     "::::"      0
-    "1:"        60000
-    "1::"       3600000
+    "0"         0
     "::1"       1000
+    "1"         1000
+    "1:"        60000
     ":1:"       60000
-    "1:1:1.001" 3661001
-    "0" 0))
+    "1::"       3600000
+    "1:1:1.001" 3661001))
 
 (declare-function format-time-string@force-UTC "speedo-test") ;;pacify compiler
 (ert-deftest speedo--ms-to-date ()
@@ -208,7 +198,7 @@ It must be a non-empty plist with at least the following keys:
     (list (car args) (cadr args) t))
   (unwind-protect
       (speedo-test-with-transput
-        (should (equal (speedo--ms-to-date in) (format "1970-01-01 %s" out)))
+          (should (equal (speedo--ms-to-date ,in) (format "1970-01-01 %s" ,out)))
         0       "00:00:00"
         1       "00:00:00"
         1000    "00:00:01"
@@ -220,7 +210,7 @@ It must be a non-empty plist with at least the following keys:
   "Convert ISO 8601 DATE string to milliseconds."
   :tags '(internal)
   (speedo-test-with-transput
-    (should (equal (speedo--date-to-ms (format "1970-01-01 %s+00:00" in)) out))
+      (should (equal (speedo--date-to-ms (format "1970-01-01 %s+00:00" ,in)) ,out))
     "00:00:00" 0
     "00:00:01" 1000
     "00:01:00" 60000
@@ -234,7 +224,8 @@ It must be a non-empty plist with at least the following keys:
 (ert-deftest speedo--compact-time-formatter ()
   "Return shortest time string from H M S MS."
   :tags '(internal)
-  (speedo-test-with-transput (should (string= (speedo--compact-time-formatter in) out))
+  (speedo-test-with-transput
+      (should (string= (speedo--compact-time-formatter ,@in) ,out))
     (0 0 0 0)   "0"
     (0 0 0 1)   "0.001"
     (0 0 0 100) "0.100" ;@BUG?: should this drop trailing zeros?
@@ -245,6 +236,17 @@ It must be a non-empty plist with at least the following keys:
     (0 1 0 0)   "1:00"
     (1 0 0 0)   "1:00:00"
     (1 1 1 1)   "1:01:01.001"))
+
+(ert-deftest speedo--format-ms ()
+  "Format N milliseconds with `speedo--time-formatter'."
+  :tags '(internal)
+  (speedo-test-template*
+   (let* ((speedo--time-formatter ',formatter))
+     (should (string= (speedo--format-ms ,in) ,out)))
+   (formatter                     in    out)
+   nil                            60000 "1:00"
+   speedo--compact-time-formatter 60000 "1:00"
+   speedo--sub-hour-formatter     60000 "1:00.0"))
 
 (provide 'speedo-test)
 ;;; speedo-test.el ends here
