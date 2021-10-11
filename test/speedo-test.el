@@ -226,5 +226,25 @@ It must be a non-empty plist with at least the following keys:
     "00:01:00" 60000
     "01:01:01" 3661000))
 
+(ert-deftest speedo--timestamp ()
+  "Return TIME since unix epoch in milliseconds."
+  :tags '(internal)
+  (should (eq (speedo--timestamp (date-to-time "1970-01-01 00:01:00+00:00")) 60000)))
+
+(ert-deftest speedo--compact-time-formatter ()
+  "Return shortest time string from H M S MS."
+  :tags '(internal)
+  (speedo-test-with-transput (should (string= (speedo--compact-time-formatter in) out))
+    (0 0 0 0)   "0"
+    (0 0 0 1)   "0.001"
+    (0 0 0 100) "0.100" ;@BUG?: should this drop trailing zeros?
+    (0 0 1 0)   "1"
+    (0 0 1 1)   "1.001"
+    (0 0 1 100) "1.100"
+    (0 0 59 0)  "59"
+    (0 1 0 0)   "1:00"
+    (1 0 0 0)   "1:00:00"
+    (1 1 1 1)   "1:01:01.001"))
+
 (provide 'speedo-test)
 ;;; speedo-test.el ends here
