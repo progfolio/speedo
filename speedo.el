@@ -363,9 +363,8 @@ It must be a non-empty plist with at least the following keys:
    (when (> ms 0) (format ".%03d" ms))))
 
 (defun speedo--format-ms (n)
-  "Format N milliseconds with `speedo-time-formatter'.
-If FORMATTER is non-nil, use that format function instead.
-It is called with hours, minutes, seconds, milliseconds."
+  "Format N milliseconds with `speedo--time-formatter'.
+Formatter is called with hours, minutes, seconds, milliseconds."
   (let* ((milliseconds (mod n 1000))
          (n (/ n 1000))
          (seconds (mod n 60))
