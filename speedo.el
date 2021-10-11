@@ -257,6 +257,7 @@ e.g. (plist-put nil '(:one (:two (:three t) :one :two :three
 ;; (:one (:two (:three nil)))
 Note that missing keywords along path are added."
   (unless (listp plist) (signal 'wrong-type-argument `(listp ,plist)))
+  (unless (remq nil path) (error "empty plist-put* PATH given"))
   (let* ((plen (length path)))
     (dotimes (n plen)
       (setq val (plist-put (let ((val (apply #'speedo--plist-get*
