@@ -264,7 +264,7 @@ Note that missing keywords along path are added."
                                              `(,plist ,@(butlast path (1+ n))))))
                              (if (keywordp val) val nil))
                            (car (last path (1+ n))) val))))
-  (if path val plist))
+  (plist-put plist (car val) (cadr val)))
 
 (defun speedo--plist-remove (plist &rest keys)
   "Return a copy of PLIST with KEYS removed.
@@ -434,13 +434,14 @@ IF NOSAVE is non-nil, do not cache the result."
   (let ((attempts (or attempts (speedo--attempts))))
     (if nocache
         (when-let* ((runs (cl-remove-if-not #'speedo--attempt-complete-p attempts))
-                    (sorted (cl-sort runs #'<
+                    (sorted (cl-sort (copy-tree runs) #'<
                                      :key (lambda (r) (speedo--splits-duration
                                                        (plist-get r :splits)))))
                     (pb (car sorted))
                     (index (cl-position (plist-get pb :start) attempts
                                         :key (lambda (a) (plist-get a :start)))))
-          (unless nosave (speedo--plist-put* index speedo--data :runs :pb))
+          (unless nosave (setq speedo--data
+                               (speedo--plist-put* index speedo--data :runs :pb)))
           pb)
       (if-let ((index (speedo--plist-get* speedo--data :runs :pb)))
           (nth index attempts)
@@ -788,14 +789,14 @@ Time should be accesed by views via the `speedo--timer' variable."
 (defun speedo--attempt-end ()
   "Save the current attempt to `speedo--data'.
 Reset timers."
-  (let* ((current (copy-tree speedo--current-attempt))
+  (let* ((current speedo--current-attempt)
          (cleaned (plist-put current :splits
                              (mapcar (lambda (split) (speedo--plist-remove split :start))
                                      (cl-remove-if-not (lambda (split) (plist-get split :duration))
                                                        (plist-get current :splits))))))
     (setq speedo--data (plist-put speedo--data :attempts
                                   (append (plist-get speedo--data :attempts)
-                                          (list cleaned))))
+                                          (list (copy-tree cleaned)))))
     (message "attempt ended")
     (setq speedo--current-attempt nil
           speedo--review t)
