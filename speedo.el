@@ -918,9 +918,10 @@ Reset timers."
   "Return string with game title and category."
   (propertize (format "%s %s"
                       (or (plist-get speedo--data :title) "")
-                      (or (replace-regexp-in-string
-                           "%" "%%"
-                           (plist-get speedo--data :category) "")))
+                      (or (when-let ((category (plist-get speedo--data :category)))
+                            (replace-regexp-in-string
+                             "%" "%%" category))
+                          ""))
               'face 'speedo-header-game-info))
 
 ;;; Save/Restore Customizations
