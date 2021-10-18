@@ -124,6 +124,7 @@ It may be any of the following values:
                                        ("World Record" . speedo-target-world-record)
                                        ("Last Attempt" . speedo-target-last-attempt)
                                        ("Last Run" . speedo-target-last-run)
+                                       ("Personal Worst" . speedo-target-personal-worst)
                                        ("None" . ignore))
   ;;best-split-times, average-segments, median-segments, balanced-pb
   "Alist of comparison targets.
@@ -427,26 +428,51 @@ If nil, FILTER defaults to ignoring attempts tagged with \"ignore\"."
   "Return t if ATTEMPT is complete, else nil."
   (not (plist-member attempt :reset)))
 
+(defun speedo--run-by (key computer &optional attempts nocache nosave)
+  "Get run from `speedo--data' by KEY.
+If there is no run by that key or NOCACHE is non-nil, compute the run with
+COMPUTER.
+COMPUTER must be a function which takes a list of ATTEMPTS and retruns a run.
+If ATTEMPTS is nil, `speedo--attempts' are used.
+If NOSAVE is non-nil, the computed result is not saved to `speedo--data'."
+  (let ((attempts (or attempts (speedo--attempts))))
+    (if nocache
+        (when-let* ((found (funcall computer (copy-tree attempts)))
+                    (index (cl-position (plist-get found :start) attempts
+                                        :key (lambda (a) (plist-get a :start)))))
+          (unless nosave
+            (setq speedo--data (speedo--plist-put* index speedo--data :runs key)))
+          found)
+      (if-let ((index (speedo--plist-get* speedo--data :runs key)))
+          (nth index attempts)
+        ;;calculate if no cache exists
+        (speedo--run-by key computer attempts 'nocache)))))
+
+(defun speedo--run-worst (&optional attempts nocache nosave)
+  "Return personal worst run.
+If NOCACHE is non-nil, recalculate from ATTEMPTS.
+IF NOSAVE is non-nil, do not cache the result."
+  (speedo--run-by
+   :worst
+   (lambda (a) (car (cl-sort
+                     (cl-remove-if-not #'speedo--attempt-complete-p a)
+                     #'<
+                     :key (lambda (run)
+                            (speedo--splits-duration (plist-get run :splits))))))
+   attempts nocache nosave))
+
 (defun speedo--run-pb (&optional attempts nocache nosave)
   "Return personal best run.
 If NOCACHE is non-nil, recalculate from ATTEMPTS.
 IF NOSAVE is non-nil, do not cache the result."
-  (let ((attempts (or attempts (speedo--attempts))))
-    (if nocache
-        (when-let* ((runs (cl-remove-if-not #'speedo--attempt-complete-p attempts))
-                    (sorted (cl-sort (copy-tree runs) #'<
-                                     :key (lambda (r) (speedo--splits-duration
-                                                       (plist-get r :splits)))))
-                    (pb (car sorted))
-                    (index (cl-position (plist-get pb :start) attempts
-                                        :key (lambda (a) (plist-get a :start)))))
-          (unless nosave (setq speedo--data
-                               (speedo--plist-put* index speedo--data :runs :pb)))
-          pb)
-      (if-let ((index (speedo--plist-get* speedo--data :runs :pb)))
-          (nth index attempts)
-        ;;calculate if no cache exists
-        (speedo--run-pb attempts 'nocache)))))
+  (speedo--run-by
+   :pb
+   (lambda (a) (car (cl-sort
+                     (cl-remove-if-not #'speedo--attempt-complete-p a)
+                     #'>
+                     :key (lambda (run)
+                            (speedo--splits-duration (plist-get run :splits))))))
+   attempts nocache nosave))
 
 (defun speedo--relative-time (a b)
   "Return formatted timestring of B to A.
@@ -475,6 +501,10 @@ Return nil if A or B is absent."
 (defun speedo-target-personal-best ()
   "Return personal best run from `speedo--data'."
   (speedo--run-pb (speedo--attempts) 'nocache 'nosave))
+
+(defun speedo-target-personal-worst ()
+  "Return personal worst run from `speedo--data'."
+  (speedo--run-worst (speedo--attempts) 'nocache 'nosave))
 
 (defun speedo-target-best-segments ()
   "Return synthesized attempt with best times for each segment."
