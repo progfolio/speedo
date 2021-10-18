@@ -835,12 +835,12 @@ Reset timers."
 
 (defun speedo--split-time-relative (attempt n)
   "Return ATTEMPT's Nth split time relative to start."
-  (let* ((splits (plist-get attempt :splits))
-         (current (nth n splits)))
-    (when-let ((duration (plist-get current :duration)))
-      (cl-reduce #'+ (cl-subseq splits 0 (1+ n))
-                 :key (lambda (split) (plist-get split :duration))
-                 :initial-value 0))))
+  (when-let ((splits (plist-get attempt :splits))
+             (current (nth n splits))
+             (duration (plist-get current :duration)))
+    (cl-reduce #'+ (cl-subseq splits 0 (1+ n))
+               :key (lambda (split) (plist-get split :duration))
+               :initial-value 0)))
 
 (defun speedo--time-format-rounded (_hours minutes seconds ms)
   "Display rounded MINUTES SECONDS MS."
