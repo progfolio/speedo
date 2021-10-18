@@ -1007,12 +1007,13 @@ When called interactivley, prompt for optional values."
       (while (not (string-empty-p
                    (setq segment (read-string (format "segment %d (empty to exit): "
                                                       (cl-incf index))))))
-        (push segment segments)))
+        (push segment segments))
+      (setq segments (nreverse segments)))
     (speedo--write-data
      (list :title title
            :category category
            :segments (mapcar (lambda (segment) (list :name segment))
-                             (nreverse segments)))
+                             segments))
      file nil nil nil 'must-be-new)))
 
 (defun speedo-next ()
