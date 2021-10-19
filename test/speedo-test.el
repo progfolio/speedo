@@ -107,8 +107,7 @@ list elements."
   :tags '(internal)
   (speedo-test-with-transput (should (equal (speedo--plist-put* ,@in) ,out))
     (t  nil        :one :two :three)  '(:one (:two (:three t)))
-    (2 '(:one nil) :one :two)         '(:one (:two 2)))
-  (should-error (speedo--plist-put* t '(:one nil) nil)))
+    (2 '(:one nil) :one :two)         '(:one (:two 2))))
 
 (ert-deftest speedo--plist-remove ()
   "Return a copy of PLIST with KEYS removed."
