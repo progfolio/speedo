@@ -904,13 +904,13 @@ Reset timers."
                             (speedo--relative-time
                              (speedo--splits-duration
                               (cl-subseq target-splits 0
-                                         (min (1+ index) (1- (length target-splits)))))
+                                         (min (+ index 1) (length target-splits))))
                              (speedo--splits-duration
                               (when-let ((splits (plist-get (if speedo--review
                                                                 (speedo-target-last-attempt)
                                                               speedo--current-attempt)
                                                             :splits)))
-                                (cl-subseq splits 0 (min (1+ index) (1- (length splits))))))))
+                                (cl-subseq splits 0 (min (+ index 1) (length splits)))))))
                           speedo-text-place-holder)))
                 (when current-line (setq s (propertize s 'comparison-timer t)))
                 (if best-split (propertize s 'face 'speedo-pb) s)))
