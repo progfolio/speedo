@@ -246,10 +246,9 @@ It must accept four arguments: hours, minutes, seconds, milliseconds.")
 PATH is a list of keywords which are nested within one another.
 e.g. (plist-get* '(:one (:two (:three t))) :one :two :three) ;; t"
   (unless (listp plist) (signal 'wrong-type-argument `(listp ,plist)))
-  (when path
-    (while path
-      (setq plist (plist-get plist (pop path))))
-    plist))
+  (while path
+    (setq plist (plist-get plist (pop path))))
+  plist)
 
 (defun speedo--plist-put* (val plist &rest path)
   "Set VAL within a copy of PLIST along PATH.
