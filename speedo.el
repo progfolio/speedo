@@ -455,7 +455,7 @@ IF NOSAVE is non-nil, do not cache the result."
    :worst
    (lambda (a) (car (cl-sort
                      (cl-remove-if-not #'speedo--attempt-complete-p a)
-                     #'<
+                     #'>
                      :key (lambda (run)
                             (speedo--splits-duration (plist-get run :splits))))))
    attempts nocache nosave))
@@ -468,7 +468,7 @@ IF NOSAVE is non-nil, do not cache the result."
    :pb
    (lambda (a) (car (cl-sort
                      (cl-remove-if-not #'speedo--attempt-complete-p a)
-                     #'>
+                     #'<
                      :key (lambda (run)
                             (speedo--splits-duration (plist-get run :splits))))))
    attempts nocache nosave))
