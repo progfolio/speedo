@@ -256,15 +256,15 @@ PATH is a list of keywords which are nested within one another.
 e.g. (plist-put nil '(:one (:two (:three t) :one :two :three
 ;; (:one (:two (:three nil)))
 Note that missing keywords along path are added."
+  (unless path (error "Attemtpted to put %S on empty PATH" val))
   (unless (listp plist) (signal 'wrong-type-argument `(listp ,plist)))
-  (unless (remq nil path) (error "Empty plist-put* PATH given"))
   (let* ((plen (length path)))
     (dotimes (n plen)
-      (setq val (plist-put (let ((val (apply #'speedo--plist-get*
-                                             `(,plist ,@(butlast path (1+ n))))))
-                             (if (keywordp val) val nil))
-                           (car (last path (1+ n))) val))))
-  (plist-put plist (car val) (cadr val)))
+      (let ((p (apply
+                #'speedo--plist-get*
+                (append (list plist) (butlast path (1+ n))))))
+        (setq val (plist-put p (car (last path (1+ n))) val)))))
+  val)
 
 (defun speedo--plist-remove (plist &rest keys)
   "Return a copy of PLIST with KEYS removed.
