@@ -20,85 +20,13 @@
 (require 'face-remap)
 (require 'tabulated-list)
 (require 'text-property-search)
+(require 'speedo-faces)
 
 ;;;; Groups
 (defgroup speedo nil
   "Speedo: lightweight split timer."
   :group 'applications
   :prefix "speedo-")
-
-(defgroup speedo-faces nil
-  "Faces used in speedo.el."
-  :group 'speedo
-  :group 'faces)
-
-;;;; Faces
-(defface speedo-ahead
-  '((t (:inherit speedo-emphasis :foreground "green")))
-  "Face for time ahead of comparison."
-  :group 'speedo-faces)
-
-(defface speedo-behind
-  '((t (:inherit speedo-emphasis :foreground "red")))
-  "Face for time behind comparison."
-  :group 'speedo-faces)
-
-(defface speedo-neutral
-  '((t (:inherit speedo-emphasis :foreground "#5555FF")))
-  "Face for time equal to comparison."
-  :group 'speedo-faces)
-
-(defface speedo-comparison-line
-  '((t (:weight light)))
-  "Face for the global run timer."
-  :group 'speedo-faces)
-
-(defface speedo-current-line
-  '((t (:weight ultra-bold)))
-  "Face for the global run timer."
-  :group 'speedo-faces)
-
-(defface speedo-default
-  '((t (:family "Hermit" :height 1.0)))
-  "Face for emphasized information.")
-
-(defface speedo-emphasis
-  '((t (:weight bold :slant italic :height 1.0)))
-  "Face for emphasized information.")
-
-(defface speedo-gaining
-  '((t (:inherit speedo-emphasis :foreground "#CD5C5C")))
-  "Face for time globally behind, current split ahead of comparison."
-  :group 'speedo-faces)
-
-(defface speedo-header-game-info
-  '((t (:height 1.2 :weight ultra-bold :foreground "#DD5668" :extend t)))
-  "Face for the game title and category in the header line."
-  :group 'speedo-faces)
-
-(defface speedo-header-game-stats
-  '((t (:height 1.2 :weight bold)))
-  "Face for the attempted to completed ratio."
-  :group 'speedo-faces)
-
-(defface speedo-hl-line
-  '((t (:background "#202060" :extend t)))
-  "Face for highlighted line.")
-
-(defface speedo-losing
-  '((t (:inherit speedo-emphasis :foreground "#3EB489")))
-  "Face for time globally ahead, current split behind of comparison."
-  :group 'speedo-faces)
-
-(defface speedo-pb
-  '((t (:inherit speedo-emphasis :foreground "gold")))
-  "Face for time ahead of comparison."
-  :group 'speedo-faces)
-
-(defface speedo-timer
-  '((t (:inherit speedo-neutral :weight ultra-bold :height 1.5)))
-  "Face for the global run timer."
-  :group 'speedo-faces)
 
 ;;; Customizations
 (defcustom speedo-buffer "*speedo*"
