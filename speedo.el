@@ -427,6 +427,10 @@ If nil, FILTER defaults to ignoring attempts tagged with \"ignore\"."
   "Return t if ATTEMPT is complete, else nil."
   (not (plist-member attempt :reset)))
 
+(defun speedo--attempt-incomplete-p (attempt)
+  "Return t if ATTEMPT is incomplete, else nil."
+  (not (speedo--attempt-complete-p attempt)))
+
 (defun speedo--run-by (key computer &optional attempts nocache nosave)
   "Get run from `speedo--data' by KEY.
 If there is no run by that key or NOCACHE is non-nil, compute the run with
