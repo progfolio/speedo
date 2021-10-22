@@ -885,46 +885,39 @@ Reset timers."
          (segment-count (length segments))
          splits)
     (dotimes (index segment-count)
-      (let* ((current-line (= index speedo--segment-index))
+      (let* ((attempt (if speedo--review (speedo-target-last-attempt) speedo--current-attempt))
+             (current-line (= index speedo--segment-index))
              (segment (nth index segments))
              (name (let ((n (plist-get segment :name)))
                      (if current-line (propertize n 'face 'speedo-current-line) n)))
              (target-splits (plist-get speedo--target-attempt :splits))
+             (attempt-splits (plist-get attempt :splits))
              (current-face '(:inherit (speedo-current-line speedo-comparison-line)))
              (best-split
               (when-let ((best (nth index speedo--best-segments))
                          (segment-duration
-                          (plist-get
-                           (nth index (plist-get (if speedo--review
-                                                     (speedo-target-last-attempt)
-                                                   speedo--current-attempt)
-                                                 :splits))
-                           :duration)))
+                          (plist-get (nth index attempt-splits) :duration)))
                 (< segment-duration best)))
              (comparison
-              (let* ((s
-                      (or (when (and target-splits
-                                     (or speedo--current-attempt speedo--review))
-                            (speedo--relative-time
-                             (speedo--splits-duration
-                              (cl-subseq target-splits 0
-                                         (min (+ index 1) (length target-splits))))
-                             (speedo--splits-duration
-                              (when-let ((splits (plist-get (if speedo--review
-                                                                (speedo-target-last-attempt)
-                                                              speedo--current-attempt)
-                                                            :splits)))
-                                (cl-subseq splits 0 (min (+ index 1) (length splits)))))))
-                          speedo-text-place-holder)))
+              (let* ((s (or
+                         (when (and target-splits
+                                    (or speedo--current-attempt
+                                        (and speedo--review
+                                             (plist-get (nth index attempt-splits)
+                                                        :duration))))
+                           (speedo--relative-time
+                            (speedo--splits-duration
+                             (cl-subseq target-splits 0
+                                        (min (+ index 1) (length target-splits))))
+                            (speedo--splits-duration
+                             (when-let ((splits (plist-get attempt :splits)))
+                               (cl-subseq splits 0 (min (+ index 1) (length splits)))))))
+                         speedo-text-place-holder)))
                 (when current-line (setq s (propertize s 'comparison-timer t)))
                 (if best-split (propertize s 'face 'speedo-pb) s)))
              (speedo--time-formatter #'speedo--time-format-rounded)
              (split-time
-              (let ((s (or (when-let ((current (speedo--split-time-relative
-                                                (if speedo--review
-                                                    (speedo-target-last-attempt)
-                                                  speedo--current-attempt)
-                                                index)))
+              (let ((s (or (when-let ((current (speedo--split-time-relative attempt index)))
                              (speedo--format-ms current))
                            (when-let ((target (speedo--split-time-relative
                                                speedo--target-attempt index)))
