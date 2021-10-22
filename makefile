@@ -4,13 +4,13 @@
 #$ make -e
 EMACS = emacs
 
-
 .PHONY: all
 all:  clean compile check
 compile: speedo.elc
 check: speedo.elc
-	$(EMACS) -Q --batch -L . -l ert -l ./test/speedo-test.el \
---eval "(let ((ert-quiet t)) (require 'speedo-ert-print-hack) (ert-run-tests-batch-and-exit))"
+	$(EMACS) -Q --batch -L . -L ./test \
+					 -l ert -l speedo-ert-print-hack -l speedo-test \
+           --eval "(let ((ert-quiet t)) (ert-run-tests-batch-and-exit))"
 clean:
 	rm -f speedo.elc
 .SUFFIXES: .el .elc
