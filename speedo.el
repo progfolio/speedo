@@ -1304,7 +1304,6 @@ If HIDE is non-nil, do not display `speedo-buffer' after loading."
                 (goto-char (1- (point)))
                 (insert "\n"
                         (cond
-                         ;;@TODO: support repeating character
                          ((characterp it)
                           (make-string (- (line-end-position) (line-beginning-position))
                                        it))
