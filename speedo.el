@@ -23,6 +23,7 @@
 (require 'speedo-vars)
 (require 'speedo-faces)
 
+(declare-function speedo-save-file "speedo-commands" (&optional force))
 
 ;;; Functions
 (defun speedo--plist-get* (plist &rest path)
@@ -762,104 +763,6 @@ If `speedo-confirm-evaluate' is non-nil, confirm before evaluation."
                  obarray)
     (nreverse symbols)))
 
-(defun speedo--goto-index ()
-  "Move point to segment assoicated with `speedo--segment-index'."
-  (when (< speedo--segment-index (length (plist-get speedo--data :segments)))
-    (goto-char (point-min))
-    (while (not (= (if-let ((id (tabulated-list-get-id))) id -100) speedo--segment-index))
-      (forward-line))))
-
-;;; Commands
-(defun speedo-new-game (title &optional category dir &rest segments)
-  "Write new database for game with TITLE to DIR.
-DIR is optional and defaults to `speedo-directory'.
-CATEGORY and SEGMENTS are added to the DB structure if provided.
-When called interactivley, prompt for optional values."
-  (interactive "stitle: \nscategory: ")
-  (let ((file (expand-file-name
-               (replace-regexp-in-string "\\(?:[[:space:]]+\\)" "-" title)
-               (or dir speedo-directory)))
-        (index 0)
-        segment)
-    (unless (or segments (not (called-interactively-p 'interactive)))
-      (while (not (string-empty-p
-                   (setq segment (read-string (format "segment %d (empty to exit): "
-                                                      (cl-incf index))))))
-        (push segment segments))
-      (setq segments (nreverse segments)))
-    (speedo--write-data
-     (list :title title
-           :category category
-           :segments (mapcar (lambda (segment) (list :name segment))
-                             segments))
-     file nil nil nil 'must-be-new)))
-
-(defun speedo-next ()
-  "Start the next segment or a new attempt."
-  (interactive)
-  (with-current-buffer speedo-buffer
-    (if speedo--current-attempt
-        (let ((last (1- (length (plist-get speedo--current-attempt :splits)))))
-          (speedo--split-end)
-          (when (= speedo--segment-index last) (speedo--attempt-end)))
-      (speedo--attempt-init))
-    (cl-incf speedo--segment-index)
-    (speedo--split-start)
-    (speedo--display-ui)
-    (speedo--refresh-header)
-    (unless speedo--current-attempt (speedo--display-timers))
-    (speedo--goto-index)))
-
-(defun speedo-previous ()
-  "Select the previous segment."
-  (interactive)
-  (with-current-buffer speedo-buffer
-    (unless speedo--current-attempt (user-error "No attempt in progress"))
-    (when (= speedo--segment-index 0) (user-error "No previous segment"))
-    ;; clear out attempt data for this split and the previous
-    (let ((current (speedo--current-split)))
-      (setf current (plist-put current :duration nil)))
-    (cl-decf speedo--segment-index)
-    (let ((current (speedo--current-split)))
-      (setf current (plist-put current :duration nil)))
-    (speedo--goto-index)
-    (speedo--display-ui)))
-
-(defun speedo-mistake ()
-  "Record a mistake in the current split."
-  (interactive)
-  (if speedo--current-attempt
-      (let ((current (speedo--current-split)))
-        (setf current
-              (plist-put current :mistakes
-                         (append  (plist-get current :mistakes)
-                                  (list (- (speedo--timestamp)
-                                           (plist-get speedo--current-attempt :start))))))
-        (speedo--footer-mistakes)
-        (message "mistake recorded"))
-    (user-error "No run in progress")))
-
-(defun speedo-reset ()
-  "Reset the current attempt if it is in progress.
-If no attempt is in progress, clear the UI times."
-  (interactive)
-  (if (not speedo--current-attempt)
-      (speedo--clear)
-    (setq speedo--current-attempt
-          (plist-put speedo--current-attempt :reset
-                     (- (speedo--timestamp)
-                        (plist-get speedo--current-attempt :start))))
-    (speedo--attempt-end)
-    (setq speedo--segment-index -1)
-    (speedo--display-ui)))
-
-(defun speedo-bury ()
-  "Bury the `speedo-buffer'."
-  (interactive)
-  (with-current-buffer speedo-buffer
-    (internal-show-cursor (selected-window) t) ;;show hidden cursor
-    (bury-buffer)))
-
 (defun speedo--convert-data (data &optional human)
   "Return a copy of converted DATA.
 If HUMAN is non-nil convert data to readable timestamps.
@@ -927,16 +830,6 @@ ARGS are passed to `write-region'"
       (indent-region (point-min) (point-max))
       (apply #'write-region `(,(point-min) ,(point-max) ,file ,@args)))))
 
-(defun speedo-save-file (&optional force)
-  "Save `speedo--data' to `speedo--data-file'.
-If FORCE is non-nil, save without checking if data has been modified."
-  (interactive "P")
-  (if (or force (speedo--data-modified-p))
-      (speedo--write-data
-       (speedo--convert-data speedo--data 'human)
-       speedo--data-file)
-    (message "(No changes need to be saved)")))
-
 (defun speedo--nth-target (n)
   "Compare against Nth relative target in `speedo-comparison-targets'.
 Negative N cycles backward, positive forward."
@@ -950,16 +843,6 @@ Negative N cycles backward, positive forward."
   (speedo--display-ui)
   (speedo--display-timers))
 
-(defun speedo-comparison-next (&optional n)
-  "Compare against Nth next standard in `speedo-comparison-targets'."
-  (interactive "p")
-  (speedo--nth-target (or n 1)))
-
-(defun speedo-comparison-previous (&optional n)
-  "Compare against Nth next standard in `speedo-comparison-targets'."
-  (interactive "p")
-  (speedo--nth-target (- (or n 1))))
-
 (defun speedo--load-file (file)
   "Load a splits FILE."
   (if-let ((data (speedo--read-file file)))
@@ -971,39 +854,6 @@ Negative N cycles backward, positive forward."
                 speedo--data-file file)
         (speedo--target-attempt (cdr speedo--comparison-target)))
     (error "Could not load: %S. Malformed?" file)))
-
-;;;###autoload
-(defun speedo-load-file (&optional file)
-  "Load a splits FILE.
-If HIDE is non-nil, do not display `speedo-buffer' after loading."
-  (interactive (if speedo--current-attempt
-                   (user-error "Cannot Load file while attempt is in progress")
-                 (list (read-file-name "Splits file: " speedo-directory))))
-  (cond
-   (speedo--current-attempt (user-error "Cannot Load file while attempt is in progress"))
-   ((and (speedo--data-modified-p)
-         (y-or-n-p (format "%S modified. Save before loading %s? "
-                           speedo--data-file file)))
-    ;; Force because we just checked for modifications above
-    (speedo-save-file 'force)))
-  (speedo--load-file file)
-  (unless (string= (buffer-name (current-buffer)) speedo-buffer)
-    (switch-to-buffer (get-buffer-create speedo-buffer)))
-  (speedo-mode))
-
-;;;###autoload
-(defun speedo ()
-  "Open the splits buffer."
-  (interactive)
-  (if speedo--data
-      (unless (string= (buffer-name (current-buffer)) speedo-buffer)
-        (switch-to-buffer (get-buffer-create speedo-buffer) nil)
-        (set-window-dedicated-p (selected-window) t)
-        (when speedo-hide-cursor (speedo--hide-cursor))
-        (unless (derived-mode-p 'speedo-mode) (speedo-mode)))
-    (speedo-load-file
-     (when speedo-default-splits-file
-       (expand-file-name speedo-default-splits-file speedo-directory)))))
 
 (defun speedo--ui-init ()
   "Initialize format of the UI."
