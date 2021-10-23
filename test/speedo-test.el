@@ -147,10 +147,10 @@ It must be a non-empty plist with at least the following keys:
   :tags '(stub)
   (skip-unless nil))
 
-(ert-deftest speedo--sub-hour-formatter ()
+(ert-deftest speedo--formatter-sub-hour ()
   :tags '(internal)
-  (should-error (speedo--sub-hour-formatter nil nil nil nil) :type 'wrong-type-argument)
-  (speedo-test-with-transput (should (string= (speedo--sub-hour-formatter ,@in) ,out))
+  (should-error (speedo--formatter-sub-hour nil nil nil nil) :type 'wrong-type-argument)
+  (speedo-test-with-transput (should (string= (speedo--formatter-sub-hour ,@in) ,out))
     (nil 0 0 0) "0:00.0"
     (0 0 0 0)   "0:00.0"
     (0 0 0 100) "0:00.1"
@@ -220,11 +220,11 @@ It must be a non-empty plist with at least the following keys:
   :tags '(internal)
   (should (eq (speedo--timestamp (date-to-time "1970-01-01 00:01:00+00:00")) 60000)))
 
-(ert-deftest speedo--compact-time-formatter ()
+(ert-deftest speedo--formatter-compact ()
   "Return shortest time string from H M S MS."
   :tags '(internal)
   (speedo-test-with-transput
-      (should (string= (speedo--compact-time-formatter ,@in) ,out))
+      (should (string= (speedo--formatter-compact ,@in) ,out))
     (0 0 0 0)   "0"
     (0 0 0 1)   "0.001"
     (0 0 0 100) "0.100" ;@BUG?: should this drop trailing zeros?
@@ -244,8 +244,8 @@ It must be a non-empty plist with at least the following keys:
      (should (string= (speedo--format-ms ,in) ,out)))
    (formatter                     in    out)
    nil                            60000 "1:00"
-   speedo--compact-time-formatter 60000 "1:00"
-   speedo--sub-hour-formatter     60000 "1:00.0"))
+   speedo--formatter-compact 60000 "1:00"
+   speedo--formatter-sub-hour     60000 "1:00.0"))
 
 (provide 'speedo-test)
 ;;; speedo-test.el ends here

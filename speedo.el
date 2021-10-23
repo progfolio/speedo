@@ -26,6 +26,15 @@
 (declare-function speedo-save-file "speedo-commands" (&optional force))
 
 ;;; Functions
+
+;;;; Utilities
+(defun speedo--goto-index ()
+  "Move point to segment assoicated with `speedo--segment-index'."
+  (when (< speedo--segment-index (length (plist-get speedo--data :segments)))
+    (goto-char (point-min))
+    (while (not (= (if-let ((id (tabulated-list-get-id))) id -100) speedo--segment-index))
+      (forward-line))))
+
 (defun speedo--plist-get* (plist &rest path)
   "Return PLIST value along key PATH.
 PATH is a list of keywords which are nested within one another.
@@ -60,6 +69,38 @@ This is different from setting KEYS to nil."
         (push (plist-get plist keyword) result)
         (push keyword result)))))
 
+(defun speedo--relative-time (a b)
+  "Return formatted timestring of B to A.
+Times should be provided in ms.
+Return nil if A or B is absent."
+  (when (and a b)
+    (let* ((previous (- a b))
+           (sign (cond
+                  ((< previous 0) "+")
+                  ((> previous 0) "-")
+                  (t " ")))
+           (time (speedo--format-ms (abs previous))))
+      (setq time (substring time (string-match-p "[^0:]" time)))
+      (when (string-prefix-p "." time) (setq time (concat "0" time)))
+      (propertize (concat sign time)
+                  'face (cond
+                         ((< previous 0) 'speedo-behind)
+                         ((> previous 0) 'speedo-ahead)
+                         (t 'speedo-neutral))))))
+
+;;;; Predicates
+(defun speedo--attempt-complete-p (attempt)
+  "Return t if ATTEMPT is complete, else nil."
+  (not (plist-member attempt :reset)))
+
+(defun speedo--attempt-ignored-p (attempt)
+  "Return t if ATTEMPT is tagged \"ignore\"."
+  (member "ignore" (plist-get attempt :tags)))
+
+(defun speedo--attempt-incomplete-p (attempt)
+  "Return t if ATTEMPT is incomplete, else nil."
+  (not (speedo--attempt-complete-p attempt)))
+
 (defun speedo--database-p (obj)
   "Return t if OBJ is a well formed database object.
 It must be a non-empty plist with at least the following keys:
@@ -68,6 +109,11 @@ It must be a non-empty plist with at least the following keys:
   (and obj (listp obj)
        (cl-every (lambda (requirement) (plist-member obj requirement))
                  '(:title :segments))))
+
+(defun speedo--data-modified-p ()
+  "Return t if `speedo--data' and `speedo--data-file' are not `equal'."
+  (when (and speedo--data speedo--data-file)
+    (not (equal speedo--data (speedo--convert-data (speedo--read-file speedo--data-file))))))
 
 (defun speedo--read-file (file)
   "Read FILE into an elisp object."
@@ -82,13 +128,8 @@ It must be a non-empty plist with at least the following keys:
               (signal 'wrong-type-argument (list 'speedo--database-p obj))))))
     (error (user-error "Speedo could not read %S: %S" file err))))
 
-(defun speedo--data-modified-p ()
-  "Return t if `speedo--data' and `speedo--data-file' are not `equal'."
-  (when (and speedo--data speedo--data-file)
-    (not (equal speedo--data (speedo--convert-data (speedo--read-file speedo--data-file))))))
-
 ;;;; Timer
-(defun speedo--sub-hour-formatter (_hours minutes seconds ms)
+(defun speedo--formatter-sub-hour (_hours minutes seconds ms)
   "Display MINUTES:SECONDS.MS."
   (format "%d:%02d.%1d"  minutes seconds (/ ms 100)))
 
@@ -139,7 +180,7 @@ It must be a non-empty plist with at least the following keys:
   (+ (* 1000 (string-to-number (format-time-string "%s" time)))
      (string-to-number (format-time-string "%3N" time))))
 
-(defun speedo--compact-time-formatter (h m s ms)
+(defun speedo--formatter-compact (h m s ms)
   "Return shortest time string from H M S MS."
   (concat
    (cond ((> h 0) (format "%d:%02d:%02d" h m s))
@@ -159,12 +200,12 @@ Formatter is called with hours, minutes, seconds, milliseconds."
          ;; using mod to check would truncate the hours
          ;; in cases where hours % 60 = 0
          (hours (/ n  (* 60 60))))
-    (funcall (or speedo--time-formatter #'speedo--compact-time-formatter)
+    (funcall (or speedo--time-formatter #'speedo--formatter-compact)
              hours minutes seconds milliseconds)))
 
 (defun speedo-total-play-time (&optional attempts)
   "Return sum of ATTEMPTS durations as timestamp."
-  (let ((speedo--time-formatter #'speedo--compact-time-formatter))
+  (let ((speedo--time-formatter #'speedo--formatter-compact))
     (speedo--format-ms
      (apply #'+
             (flatten-tree
@@ -179,10 +220,6 @@ If a split is missing a :duration, return nil."
   (condition-case _
       (cl-reduce #'+ splits :key (lambda (s) (plist-get s :duration)) :initial-value 0)
     (error nil)))
-
-(defun speedo--attempt-ignored-p (attempt)
-  "Return t if ATTEMPT is tagged \"ignore\"."
-  (member "ignore" (plist-get attempt :tags)))
 
 (defun speedo--attempts (&optional filter)
   "Return possibly FILTERed attempts.
@@ -207,14 +244,6 @@ If nil, FILTER defaults to ignoring attempts tagged with \"ignore\"."
     (dotimes (n (length (plist-get speedo--data :segments)))
       (push (speedo--segment-pb n) durations))
     (nreverse durations)))
-
-(defun speedo--attempt-complete-p (attempt)
-  "Return t if ATTEMPT is complete, else nil."
-  (not (plist-member attempt :reset)))
-
-(defun speedo--attempt-incomplete-p (attempt)
-  "Return t if ATTEMPT is incomplete, else nil."
-  (not (speedo--attempt-complete-p attempt)))
 
 (defun speedo--run-by (key computer &optional attempts nocache nosave)
   "Get run from `speedo--data' by KEY.
@@ -261,25 +290,6 @@ IF NOSAVE is non-nil, do not cache the result."
                      :key (lambda (run)
                             (speedo--splits-duration (plist-get run :splits))))))
    attempts nocache nosave))
-
-(defun speedo--relative-time (a b)
-  "Return formatted timestring of B to A.
-Times should be provided in ms.
-Return nil if A or B is absent."
-  (when (and a b)
-    (let* ((previous (- a b))
-           (sign (cond
-                  ((< previous 0) "+")
-                  ((> previous 0) "-")
-                  (t " ")))
-           (time (speedo--format-ms (abs previous))))
-      (setq time (substring time (string-match-p "[^0:]" time)))
-      (when (string-prefix-p "." time) (setq time (concat "0" time)))
-      (propertize (concat sign time)
-                  'face (cond
-                         ((< previous 0) 'speedo-behind)
-                         ((> previous 0) 'speedo-ahead)
-                         (t 'speedo-neutral))))))
 
 (defun speedo-target-world-record ()
   "Return world record run."
@@ -558,7 +568,7 @@ Time should be accesed by views via the `speedo--timer' variable."
     (speedo--insert-footer)
     (run-hooks 'speedo-post-ui-display-hook)))
 
-(defun speedo--refresh-header ()
+(defun speedo--update-header ()
   "Refresh the header."
   (with-current-buffer speedo-buffer
     (setq header-line-format
@@ -582,7 +592,7 @@ Time should be accesed by views via the `speedo--timer' variable."
               (mapcar (lambda (segment) (list :segment (plist-get segment :name)))
                       (plist-get speedo--data :segments))))
   (speedo--target-attempt (cdr speedo--comparison-target))
-  (speedo--refresh-header)
+  (speedo--update-header)
   (speedo--display-ui)
   (speedo--timer-start))
 
@@ -662,8 +672,8 @@ Reset timers."
   "Display rounded MINUTES SECONDS MS."
   (format "%02d:%02d" minutes (min 59 (round (+ seconds (/ ms 1000.0))))))
 
-(defun speedo--ui-splits ()
-  "Return a list of splits for UI."
+(defun speedo--timer-rows ()
+  "Return a list of table rows for timer."
   (let* ((segments (plist-get speedo--data :segments))
          (segment-count (length segments))
          splits)
@@ -774,7 +784,7 @@ sacrificing performance at runtime."
         (fn (if human #'speedo--format-ms
               #'speedo--time-string-to-ms))
         ;; losless formatter
-        (speedo--time-formatter #'speedo--compact-time-formatter))
+        (speedo--time-formatter #'speedo--formatter-compact))
     (dolist (attempt (plist-get data :attempts) data)
       (setq attempt
             (plist-put attempt :start
@@ -855,7 +865,7 @@ Negative N cycles backward, positive forward."
         (speedo--target-attempt (cdr speedo--comparison-target)))
     (error "Could not load: %S. Malformed?" file)))
 
-(defun speedo--ui-init ()
+(defun speedo--timer-columns-init ()
   "Initialize format of the UI."
   (setq tabulated-list-format
         ;;@INCOMPLETE: widths of columns should be defcustoms
@@ -888,11 +898,11 @@ Negative N cycles backward, positive forward."
     (hl-line-mode))
   (add-hook 'kill-emacs-hook #'speedo--ask-to-save)
   (setq buffer-face-mode-face 'speedo-default
-        tabulated-list-entries #'speedo--ui-splits
+        tabulated-list-entries #'speedo--timer-rows
         default-directory (file-name-directory speedo--data-file))
   (buffer-face-mode)
-  (speedo--refresh-header)
-  (speedo--ui-init)
+  (speedo--update-header)
+  (speedo--timer-columns-init)
   (speedo--display-ui))
 
 ;;;; Key bindings
