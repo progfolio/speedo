@@ -411,13 +411,13 @@ If CACHE is non-nil, use the cache."
                             (t       'speedo-timer)))))))
         nil))))
 
-(defun speedo--display-run-timer ()
-  "Display the run timer."
+(defun speedo--timer-display-start ()
+  "Start timer to display UI timers."
   (when speedo--ui-timer-object (cancel-timer speedo--ui-timer-object))
   (setq speedo--ui-timer-object (run-with-timer 0 0.1 #'speedo--display-timers)))
 
 (defun speedo--timer-start ()
-  "Start the timer. Time is updated in milliseconds every tenth of a seocond.
+  "Start the game timer. Time is updated in milliseconds every tenth of a seocond.
 Time should be accesed by views via the `speedo--timer' variable."
   ;;ensure only a single timer is running.
   (when speedo--timer-object (cancel-timer speedo--timer-object))
@@ -425,7 +425,7 @@ Time should be accesed by views via the `speedo--timer' variable."
     (setq speedo--timer-object
           (run-with-timer
            0 0.1 (lambda () (setq speedo--timer (- (speedo--timestamp) start))))))
-  (speedo--display-run-timer))
+  (speedo--timer-display-start))
 
 (defun speedo--footer ()
   "Return propertized footer string as determined by `speedo-footer-format'."
