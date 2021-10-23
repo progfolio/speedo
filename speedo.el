@@ -343,105 +343,73 @@ If CACHE is non-nil, use the cache."
               speedo--target-attempt result)))))
 
 ;;@UI: can we use replace-region to avoid timer strings flickering?
-(defun speedo--attempt-in-progress-timer ()
-  "Display the timer string while an attempt is in progress."
-  (let (ahead behind gaining losing)
-    (when-let* ((target-splits (plist-get speedo--target-attempt :splits))
-                (target-index (max 0 (min speedo--segment-index (1- (length target-splits)))))
-                (target-split-duration
-                 (plist-get (nth target-index target-splits) :duration))
-                (target-previous-duration
-                 (speedo--splits-duration
-                  (cl-subseq target-splits 0 (max target-index 1))))
-                (split-duration (- (speedo--timestamp)
-                                   (plist-get (speedo--current-split) :start)))
-                (previous-duration
-                 (or (speedo--splits-duration
-                      (cl-subseq
-                       (plist-get speedo--current-attempt :splits)
-                       0 (max speedo--segment-index 1)))
-                     ;;in case of first split, there is no previous duration
-                     0))
-                (current-total (+ split-duration previous-duration))
-                ;; we don't want to double target-total in case of first split
-                (target-total (+ target-split-duration
-                                 (if (zerop speedo--segment-index)
-                                     0
-                                   target-previous-duration)))
-                (speedo--time-formatter #'speedo--sub-hour-formatter))
-      (let ((current-segment-behind (> split-duration target-split-duration)))
-        (setq ahead   (< current-total target-total)
-              behind  (> current-total target-total)
-              losing  (and ahead current-segment-behind)
-              gaining (and behind (< split-duration target-split-duration)))
-        (when (or losing behind)
-          (when-let ((current-relative (text-property-search-forward 'comparison-timer)))
-            (put-text-property (prop-match-beginning current-relative)
-                               (prop-match-end current-relative)
-                               'display (speedo--relative-time target-total
-                                                               current-total)))
-          (when current-segment-behind
-            (save-excursion
-              (when-let ((live-segment (text-property-search-forward 'speedo-previous)))
-                (put-text-property (prop-match-beginning live-segment)
-                                   (prop-match-end live-segment)
-                                   'display (format speedo-footer-live-segment-format
-                                                    (speedo--relative-time target-split-duration
-                                                                           split-duration)))))))))
-    (when-let ((timer (text-property-search-forward 'speedo-timer)))
-      (put-text-property
-       (prop-match-beginning timer) (prop-match-end timer)
-       'display
-       (when (or speedo--current-attempt speedo--review)
-         (propertize (speedo--format-ms speedo--timer)
-                     'face
-                     (cond
-                      (gaining '(:inherit (speedo-gaining speedo-timer)))
-                      (losing  '(:inherit (speedo-losing speedo-timer)))
-                      ((and ahead (not speedo--current-attempt))
-                       '(:inherit (speedo-pb speedo-timer)))
-                      (ahead   '(:inherit (speedo-ahead speedo-timer)))
-                      (behind  '(:inherit (speedo-behind speedo-timer)))
-                      (t       'speedo-timer)))))))
-  nil)
-
-(defun speedo--review-timer ()
-  "Display the timer during a run review."
-  (when-let ((ui (text-property-search-forward 'speedo-timer)))
-    (let* ((last-attempt (speedo-target-last-attempt))
-           (last-splits (plist-get last-attempt :splits))
-           (last (speedo--splits-duration
-                  (cl-remove-if-not (lambda (split) (plist-get split :duration))
-                                    last-splits)))
-           (complete (speedo--attempt-complete-p last-attempt))
-           (pb (speedo--splits-duration (plist-get (speedo--run-pb) :splits)))
-           (target (speedo--splits-duration (plist-get speedo--target-attempt :splits)))
-           (new-pb (= pb last))
-           (gaining (and target (< last target)))
-           (losing (and target (not (zerop target)) (> last target)))
-           (behind (and losing complete))
-           (ahead (and gaining complete))
-           (timer (propertize (speedo--format-ms last)
-                              'face `(:inherit (,(cond
-                                                  (new-pb  'speedo-pb)
-                                                  (ahead   'speedo-ahead)
-                                                  (behind  'speedo-behind)
-                                                  (gaining 'speedo-gaining)
-                                                  (losing  'speedo-losing)
-                                                  (t       'speedo-neutral))
-                                                speedo-timer)))))
-      (put-text-property (prop-match-beginning ui) (prop-match-end ui) 'display timer))))
-
 (defun speedo--display-timers ()
-  "Display UI timers."
+  "Display the global, live segment, and segment comparison timers."
   (with-current-buffer speedo-buffer
-    (with-silent-modifications
-      (save-excursion
+    (save-excursion
+      (with-silent-modifications
         (goto-char (point-min))
-        (cond
-         (speedo--current-attempt (speedo--attempt-in-progress-timer))
-         (speedo--review (speedo--review-timer))
-         (t nil))))))
+        (let (ahead behind gaining losing)
+          (when-let* ((target-splits (plist-get speedo--target-attempt :splits))
+                      (target-index (max 0 (min speedo--segment-index (1- (length target-splits)))))
+                      (target-split-duration
+                       (plist-get (nth target-index target-splits) :duration))
+                      (target-previous-duration
+                       (speedo--splits-duration
+                        (cl-subseq target-splits 0 (max target-index 1))))
+                      (current-split (speedo--current-split))
+                      (split-duration (- (speedo--timestamp)
+                                         (plist-get current-split :start)))
+                      (previous-duration
+                       (or (speedo--splits-duration
+                            (cl-subseq
+                             (plist-get speedo--current-attempt :splits)
+                             0 (max speedo--segment-index 1)))
+                           ;;in case of first split, there is no previous duration
+                           0))
+                      (current-total (+ split-duration previous-duration))
+                      ;; we don't want to double target-total in case of first split
+                      (target-total (+ target-split-duration
+                                       (if (zerop speedo--segment-index)
+                                           0
+                                         target-previous-duration)))
+                      (speedo--time-formatter #'speedo--formatter-sub-hour))
+            (let ((current-segment-behind (> split-duration target-split-duration)))
+              (setq ahead   (< current-total target-total)
+                    behind  (> current-total target-total)
+                    losing  (and ahead current-segment-behind)
+                    gaining (and behind (< split-duration target-split-duration)))
+              (when (and speedo--attempt-in-progress (or losing behind))
+                (when-let ((current-relative (text-property-search-forward 'comparison-timer)))
+                  (put-text-property (prop-match-beginning current-relative)
+                                     (prop-match-end current-relative)
+                                     'display (speedo--relative-time target-total
+                                                                     current-total)))
+                (when current-segment-behind
+                  (save-excursion
+                    (when-let ((live-segment (text-property-search-forward 'speedo-previous)))
+                      (put-text-property (prop-match-beginning live-segment)
+                                         (prop-match-end live-segment)
+                                         'display (format speedo-footer-live-segment-format
+                                                          (speedo--relative-time target-split-duration
+                                                                                 split-duration)))))))))
+          (when-let ((timer speedo--timer)
+                     (timer-ui (text-property-search-forward 'speedo-timer)))
+            (put-text-property
+             (prop-match-beginning timer-ui) (prop-match-end timer-ui)
+             'display
+             (when speedo--current-attempt
+               (propertize (speedo--format-ms timer)
+                           'face
+                           (cond
+                            (gaining '(:inherit (speedo-gaining speedo-timer)))
+                            (losing  '(:inherit (speedo-losing speedo-timer)))
+                            ((and ahead (not speedo--current-attempt))
+                             '(:inherit (speedo-pb speedo-timer)))
+                            (ahead   '(:inherit (speedo-ahead speedo-timer)))
+                            (behind  '(:inherit (speedo-behind speedo-timer)))
+                            (t       'speedo-timer)))))))
+        nil))))
 
 (defun speedo--display-run-timer ()
   "Display the run timer."
@@ -480,8 +448,8 @@ Time should be accesed by views via the `speedo--timer' variable."
 
 (defun speedo--footer-previous-split-time ()
   "Insert previous split relative time in UI."
-  (when (and (or speedo--current-attempt
-                 speedo--review)
+  (when (and speedo--attempt-in-progress
+             speedo--current-attempt
              speedo--target-attempt
              ;; there is no previous for the first split
              (> speedo--segment-index 0))
@@ -527,7 +495,7 @@ Time should be accesed by views via the `speedo--timer' variable."
 
 (defun speedo--footer-mistakes ()
   "Insert mistake count in the UI."
-  (when (or speedo--current-attempt speedo--review)
+  (when speedo--current-attempt
     (save-excursion
       (goto-char (point-min))
       (with-silent-modifications
@@ -583,8 +551,8 @@ Time should be accesed by views via the `speedo--timer' variable."
   (let (speedo--comparison-target)
     (dolist (target speedo-comparison-targets)
       (speedo--target-attempt (cdr target))))
-  (setq speedo--segment-index -1
-        speedo--review nil
+  (setq speedo--attempt-in-progress t
+        speedo--segment-index -1
         speedo--best-segments (speedo--best-segments)
         speedo--current-attempt
         (list :start (speedo--timestamp)
@@ -612,35 +580,37 @@ Time should be accesed by views via the `speedo--timer' variable."
   (let ((current (speedo--current-split)))
     (setf current (plist-put current :start (speedo--timestamp)))))
 
+(defun speedo--data-add-attempt (attempt)
+  "Return `speedo--data' with ATTEMPT appended to :attempts."
+  (let ((cleaned
+         (plist-put attempt :splits
+                    (mapcar (lambda (split) (speedo--plist-remove split :start))
+                            (cl-remove-if-not (lambda (split) (plist-get split :duration))
+                                              (plist-get attempt :splits))))))
+    (setq speedo--data (plist-put speedo--data :attempts
+                                  (append (plist-get speedo--data :attempts)
+                                          (list (copy-tree cleaned)))))))
+
 (defun speedo--attempt-end ()
   "Save the current attempt to `speedo--data'.
 Reset timers."
-  (let* ((current speedo--current-attempt)
-         (cleaned (plist-put current :splits
-                             (mapcar (lambda (split) (speedo--plist-remove split :start))
-                                     (cl-remove-if-not (lambda (split) (plist-get split :duration))
-                                                       (plist-get current :splits))))))
-    (setq speedo--data (plist-put speedo--data :attempts
-                                  (append (plist-get speedo--data :attempts)
-                                          (list (copy-tree cleaned)))))
-    (message "attempt ended")
-    (setq speedo--current-attempt nil
-          speedo--review t)
-    (speedo--run-pb nil 'nocache)
-    (speedo--refresh-header)
-    (cancel-timer speedo--timer-object)
-    (cancel-timer speedo--ui-timer-object)))
+  (setq speedo--attempt-in-progress nil)
+  (cancel-timer speedo--timer-object)
+  (cancel-timer speedo--ui-timer-object)
+  (speedo--data-add-attempt speedo--current-attempt)
+  (speedo--run-pb nil 'nocache) ;; Last attempt may be new PB
+  (speedo--display-ui)
+  (speedo--update-header)
+  (message "attempt ended"))
 
 (defun speedo--clear ()
   "Clear the last attempts times from UI."
-  (with-current-buffer speedo-buffer
-    (setq speedo--review nil
-          speedo--timer nil
-          speedo--target-attempts nil)
-    (speedo--target-attempt (cdr speedo--comparison-target))
-    (speedo--display-ui)
-    (speedo--display-timers)
-    (goto-char (point-min))))
+  (setq speedo--timer nil
+        speedo--target-attempts nil
+        speedo--current-attempt nil)
+  (speedo--target-attempt (cdr speedo--comparison-target))
+  (speedo--display-ui)
+  (goto-char (point-min)))
 
 (defun speedo--hide-cursor ()
   "Hide cursor in `speedo-buffer'."
@@ -678,7 +648,7 @@ Reset timers."
          (segment-count (length segments))
          splits)
     (dotimes (index segment-count)
-      (let* ((attempt (if speedo--review (speedo-target-last-attempt) speedo--current-attempt))
+      (let* ((attempt speedo--current-attempt)
              (current-line (= index speedo--segment-index))
              (segment (nth index segments))
              (name (let ((n (plist-get segment :name)))
@@ -693,11 +663,7 @@ Reset timers."
                 (< segment-duration best)))
              (comparison
               (let* ((s (or
-                         (when (and target-splits
-                                    (or speedo--current-attempt
-                                        (and speedo--review
-                                             (plist-get (nth index attempt-splits)
-                                                        :duration))))
+                         (when (and target-splits speedo--current-attempt)
                            (speedo--relative-time
                             (speedo--splits-duration
                              (cl-subseq target-splits 0
@@ -857,8 +823,9 @@ Negative N cycles backward, positive forward."
   "Load a splits FILE."
   (if-let ((data (speedo--read-file file)))
       (prog1
-          (setq speedo--review nil
-                speedo--segment-index -1
+          (setq speedo--segment-index -1
+                speedo--current-attempt nil
+                speedo--attempt-in-progress nil
                 speedo--data (speedo--convert-data data)
                 speedo--comparison-target (car speedo-comparison-targets)
                 speedo--data-file file)
