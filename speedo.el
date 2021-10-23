@@ -848,6 +848,13 @@ Negative N cycles backward, positive forward."
          '("Comparison" 10)
          '("Time" 25))))
 
+(defun speedo--confirm-kill-buffer ()
+  "Clean up before killing `speedo-buffer'."
+  (when (and (string= (buffer-name (current-buffer)) speedo-buffer)
+             speedo--attempt-in-progress
+             (yes-or-no-p "Killing buffer will reset current attempt. Proceed?"))
+    (speedo--attempt-end)))
+
 (define-derived-mode speedo-mode tabulated-list-mode "speedo"
   "Major mode for speedrun split timer.
 
@@ -863,7 +870,8 @@ Negative N cycles backward, positive forward."
     (face-remap-set-base 'hl-line nil)
     (face-remap-add-relative 'hl-line 'speedo-hl-line)
     (hl-line-mode))
-  (add-hook 'kill-emacs-hook #'speedo--ask-to-save)
+  (add-hook 'kill-emacs-hook  #'speedo--ask-to-save)
+  (add-hook 'kill-buffer-hook #'speedo--confirm-kill-buffer nil t)
   (setq buffer-face-mode-face 'speedo-default
         tabulated-list-entries #'speedo--timer-rows
         default-directory (file-name-directory speedo--data-file))
