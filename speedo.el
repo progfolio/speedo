@@ -529,11 +529,15 @@ Time should be accesed by views via the `speedo--timer' variable."
       (speedo--footer-previous-split-time))))
 
 (defun speedo--display-ui ()
-  "Display the UI (sans header)."
+  "Display the UI table and footer (sans header)."
   (with-current-buffer speedo-buffer
-    (run-hooks 'speedo-pre-ui-display-hook)
-    (tabulated-list-print 'remember-pos 'update)
-    (speedo--insert-footer)
+    (let ((line (line-number-at-pos nil 'absolute)))
+      (run-hooks 'speedo-pre-ui-display-hook)
+      ;; Unfortunately, we can't rely on `tabulated-list-print' to remember our
+      (tabulated-list-print nil 'update)
+      (speedo--insert-footer)
+      (goto-char (point-min))
+      (forward-line (1- line)))
     (run-hooks 'speedo-post-ui-display-hook)))
 
 (defun speedo--update-header ()
