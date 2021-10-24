@@ -175,7 +175,8 @@ Returns a plist of form:
                  (car (cl-sort (mapcar (lambda (segment) (length (plist-get segment :name)))
                                        (plist-get speedo--data :segments))
                                #'>))))
-             8)))
+             8)
+            t))
           (target-attempt (car attempts)))
       (setq tabulated-list-format
             (vconcat
