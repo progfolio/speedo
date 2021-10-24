@@ -19,21 +19,26 @@
 ;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Commentary:
-
 ;;
 
 ;;; Code:
 (require 'speedo)
 
-(defun speedo-review--attempts ()
-  "Return a list of attempts."
+(defcustom speedo-review-include-target t
+  "If non-nil, consider `speedo--comparison-target' implicit target of comparisons."
+  :type  'boolean
+  :group 'speedo)
+
+(defun speedo-review-read-attempts (&optional collection)
+  "Return a list of attempts from COLLECTION.
+If COLLECTION is nil, use `speedo--data' or throw an error."
   (let* ((candidates
           (mapcar
            (lambda (attempt)
              (cons (string-trim
                     (string-join
                      (list
-                      (format-time-string "%Y-%m-%d %H:%M%p"
+                      (format-time-string "%Y-%m-%d %I:%M%p"
                                           (/ (plist-get attempt :start) 1000))
                       (if-let ((duration (speedo--format-ms
                                           (speedo--splits-duration
@@ -47,57 +52,11 @@
                                  (plist-get attempt :tags) " "))
                      " "))
                    attempt))
-           (plist-get speedo--data :attempts)))
+           (or collection (plist-get speedo--data :attempts))))
          (selections (delete-dups (completing-read-multiple "Attempts: " candidates))))
     (mapcar (lambda (selection) (alist-get selection candidates nil nil #'string=))
             selections)))
-
-(defcustom speedo-review-include-target t
-  "If non-nil, consider `speedo--comparison-target' implicit target of comparisons."
-  :type  'boolean
-  :group 'speedo)
-
-(defun speedo--compare-ui-init (attempts)
-  "Initialize comparison UI format for ATTEMPTS."
-  (with-current-buffer (get-buffer-create speedo-buffer)
-    (let ((segment-col
-           (list
-            "Segment"
-            (max
-             (floor
-              (* 1.2
-                 (car (cl-sort (mapcar (lambda (segment) (length (plist-get segment :name)))
-                                       (plist-get speedo--data :segments))
-                               #'>))))
-             8)))
-          (target-attempt (car attempts)))
-      (setq tabulated-list-format
-            (vconcat
-             (list segment-col)
-             (mapcar (lambda (a)
-                       (let ((alias (or (speedo--plist-get* a :alias)
-                                        (format-time-string
-                                         "%Y-%m-%d %H:%M%p"
-                                         (/ (plist-get a :start) 1000)))))
-                         (when (equal a target-attempt)
-                           (setq alias (propertize alias 'face '(:weight bold))))
-                         (list alias (1+ (length alias)))))
-                     attempts)
-             (list (list "Average" 10)))
-            tabulated-list-entries (speedo--compare-rows attempts)))
-    ;;(speedo--compare-header)
-    (tabulated-list-mode)
-    (tabulated-list-init-header)
-    (tabulated-list-print 'remember-pos 'update)))
-
-;; (defun speedo--compare-header ()
-;;   "Set the comparison header."
-;;   (with-current-buffer speedo-buffer
-;;     (setq header-line-format
-;;           (list (speedo--header-game-info) " "
-;;                 '(:propertize "Comparisons" face speedo-header-game-info)))))
-
-(defun speedo--compare-rows (attempts)
+(defun speedo-review--rows (attempts)
   "Return table rows for ATTEMPTS."
   (let* ((segments (plist-get speedo--data :segments))
          (segment-count (length segments))
@@ -170,18 +129,69 @@
                                    `((:splits ((:duration ,(cl-reduce #'+ segment-totals
                                                                       :key (lambda (it) (/ it (length attempts)))))))))))))))))
 
+(defun speedo-review--ui-init (attempts)
+  "Initialize comparison UI format for ATTEMPTS."
+  (with-current-buffer (get-buffer-create speedo-buffer)
+    (let ((segment-col
+           (list
+            "Segment"
+            (max
+             (floor
+              (* 1.2
+                 (car (cl-sort (mapcar (lambda (segment) (length (plist-get segment :name)))
+                                       (plist-get speedo--data :segments))
+                               #'>))))
+             8)))
+          (target-attempt (car attempts)))
+      (setq tabulated-list-format
+            (vconcat
+             (list segment-col)
+             (mapcar (lambda (a)
+                       (let ((alias (or (speedo--plist-get* a :alias)
+                                        (format-time-string
+                                         "%Y-%m-%d %I:%M%p"
+                                         (/ (plist-get a :start) 1000)))))
+                         (when (equal a target-attempt)
+                           (setq alias (propertize alias 'face '(:weight bold))))
+                         (list alias (1+ (length alias)))))
+                     attempts)
+             (list (list "Average" 10)))
+            tabulated-list-entries (speedo-review--rows attempts)))
+    ;;(speedo--review-header)
+    (tabulated-list-mode)
+    (tabulated-list-init-header)
+    (let ((tabulated-list-use-header-line nil))
+      (tabulated-list-print 'remember-pos 'update))))
+
+;; (defun speedo--review-header ()
+;;   "Set the comparison header."
+;;   (with-current-buffer speedo-buffer
+;;     (setq header-line-format
+;;           (list (speedo--header-game-info) " "
+;;                 '(:propertize "Comparisons" face speedo-header-game-info)))))
+
+
 
 (defun speedo-review (attempts)
   "Compare ATTEMPTS.
 If ATTEMPTS is nil, prompt user."
-  (interactive (list (speedo-review--attempts)))
-  attempts)
+  (interactive (list (speedo-review-read-attempts)))
+  (speedo-review--ui-init attempts)
+  (display-buffer speedo-buffer))
 
 (defun speedo-review-last (&optional n attempts)
   "Compare last N ATTEMPTS against target run."
   (interactive "N")
-  (speedo-review (last (or attempts (speedo--attempts)) n)))
+  (let ((attempts (last (or attempts (speedo--attempts)) n)))
+    (speedo-review attempts)))
 
+(defun speedo-review-top-runs (&optional n attempts)
+  "Compare top N complete ATTEMPTS."
+  (interactive "N")
+  (let ((runs (cl-sort (or attempts (speedo--attempts #'speedo--attempt-incomplete-p))
+                       #'<
+                       :key (lambda (a) (speedo--splits-duration (plist-get a :splits))))))
+    (speedo-review (cl-subseq runs 0 (min n (length runs))))))
 
 (provide 'speedo-review)
 ;;; speedo-review.el ends here
