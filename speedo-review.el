@@ -123,38 +123,38 @@ Returns a plist of form:
   (let ((rows (speedo-review--row-data attempts)))
     (mapcar
      (lambda (r)
-       (list (plist-get r :id)
-             (vconcat (list (plist-get r :name))
-                      (let ((times)
-                            (durations (plist-get r :durations))
-                            (relatives (plist-get r :relatives)))
-                        (dotimes (i (length durations))
-                          (push (concat
-                                 (format "%-8s"
-                                         (if-let ((duration (nth i durations)))
-                                             (speedo--format-ms duration)
-                                           speedo-text-place-holder))
-                                 (unless (zerop i)
-                                   (if-let ((relative (nth i relatives)))
-                                       (concat " "  (speedo--relative-time relative 0)))))
-                                times))
-
-
-                        (nreverse times))
-                      (list
-                       (concat
-                        (format "%-8s"
-                                (if-let ((average-duration (plist-get r :average-duration)))
-                                    (speedo--format-ms average-duration)
-                                  speedo-text-place-holder))
-                        (when-let ((average-relative (plist-get r :average-relative)))
-                          (speedo--relative-time average-relative 0))))
-                      (list
-                       (number-to-string
-                       (if-let ((consistency (plist-get r :consistency)))
-                           consistency
-                         -1))))))
-    rows)))
+       (let ((id (plist-get r :id)))
+         (list id
+               (vconcat (list (number-to-string (1+ id)))
+                        (list (plist-get r :name))
+                        (let ((times)
+                              (durations (plist-get r :durations))
+                              (relatives (plist-get r :relatives)))
+                          (dotimes (i (length durations))
+                            (push (concat
+                                   (format "%-8s"
+                                           (if-let ((duration (nth i durations)))
+                                               (speedo--format-ms duration)
+                                             speedo-text-place-holder))
+                                   (unless (zerop i)
+                                     (if-let ((relative (nth i relatives)))
+                                         (concat " "  (speedo--relative-time relative 0)))))
+                                  times))
+                          (nreverse times))
+                        (list
+                         (concat
+                          (format "%-8s"
+                                  (if-let ((average-duration (plist-get r :average-duration)))
+                                      (speedo--format-ms average-duration)
+                                    speedo-text-place-holder))
+                          (when-let ((average-relative (plist-get r :average-relative)))
+                            (speedo--relative-time average-relative 0))))
+                        (list
+                         (number-to-string
+                          (if-let ((consistency (plist-get r :consistency)))
+                              consistency
+                            -1)))))))
+     rows)))
 
 (defun speedo-review--sort-consistencies (a b)
   "Sort table rows A and B by consistency."
@@ -179,6 +179,7 @@ Returns a plist of form:
           (target-attempt (car attempts)))
       (setq tabulated-list-format
             (vconcat
+             (list (list "ID" 4 (lambda (a b) (< (car a) (car b)))))
              (list segment-col)
              (mapcar (lambda (a)
                        (let ((alias (or (speedo--plist-get* a :alias)
