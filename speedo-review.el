@@ -210,6 +210,7 @@ Returns a plist of form:
 
 
 
+;;;###autoload
 (defun speedo-review (attempts)
   "Compare ATTEMPTS.
 If ATTEMPTS is nil, prompt user."
@@ -217,15 +218,17 @@ If ATTEMPTS is nil, prompt user."
   (speedo-review--ui-init attempts)
   (display-buffer speedo-buffer))
 
+;;;###autoload
 (defun speedo-review-last (&optional n attempts)
   "Compare last N ATTEMPTS against target run."
   (interactive "N")
   (let ((attempts (last (or attempts (speedo--attempts)) n)))
     (speedo-review attempts)))
 
+;;;###autoload
 (defun speedo-review-top-runs (&optional n attempts)
   "Compare top N complete ATTEMPTS."
-  (interactive "N")
+  (interactive "NHow many runs?: ")
   (let ((runs (cl-sort (or attempts (speedo--attempts #'speedo--attempt-incomplete-p))
                        #'<
                        :key (lambda (a) (speedo--splits-duration (plist-get a :splits))))))
