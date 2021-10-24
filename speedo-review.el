@@ -105,9 +105,8 @@ Returns a plist of form:
                              (let ((deviations
                                     (mapcar (lambda (time) (abs (- average-relative time)))
                                             (plist-get row :relatives))))
-                               (/ 1.0
-                                  (/ (cl-reduce #'+ deviations)
-                                     (length deviations))))))))
+                               (/ 1.0 (/ (cl-reduce #'+ deviations)
+                                         (length deviations))))))))
     ;;normalize consistency values to rankings
     (setq rows (nreverse rows))
     (let* ((sorted (cl-sort (cl-remove-if-not (lambda (r) (plist-get r :consistency))
@@ -200,15 +199,6 @@ Returns a plist of form:
     (tabulated-list-init-header)
     (let ((tabulated-list-use-header-line nil))
       (tabulated-list-print 'remember-pos 'update))))
-
-;; (defun speedo--review-header ()
-;;   "Set the comparison header."
-;;   (with-current-buffer speedo-buffer
-;;     (setq header-line-format
-;;           (list (speedo--header-game-info) " "
-;;                 '(:propertize "Comparisons" face speedo-header-game-info)))))
-
-
 
 ;;;###autoload
 (defun speedo-review (attempts)
