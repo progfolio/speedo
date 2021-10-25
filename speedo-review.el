@@ -256,7 +256,7 @@ Returns a plist of form:
          (a (speedo--time-string-to-ms (aref (cadr a) col-index)))
          (b (speedo--time-string-to-ms (aref (cadr b) col-index))))
     (cond
-     ;; Duration of 0 is moved to end of list
+     ;; Duration of 0 (incomplete attempt) is moved to end of list
      ((zerop a) nil)
      ((zerop b) t)
      (t (< a b)))))
