@@ -37,6 +37,8 @@
   "When non-nil, include total attempt durations at bottom of data table.")
 (defvar speedo-review-include-average-column t
   "When non-nil, include Averages column in review.")
+(defvar speedo-review-include-consistency-column t
+  "When non-nil, include Consistency column in review.")
 (defvar speedo-review-mode-map (make-sparse-keymap) "Keymap for `speedo-review-mode'.")
 
 (defun speedo-review-read-attempts (&optional collection)
@@ -160,11 +162,12 @@ Returns a plist of form:
                                     speedo-text-place-holder))
                           (when-let ((average-relative (plist-get r :average-relative)))
                             (speedo--relative-time average-relative 0)))))
-                      (list
-                       (number-to-string
-                        (if-let ((consistency (plist-get r :consistency)))
-                            consistency
-                          -1)))))))
+                      (when speedo-review-include-consistency-column
+                        (list
+                         (number-to-string
+                          (if-let ((consistency (plist-get r :consistency)))
+                              consistency
+                            -1))))))))
    data))
 
 (defun speedo-review--sort-consistencies (a b)
@@ -262,7 +265,8 @@ If CACHE is non-nil, the attempts are saved in `speedo-review--attempts'."
                      attempts)
              (when speedo-review-include-average-column
                (list (list "Average" 20)))
-             (list (list "Consistency" 20 #'speedo-review--sort-consistencies))))
+             (when speedo-review-include-consistency-column
+               (list (list "Consistency" 20 #'speedo-review--sort-consistencies)))))
       ;;commands are responsible for setting `speedo-review--header'
       (setq tabulated-list-use-header-line nil)
       (setq header-line-format speedo-review--header)
@@ -328,6 +332,13 @@ HEADER is displayed in review buffer."
   (interactive)
   (setq speedo-review-include-average-column
         (not speedo-review-include-average-column))
+  (speedo-review--ui-init speedo-review--attempts))
+
+(defun speedo-review-toggle-consistency-column ()
+  "Toggle display of the Column column in `speedo-review-buffer'."
+  (interactive)
+  (setq speedo-review-include-consistency-column
+        (not speedo-review-include-consistency-column))
   (speedo-review--ui-init speedo-review--attempts))
 
 (defun speedo-review--sort-col (name)
