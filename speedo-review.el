@@ -262,29 +262,26 @@ Returns a plist of form:
          (list alias (1+ (length alias)) #'speedo-review--sort-attempt-column)))
      attempts)))
 
+(defun speedo-review--segment-col-length ()
+  "Return length of longest segment name with padding."
+  (let ((longest (car
+                  (cl-sort (mapcar (lambda (segment) (length (plist-get segment :name)))
+                                   (plist-get speedo--data :segments))
+                           #'>))))
+    (max (floor (* 1.2 longest)) (length "Segment"))))
+
 (defun speedo-review--columns (attempts)
   "Return Column format for ATTEMPTS.
 Used as `tabulated-list-format'."
-  (let ((segment-col
-         (list
-          "Segment"
-          (max
-           (floor
-            (* 1.2
-               (car (cl-sort (mapcar (lambda (segment) (length (plist-get segment :name)))
-                                     (plist-get speedo--data :segments))
-                             #'>))))
-           8)
-          t)))
-    (vconcat
-     (when speedo-review-include-id-column
-       (list (list "ID" 4 (lambda (a b) (< (car a) (car b))))))
-     (list segment-col)
-     (speedo-review--attempt-columns attempts)
-     (when speedo-review-include-average-column
-       (list (list "Average" 20 #'speedo-review--sort-attempt-column)))
-     (when speedo-review-include-consistency-column
-       (list (list "Consistency" 20 #'speedo-review--sort-consistencies))))))
+  (vconcat
+   (when speedo-review-include-id-column
+     (list (list "ID" 4 (lambda (a b) (< (car a) (car b))))))
+   (list (list "Segment" (speedo-review--segment-col-length) t))
+   (speedo-review--attempt-columns attempts)
+   (when speedo-review-include-average-column
+     (list (list "Average" 20 #'speedo-review--sort-attempt-column)))
+   (when speedo-review-include-consistency-column
+     (list (list "Consistency" 20 #'speedo-review--sort-consistencies)))))
 
 (defun speedo-review--ui-init (attempts &optional cache)
   "Initialize comparison UI format for ATTEMPTS.
