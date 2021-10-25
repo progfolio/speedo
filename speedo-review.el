@@ -204,7 +204,8 @@ Returns a plist of form:
         (let* ((totals
                 (apply
                  #'cl-mapcar
-                 `((lambda (&rest durations) (apply #'+ (or (delq nil durations) -1)))
+                 `((lambda (&rest durations) (apply #'+ (or (delq nil durations)
+                                                            (list -1))))
                    ,@(mapcar (lambda (row) (plist-get row :durations)) rows))))
                (want-average-p (and speedo-review-include-average-column
                                     (> (length totals) 1)))
