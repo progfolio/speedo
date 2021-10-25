@@ -145,8 +145,8 @@ If HIDE is non-nil, do not display `speedo-buffer' after loading."
     (speedo--load-file file)
     (unless hide
       (switch-to-buffer (get-buffer-create speedo-buffer))
-      (goto-char (point-min)))
-    (with-current-buffer speedo-buffer (speedo-mode))))
+      (speedo-mode)
+      (goto-char (point-min)))))
 
 ;;;###autoload
 (defun speedo ()
