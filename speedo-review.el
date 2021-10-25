@@ -151,14 +151,15 @@ Returns a plist of form:
                                        (concat " "  (speedo--relative-time relative 0)))))
                                 times))
                         (nreverse times))
-                      (list
-                       (concat
-                        (format "%-8s"
-                                (if-let ((average-duration (plist-get r :average-duration)))
-                                    (speedo--format-ms average-duration)
-                                  speedo-text-place-holder))
-                        (when-let ((average-relative (plist-get r :average-relative)))
-                          (speedo--relative-time average-relative 0))))
+                      (when speedo-review-include-average-column
+                        (list
+                         (concat
+                          (format "%-8s"
+                                  (if-let ((average-duration (plist-get r :average-duration)))
+                                      (speedo--format-ms average-duration)
+                                    speedo-text-place-holder))
+                          (when-let ((average-relative (plist-get r :average-relative)))
+                            (speedo--relative-time average-relative 0)))))
                       (list
                        (number-to-string
                         (if-let ((consistency (plist-get r :consistency)))
@@ -203,7 +204,8 @@ Returns a plist of form:
                   (cl-reduce
                    #'+ rows
                    :key (lambda (r) (plist-get r :average-duration))))))
-          (setq totals (append totals (list average-total)))
+          (when speedo-review-include-average-column
+            (setq totals (append totals (list average-total))))
           (insert (propertize " " 'display (pop props))
                   (propertize "Totals" 'face '(:weight bold)))
           (dotimes (i (length totals))
@@ -221,9 +223,14 @@ Returns a plist of form:
                          (unless (or (zerop i) (null basis))
                            (speedo--relative-time basis (nth i totals)))))))))))))
 
-(defun speedo-review--ui-init (attempts)
-  "Initialize comparison UI format for ATTEMPTS."
+(defvar speedo-review--attempts nil
+  "Used to store attempts when manipulating views.")
+
+(defun speedo-review--ui-init (attempts &optional cache)
+  "Initialize comparison UI format for ATTEMPTS.
+If CACHE is non-nil, the attempts are saved in `speedo-review--attempts'."
   (with-current-buffer (get-buffer-create speedo-review-buffer)
+    (when cache (setq speedo-review--attempts attempts))
     (let* ((segment-col
             (list
              "Segment"
@@ -253,7 +260,8 @@ Returns a plist of form:
                            (setq alias (propertize alias 'face '(:weight bold))))
                          (list alias (1+ (length alias)))))
                      attempts)
-             (list (list "Average" 20))
+             (when speedo-review-include-average-column
+               (list (list "Average" 20)))
              (list (list "Consistency" 20 #'speedo-review--sort-consistencies))))
       ;;commands are responsible for setting `speedo-review--header'
       (setq tabulated-list-use-header-line nil)
@@ -280,7 +288,7 @@ HEADER is shown in the review buffer."
         (or header
             (list (speedo--header-game-info)
                   (format " %d Attempts" (length attempts)))))
-  (speedo-review--ui-init attempts)
+  (speedo-review--ui-init attempts 'cache)
   (display-buffer speedo-review-buffer))
 
 ;;;###autoload
@@ -316,6 +324,13 @@ HEADER is displayed in review buffer."
     (speedo-review top (list (speedo--header-game-info)
                              (format " Top %d Runs" (length top))))))
 
+(defun speedo-review-toggle-average-column ()
+  "Toggle display of the Averages column in `speedo-review-buffer'."
+  (interactive)
+  (setq speedo-review-include-average-column
+        (not speedo-review-include-average-column))
+  (speedo-review--ui-init speedo-review--attempts))
+
 (define-derived-mode speedo-review-mode tabulated-list-mode "speedo-review"
   "Major mode for reviewing speedo attempts.
 
@@ -332,5 +347,7 @@ HEADER is displayed in review buffer."
         default-directory (file-name-directory speedo--data-file))
   (buffer-face-mode))
 
+;;;; Key bindings
+(define-key speedo-review-mode-map (kbd "A")  'speedo-review-toggle-average-column)
 (provide 'speedo-review)
 ;;; speedo-review.el ends here
