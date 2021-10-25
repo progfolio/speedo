@@ -410,6 +410,7 @@ HEADER is displayed in review buffer."
 (define-key speedo-review-mode-map (kbd "A") 'speedo-review-toggle-average-column)
 (define-key speedo-review-mode-map (kbd "C") 'speedo-review-toggle-consistency-column)
 (define-key speedo-review-mode-map (kbd "I") 'speedo-review-toggle-id-column)
+(define-key speedo-review-mode-map (kbd "a") 'speedo-review-sort-average)
 (define-key speedo-review-mode-map (kbd "c") 'speedo-review-sort-consistency)
 (define-key speedo-review-mode-map (kbd "i") 'speedo-review-sort-id)
 (define-key speedo-review-mode-map (kbd "s") 'speedo-review-sort-segment)
