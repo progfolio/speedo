@@ -255,11 +255,11 @@ Returns a plist of form:
      (lambda (a)
        (let ((alias (or (speedo--plist-get* a :alias)
                         (format-time-string
-                         " %Y-%m-%d %I:%M%p "
+                         "%Y-%m-%d %I:%M%p"
                          (/ (plist-get a :start) 1000)))))
          (when (equal a target-attempt)
            (setq alias (propertize alias 'face '(:weight bold))))
-         (list alias (1+ (length alias)) #'speedo-review--sort-attempt-column)))
+         (list alias (+ (length alias) 4) #'speedo-review--sort-attempt-column)))
      attempts)))
 
 (defun speedo-review--segment-col-length ()
