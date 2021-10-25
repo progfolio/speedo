@@ -437,7 +437,8 @@ HEADER is displayed in review buffer."
 (define-key speedo-review-mode-map (kbd "a") 'speedo-review-sort-average)
 (define-key speedo-review-mode-map (kbd "c") 'speedo-review-sort-consistency)
 (define-key speedo-review-mode-map (kbd "i") 'speedo-review-sort-id)
-(define-key speedo-review-mode-map (kbd "l") 'speedo-review-last-runs)
+(define-key speedo-review-mode-map (kbd "lr") 'speedo-review-last-runs)
+(define-key speedo-review-mode-map (kbd "la") 'speedo-review-last-attempts)
 (define-key speedo-review-mode-map (kbd "s") 'speedo-review-sort-segment)
 (define-key speedo-review-mode-map (kbd "t") 'speedo-review-top-runs)
 
