@@ -176,18 +176,23 @@ Returns a plist of form:
                     (speedo--relative-time average-relative 0)))))
               (when speedo-review-include-consistency-column
                 (list
-                 (number-to-string
-                  (if-let ((consistency (plist-get r :consistency)))
-                      consistency
-                    -1))))))))
+                 (if-let ((consistency (plist-get r :consistency)))
+                     (number-to-string consistency)
+                   speedo-text-place-holder)))))))
    data))
 
 (defun speedo-review--sort-consistencies (a b)
   "Sort table rows A and B by consistency."
-  (let ((a (cadr a))
-        (b (cadr b)))
-    (< (string-to-number (aref a (1- (length a))))
-       (string-to-number (aref b (1- (length b)))))))
+  (let* ((a (cadr a))
+         (b (cadr b))
+         (consistency-a (aref a (1- (length a))))
+         (consistency-b (aref b (1- (length b)))))
+    (cond
+     ;; Ensure place holders are put at end of list by default
+     ((string= consistency-a speedo-text-place-holder) nil)
+     ((string= consistency-b speedo-text-place-holder) t)
+     (t (< (string-to-number consistency-a)
+           (string-to-number consistency-b))))))
 
 (defun speedo-review--insert-totals (rows)
   "Insert totals run for ROWS in review buffer."
@@ -227,7 +232,7 @@ Returns a plist of form:
           (dotimes (i (length totals))
             (let ((total (nth i totals)))
               (insert (propertize " " 'display (pop props)))
-              (insert (if (< total 0) ;;no durations
+              (insert (if (or (null total) (< 0 total)) ;;no durations
                           speedo-text-place-holder
                         (concat
                          (format "%-8s "
