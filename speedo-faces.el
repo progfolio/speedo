@@ -77,7 +77,7 @@
   :group 'speedo-faces)
 
 (defface speedo-hl-line
-  '((t (:background "#202060" :extend t)))
+  '((t (:inherit hl-line)))
   "Face for highlighted line.")
 
 (defface speedo-losing
