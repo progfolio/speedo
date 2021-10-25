@@ -31,6 +31,9 @@
 
 (defvar speedo-review--header nil
   "Used to set custom `header-line-format' during comparisons.")
+(defvar speedo-review--totals-data nil "Workaround for post sorting data insertion.")
+(defvar speedo-review-buffer   (concat speedo-buffer "<review>"))
+(defvar speedo-review-mode-map (make-sparse-keymap) "Keymap for `speedo-review-mode'.")
 
 (defun speedo-review-read-attempts (&optional collection)
   "Return a list of attempts from COLLECTION.
@@ -106,7 +109,8 @@ Returns a plist of form:
         ;;compute mean absolute deviation to measure consistency
         (setf row (plist-put row :consistency
                              (let ((deviations
-                                    (mapcar (lambda (time) (abs (- average-relative time)))
+                                    (mapcar (lambda (time)
+                                              (abs (- average-relative time)))
                                             (plist-get row :relatives))))
                                (/ 1.0 (/ (cl-reduce #'+ deviations)
                                          (length deviations))))))))
@@ -216,8 +220,6 @@ Returns a plist of form:
                          (unless (or (zerop i) (null basis))
                            (speedo--relative-time basis (nth i totals)))))))))))))
 
-(defvar speedo-review--totals-data nil "Workaround for post sorting data insertion.")
-
 (defun speedo-review--ui-init (attempts)
   "Initialize comparison UI format for ATTEMPTS."
   (with-current-buffer (get-buffer-create speedo-buffer)
@@ -236,7 +238,8 @@ Returns a plist of form:
            (row-data (setq speedo-review--totals-data
                            (speedo-review--row-data attempts)))
            (rows (speedo-review--rows row-data)))
-      (setq tabulated-list-format
+      (setq tabulated-list-entries rows
+            tabulated-list-format
             (vconcat
              (list (list "ID" 4 (lambda (a b) (< (car a) (car b)))))
              (list segment-col)
@@ -250,8 +253,7 @@ Returns a plist of form:
                          (list alias (1+ (length alias)))))
                      attempts)
              (list (list "Average" 20))
-             (list (list "Consistency" 20 #'speedo-review--sort-consistencies)))
-            tabulated-list-entries rows)
+             (list (list "Consistency" 20 #'speedo-review--sort-consistencies))))
       ;;commands are responsible for setting `speedo-review--header'
       (setq tabulated-list-use-header-line nil)
       (setq header-line-format speedo-review--header
@@ -288,8 +290,7 @@ HEADER is displayed in review buffer."
   (let ((attempts (last (or attempts (speedo--attempts)) n)))
     (speedo-review attempts (list (speedo--header-game-info)
                                   (or header
-                                      (format " Last %d Attempts"
-                                              (length attempts)))))))
+                                      (format " Last %d Attempts" (length attempts)))))))
 
 ;;;###autoload
 (defun speedo-review-last-runs (&optional n attempts header)
@@ -301,8 +302,7 @@ HEADER is displayed in review buffer."
                                   n))))
     (speedo-review attempts (list (speedo--header-game-info)
                                   (or header
-                                      (format " Last %d Runs"
-                                              (length attempts)))))))
+                                      (format " Last %d Runs" (length attempts)))))))
 
 ;;;###autoload
 (defun speedo-review-top-runs (&optional n attempts)
@@ -312,7 +312,6 @@ HEADER is displayed in review buffer."
                         #'<
                         :key (lambda (a) (speedo--splits-duration (plist-get a :splits)))))
          (top (cl-subseq runs 0 (min n (length runs)))))
-
     (speedo-review top (list (speedo--header-game-info)
                              (format " Top %d Runs" (length top))))))
 
