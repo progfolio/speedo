@@ -37,6 +37,8 @@
   "When non-nil, include total attempt durations at bottom of data table.")
 (defvar speedo-review-include-average-column t
   "When non-nil, include Averages column in review.")
+(defvar speedo-review-include-id-column t
+  "When non-nil, include ID column in review.")
 (defvar speedo-review-include-consistency-column t
   "When non-nil, include Consistency column in review.")
 (defvar speedo-review-mode-map (make-sparse-keymap) "Keymap for `speedo-review-mode'.")
@@ -137,37 +139,39 @@ Returns a plist of form:
    (lambda (r)
      (let ((id (plist-get r :id)))
        (list id
-             (vconcat (list (number-to-string (1+ id)))
-                      (list (plist-get r :name))
-                      (let ((times)
-                            (durations (plist-get r :durations))
-                            (relatives (plist-get r :relatives)))
-                        (dotimes (i (length durations))
-                          (push (concat
-                                 (format "%-8s"
-                                         (if-let ((duration (nth i durations)))
-                                             (speedo--format-ms duration)
-                                           speedo-text-place-holder))
-                                 (unless (zerop i)
-                                   (if-let ((relative (nth i relatives)))
-                                       (concat " "  (speedo--relative-time relative 0)))))
-                                times))
-                        (nreverse times))
-                      (when speedo-review-include-average-column
-                        (list
-                         (concat
-                          (format "%-8s"
-                                  (if-let ((average-duration (plist-get r :average-duration)))
-                                      (speedo--format-ms average-duration)
-                                    speedo-text-place-holder))
-                          (when-let ((average-relative (plist-get r :average-relative)))
-                            (speedo--relative-time average-relative 0)))))
-                      (when speedo-review-include-consistency-column
-                        (list
-                         (number-to-string
-                          (if-let ((consistency (plist-get r :consistency)))
-                              consistency
-                            -1))))))))
+             (vconcat
+              (when speedo-review-include-id-column
+                (list (number-to-string (1+ id))))
+              (list (plist-get r :name))
+              (let ((times)
+                    (durations (plist-get r :durations))
+                    (relatives (plist-get r :relatives)))
+                (dotimes (i (length durations))
+                  (push (concat
+                         (format "%-8s"
+                                 (if-let ((duration (nth i durations)))
+                                     (speedo--format-ms duration)
+                                   speedo-text-place-holder))
+                         (unless (zerop i)
+                           (if-let ((relative (nth i relatives)))
+                               (concat " "  (speedo--relative-time relative 0)))))
+                        times))
+                (nreverse times))
+              (when speedo-review-include-average-column
+                (list
+                 (concat
+                  (format "%-8s"
+                          (if-let ((average-duration (plist-get r :average-duration)))
+                              (speedo--format-ms average-duration)
+                            speedo-text-place-holder))
+                  (when-let ((average-relative (plist-get r :average-relative)))
+                    (speedo--relative-time average-relative 0)))))
+              (when speedo-review-include-consistency-column
+                (list
+                 (number-to-string
+                  (if-let ((consistency (plist-get r :consistency)))
+                      consistency
+                    -1))))))))
    data))
 
 (defun speedo-review--sort-consistencies (a b)
@@ -209,8 +213,9 @@ Returns a plist of form:
                    :key (lambda (r) (plist-get r :average-duration))))))
           (when speedo-review-include-average-column
             (setq totals (append totals (list average-total))))
-          (insert (propertize " " 'display (pop props))
-                  (propertize "Totals" 'face '(:weight bold)))
+          (when speedo-review-include-id-column
+            (insert (propertize " " 'display (pop props))))
+          (insert (propertize "Totals" 'face '(:weight bold)))
           (dotimes (i (length totals))
             (let ((total (nth i totals)))
               (insert (propertize " " 'display (pop props)))
@@ -252,7 +257,8 @@ If CACHE is non-nil, the attempts are saved in `speedo-review--attempts'."
       (setq tabulated-list-entries rows
             tabulated-list-format
             (vconcat
-             (list (list "ID" 4 (lambda (a b) (< (car a) (car b)))))
+             (when speedo-review-include-id-column
+               (list (list "ID" 4 (lambda (a b) (< (car a) (car b))))))
              (list segment-col)
              (mapcar (lambda (a)
                        (let ((alias (or (speedo--plist-get* a :alias)
@@ -327,19 +333,24 @@ HEADER is displayed in review buffer."
     (speedo-review top (list (speedo--header-game-info)
                              (format " Top %d Runs" (length top))))))
 
-(defun speedo-review-toggle-average-column ()
-  "Toggle display of the Averages column in `speedo-review-buffer'."
-  (interactive)
-  (setq speedo-review-include-average-column
-        (not speedo-review-include-average-column))
-  (speedo-review--ui-init speedo-review--attempts))
+(defmacro speedo-review-def-col-toggle (name)
+  "Define a toggle command for column represented by NAME."
+  (declare (indent 1))
+  (let ((var (intern (format "speedo-review-include-%s-column" name))))
+    `(defun ,(intern (concat "speedo-review-toggle-" name "-column")) ()
+       ,(format "Toggle display of the %s column in `speedo-review-buffer'."
+                (upcase name))
+       (interactive)
+       (setq ,var (not ,var))
+       (if (and (not ,var)
+                tabulated-list-sort-key
+                (string= (downcase ,name)
+                         (downcase (car tabulated-list-sort-key))))
+           (setq tabulated-list-sort-key nil))
+       (speedo-review--ui-init speedo-review--attempts))))
 
-(defun speedo-review-toggle-consistency-column ()
-  "Toggle display of the Column column in `speedo-review-buffer'."
-  (interactive)
-  (setq speedo-review-include-consistency-column
-        (not speedo-review-include-consistency-column))
-  (speedo-review--ui-init speedo-review--attempts))
+(dolist (colname '("average" "consistency" "id"))
+  (eval `(speedo-review-def-col-toggle ,colname)))
 
 (defun speedo-review--sort-col (name)
   "Toggle sorting of column with NAME."
@@ -384,6 +395,7 @@ HEADER is displayed in review buffer."
 ;;;; Key bindings
 (define-key speedo-review-mode-map (kbd "A") 'speedo-review-toggle-average-column)
 (define-key speedo-review-mode-map (kbd "C") 'speedo-review-toggle-consistency-column)
+(define-key speedo-review-mode-map (kbd "I") 'speedo-review-toggle-id-column)
 (define-key speedo-review-mode-map (kbd "c") 'speedo-review-sort-consistency)
 (define-key speedo-review-mode-map (kbd "i") 'speedo-review-sort-id)
 (define-key speedo-review-mode-map (kbd "s") 'speedo-review-sort-segment)
