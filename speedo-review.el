@@ -361,6 +361,7 @@ HEADER is displayed in review buffer."
 (defmacro speedo-review-def-col-toggle (name)
   "Define a toggle command for column represented by NAME."
   (declare (indent 1))
+  (setq name (downcase name))
   (let ((var (intern (format "speedo-review-include-%s-column" name))))
     `(defun ,(intern (concat "speedo-review-toggle-" name "-column")) ()
        ,(format "Toggle display of the %s column in `speedo-review-buffer'."
@@ -369,32 +370,25 @@ HEADER is displayed in review buffer."
        (setq ,var (not ,var))
        (speedo-review--ui-init speedo-review--attempts))))
 
-(dolist (colname '("average" "consistency" "id"))
-  (eval `(speedo-review-def-col-toggle ,colname)))
-
 (defun speedo-review--sort-col (name)
   "Toggle sorting of column with NAME."
   (save-excursion
     (goto-char (point-min))
-    (if (text-property-search-forward 'tabulated-list-column-name
-                                      name t)
+    (if (text-property-search-forward 'tabulated-list-column-name name t)
         (progn (backward-char) (tabulated-list-sort))
       (user-error "Could not find %S column" name))))
 
-(defun speedo-review-sort-consistency ()
-  "Toggle the sorting of the Consistency column."
-  (interactive)
-  (speedo-review--sort-col "Consistency"))
+(defmacro speedo-review-def-col-sorter (name)
+  "Define a column sorting command for column with NAME."
+  (declare (indent 1))
+  `(defun ,(intern (format "speedo-review-sort-%s" (downcase name))) ()
+     ,(format "Toggle the sorting of the %s column." (upcase name))
+     (interactive)
+     (speedo-review--sort-col ,name)))
 
-(defun speedo-review-sort-id ()
-  "Toggle the sorting of the ID column."
-  (interactive)
-  (speedo-review--sort-col "ID"))
-
-(defun speedo-review-sort-segment ()
-  "Toggle the sorting of the ID column."
-  (interactive)
-  (speedo-review--sort-col "Segment"))
+(dolist (colname '("Average" "Consistency" "ID" "Segment"))
+  (eval `(progn (speedo-review-def-col-toggle ,colname)
+                (speedo-review-def-col-sorter ,colname))))
 
 (define-derived-mode speedo-review-mode tabulated-list-mode "speedo-review"
   "Major mode for reviewing speedo attempts.
