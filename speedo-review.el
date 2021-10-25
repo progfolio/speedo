@@ -206,6 +206,8 @@ Returns a plist of form:
                  #'cl-mapcar
                  `((lambda (&rest durations) (apply #'+ (or (delq nil durations) -1)))
                    ,@(mapcar (lambda (row) (plist-get row :durations)) rows))))
+               (want-average-p (and speedo-review-include-average-column
+                                    (> (length totals) 1)))
                (basis (car totals))
                (props (save-excursion
                         (forward-line -1)
@@ -220,12 +222,12 @@ Returns a plist of form:
                               (setq on-same-line-p nil)))
                           p)))
                (average-total
-                (ignore-errors
-                  (cl-reduce
-                   #'+ rows
-                   :key (lambda (r) (plist-get r :average-duration))))))
-          (when speedo-review-include-average-column
-            (setq totals (append totals (list average-total))))
+                (when want-average-p
+                  (ignore-errors
+                    (cl-reduce
+                     #'+ rows
+                     :key (lambda (r) (plist-get r :average-duration)))))))
+          (when want-average-p (setq totals (append totals (list average-total))))
           (when speedo-review-include-id-column
             (insert (propertize " " 'display (pop props))))
           (insert (propertize "Totals" 'face '(:weight bold)))
@@ -301,7 +303,12 @@ Used as `tabulated-list-format'."
 If CACHE is non-nil, the attempts are saved in `speedo-review--attempts'."
   (with-current-buffer (get-buffer-create speedo-review-buffer)
     (when cache (setq speedo-review--attempts attempts))
-    (let* ((row-data (setq speedo-review--totals-data
+    (let* ((more-than-one-attempt-p (> (length  attempts) 1))
+           (speedo-review-include-average-column
+            (and more-than-one-attempt-p speedo-review-include-average-column))
+           (speedo-review-include-consistency-column
+            (and more-than-one-attempt-p speedo-review-include-consistency-column))
+           (row-data (setq speedo-review--totals-data
                            (speedo-review--row-data attempts)))
            (rows (speedo-review--rows row-data)))
       ;;commands are responsible for setting `speedo-review--header'
