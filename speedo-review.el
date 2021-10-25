@@ -174,7 +174,7 @@ Returns a plist of form:
 
 (defun speedo-review--insert-totals (rows)
   "Insert totals run for ROWS in review buffer."
-  (with-current-buffer speedo-buffer
+  (with-current-buffer speedo-review-buffer
     (save-excursion
       (with-silent-modifications
         (goto-char (point-max))
@@ -222,7 +222,7 @@ Returns a plist of form:
 
 (defun speedo-review--ui-init (attempts)
   "Initialize comparison UI format for ATTEMPTS."
-  (with-current-buffer (get-buffer-create speedo-buffer)
+  (with-current-buffer (get-buffer-create speedo-review-buffer)
     (let* ((segment-col
             (list
              "Segment"
@@ -280,7 +280,7 @@ HEADER is shown in the review buffer."
             (list (speedo--header-game-info)
                   (format " %d Attempts" (length attempts)))))
   (speedo-review--ui-init attempts)
-  (display-buffer speedo-buffer))
+  (display-buffer speedo-review-buffer))
 
 ;;;###autoload
 (defun speedo-review-last-attempts (&optional n attempts header)
