@@ -258,7 +258,7 @@ Returns a plist of form:
       (setq tabulated-list-use-header-line nil)
       (setq header-line-format speedo-review--header
             speedo-review--header nil)
-      (unless (derived-mode-p 'tabulated-list-mode) (tabulated-list-mode))
+      (unless (derived-mode-p 'speedo-review-mode) (speedo-review-mode))
       (tabulated-list-init-header)
       (advice-add 'tabulated-list-print :after 'speedo-review--print-totals-maybe)
       (tabulated-list-print 'remember-pos))))
@@ -266,7 +266,7 @@ Returns a plist of form:
 (defun speedo-review--print-totals-maybe (&rest _)
   "Hack to insert info into buffer post sorting.
 If `tabulated-list-mode' offered a post-print hook, we could avoid this."
-  (when (and (derived-mode-p 'speedo-mode) speedo-review-include-totals)
+  (when (and (derived-mode-p 'speedo-review-mode) speedo-review-include-totals)
     (speedo-review--insert-totals speedo-review--totals-data)))
 
 ;;;###autoload
@@ -314,6 +314,22 @@ HEADER is displayed in review buffer."
          (top (cl-subseq runs 0 (min n (length runs)))))
     (speedo-review top (list (speedo--header-game-info)
                              (format " Top %d Runs" (length top))))))
+
+(define-derived-mode speedo-review-mode tabulated-list-mode "speedo-review"
+  "Major mode for reviewing speedo attempts.
+
+\\{speedo-review-mode-map}"
+  (when speedo-hide-cursor
+    (when (bound-and-true-p blink-cursor-mode) (blink-cursor-mode -1))
+    (speedo--hide-cursor)
+    (add-hook 'quit-window-hook #'speedo--show-cursor nil 'local))
+  (when speedo-highlight-line
+    (face-remap-set-base 'hl-line nil)
+    (face-remap-add-relative 'hl-line 'speedo-hl-line)
+    (hl-line-mode))
+  (setq buffer-face-mode-face 'speedo-default
+        default-directory (file-name-directory speedo--data-file))
+  (buffer-face-mode))
 
 (provide 'speedo-review)
 ;;; speedo-review.el ends here
