@@ -1,4 +1,7 @@
 ;; -*- lexical-binding: t; -*-
+(declare-function ert--pp-with-indentation-and-newline "ert")
+(declare-function ert-string-for-test-result "ert")
+
 (progn
   (defun +without-print-limits (fn &rest args)
     "Advice around functions which print in `ert' with hardcoded levels."
