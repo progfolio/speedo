@@ -274,12 +274,12 @@ If CACHE is non-nil, the attempts are saved in `speedo-review--attempts'."
              (when speedo-review-include-consistency-column
                (list (list "Consistency" 20 #'speedo-review--sort-consistencies)))))
       ;;commands are responsible for setting `speedo-review--header'
-      (setq tabulated-list-use-header-line nil)
-      (setq header-line-format speedo-review--header)
       (unless (derived-mode-p 'speedo-review-mode) (speedo-review-mode))
+      (setq tabulated-list-use-header-line nil)
       (tabulated-list-init-header)
       (advice-add 'tabulated-list-print :after 'speedo-review--print-totals-maybe)
-      (tabulated-list-print 'remember-pos))))
+      (tabulated-list-print 'remember-pos)
+      (setq header-line-format speedo-review--header))))
 
 (defun speedo-review--print-totals-maybe (&rest _)
   "Hack to insert info into buffer post sorting.
