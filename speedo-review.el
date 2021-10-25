@@ -265,8 +265,7 @@ If CACHE is non-nil, the attempts are saved in `speedo-review--attempts'."
              (list (list "Consistency" 20 #'speedo-review--sort-consistencies))))
       ;;commands are responsible for setting `speedo-review--header'
       (setq tabulated-list-use-header-line nil)
-      (setq header-line-format speedo-review--header
-            speedo-review--header nil)
+      (setq header-line-format speedo-review--header)
       (unless (derived-mode-p 'speedo-review-mode) (speedo-review-mode))
       (tabulated-list-init-header)
       (advice-add 'tabulated-list-print :after 'speedo-review--print-totals-maybe)
