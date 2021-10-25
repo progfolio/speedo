@@ -234,48 +234,52 @@ Returns a plist of form:
 (defvar speedo-review--attempts nil
   "Used to store attempts when manipulating views.")
 
+(defun speedo-review--columns (attempts)
+  "Return Column format for ATTEMPTS.
+Used as `tabulated-list-format'."
+  (let ((segment-col
+         (list
+          "Segment"
+          (max
+           (floor
+            (* 1.2
+               (car (cl-sort (mapcar (lambda (segment) (length (plist-get segment :name)))
+                                     (plist-get speedo--data :segments))
+                             #'>))))
+           8)
+          t))
+        (target-attempt (car attempts)))
+    (vconcat
+     (when speedo-review-include-id-column
+       (list (list "ID" 4 (lambda (a b) (< (car a) (car b))))))
+     (list segment-col)
+     (mapcar (lambda (a)
+               (let ((alias (or (speedo--plist-get* a :alias)
+                                (format-time-string
+                                 "%Y-%m-%d %I:%M%p  "
+                                 (/ (plist-get a :start) 1000)))))
+                 (when (equal a target-attempt)
+                   (setq alias (propertize alias 'face '(:weight bold))))
+                 (list alias (1+ (length alias)))))
+             attempts)
+     (when speedo-review-include-average-column
+       (list (list "Average" 20)))
+     (when speedo-review-include-consistency-column
+       (list (list "Consistency" 20 #'speedo-review--sort-consistencies))))))
+
 (defun speedo-review--ui-init (attempts &optional cache)
   "Initialize comparison UI format for ATTEMPTS.
 If CACHE is non-nil, the attempts are saved in `speedo-review--attempts'."
   (with-current-buffer (get-buffer-create speedo-review-buffer)
     (when cache (setq speedo-review--attempts attempts))
-    (let* ((segment-col
-            (list
-             "Segment"
-             (max
-              (floor
-               (* 1.2
-                  (car (cl-sort (mapcar (lambda (segment) (length (plist-get segment :name)))
-                                        (plist-get speedo--data :segments))
-                                #'>))))
-              8)
-             t))
-           (target-attempt (car attempts))
-           (row-data (setq speedo-review--totals-data
+    (let* ((row-data (setq speedo-review--totals-data
                            (speedo-review--row-data attempts)))
            (rows (speedo-review--rows row-data)))
-      (setq tabulated-list-entries rows
-            tabulated-list-format
-            (vconcat
-             (when speedo-review-include-id-column
-               (list (list "ID" 4 (lambda (a b) (< (car a) (car b))))))
-             (list segment-col)
-             (mapcar (lambda (a)
-                       (let ((alias (or (speedo--plist-get* a :alias)
-                                        (format-time-string
-                                         "%Y-%m-%d %I:%M%p  "
-                                         (/ (plist-get a :start) 1000)))))
-                         (when (equal a target-attempt)
-                           (setq alias (propertize alias 'face '(:weight bold))))
-                         (list alias (1+ (length alias)))))
-                     attempts)
-             (when speedo-review-include-average-column
-               (list (list "Average" 20)))
-             (when speedo-review-include-consistency-column
-               (list (list "Consistency" 20 #'speedo-review--sort-consistencies)))))
       ;;commands are responsible for setting `speedo-review--header'
       (unless (derived-mode-p 'speedo-review-mode) (speedo-review-mode))
-      (setq tabulated-list-use-header-line nil)
+      (setq tabulated-list-entries rows
+            tabulated-list-format (speedo-review--columns attempts)
+            tabulated-list-use-header-line nil)
       (tabulated-list-init-header)
       (advice-add 'tabulated-list-print :after 'speedo-review--print-totals-maybe)
       (tabulated-list-print 'remember-pos)
