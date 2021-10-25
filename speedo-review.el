@@ -222,7 +222,7 @@ Returns a plist of form:
               (insert (if (< total 0) ;;no durations
                           speedo-text-place-holder
                         (concat
-                         (format "%-8s"
+                         (format "%-8s "
                                  (propertize (speedo--format-ms total)
                                              'face (cond
                                                     ((> total basis) 'speedo-behind)
@@ -342,6 +342,7 @@ HEADER is displayed in review buffer."
                 (upcase name))
        (interactive)
        (setq ,var (not ,var))
+       ;; Clear the sort-key if the column it refrences has been removed.
        (if (and (not ,var)
                 tabulated-list-sort-key
                 (string= (downcase ,name)
