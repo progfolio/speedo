@@ -282,7 +282,7 @@ Used as `tabulated-list-format'."
      (list segment-col)
      (speedo-review--attempt-columns attempts)
      (when speedo-review-include-average-column
-       (list (list "Average" 20)))
+       (list (list "Average" 20 #'speedo-review--sort-attempt-column)))
      (when speedo-review-include-consistency-column
        (list (list "Consistency" 20 #'speedo-review--sort-consistencies))))))
 
