@@ -232,7 +232,7 @@ Returns a plist of form:
           (dotimes (i (length totals))
             (let ((total (nth i totals)))
               (insert (propertize " " 'display (pop props)))
-              (insert (if (or (null total) (< 0 total)) ;;no durations
+              (insert (if (or (null total) (< total 0)) ;;no durations
                           speedo-text-place-holder
                         (concat
                          (format "%-8s "
