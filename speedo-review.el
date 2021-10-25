@@ -24,6 +24,8 @@
 ;;; Code:
 (require 'speedo)
 
+(declare-function speedo-load-file "speedo-commands" (&optional file hide))
+
 (defcustom speedo-review-include-target t
   "If non-nil, consider `speedo--comparison-target' implicit target of comparisons."
   :type  'boolean
@@ -42,6 +44,13 @@
 (defvar speedo-review-include-consistency-column t
   "When non-nil, include Consistency column in review.")
 (defvar speedo-review-mode-map (make-sparse-keymap) "Keymap for `speedo-review-mode'.")
+
+(defun speedo-review--ensure-data ()
+  "Ensure `speedo--data' is set and return it."
+  (unless speedo--data (speedo-load-file nil 'hide))
+  (unless (plist-get speedo--data :attempts)
+    (user-error "No attempts in speedo DB %S" speedo--data-file))
+  speedo--data)
 
 (defun speedo-review-read-attempts (&optional collection)
   "Return a list of attempts from COLLECTION.
@@ -66,8 +75,7 @@ If COLLECTION is nil, use `speedo--data' or throw an error."
                                  (plist-get attempt :tags) " "))
                      " "))
                    attempt))
-           (or collection (plist-get speedo--data :attempts)
-               (user-error (if speedo--data "No attempts in speedo DB." "Speedo DB loaded.")))))
+           (or collection (plist-get (speedo-review--ensure-data) :attempts))))
          (selections (delete-dups (completing-read-multiple "Attempts: " candidates))))
     (mapcar (lambda (selection) (alist-get selection candidates nil nil #'string=))
             selections)))
@@ -317,19 +325,21 @@ If `tabulated-list-mode' offered a post-print hook, we could avoid this."
   "Compare ATTEMPTS.
 If ATTEMPTS is nil, prompt user.
 HEADER is shown in the review buffer."
-  (interactive (list (speedo-review-read-attempts)))
-  (setq speedo-review--header
-        (or header
-            (list (speedo--header-game-info)
-                  (format " %d Attempts" (length attempts)))))
-  (speedo-review--ui-init attempts 'cache)
-  (display-buffer speedo-review-buffer))
+  (interactive)
+  (let ((attempts (or attempts (speedo-review-read-attempts))))
+    (setq speedo-review--header
+          (or header
+              (list (speedo--header-game-info)
+                    (format " %d Attempts" (length attempts)))))
+    (speedo-review--ui-init attempts 'cache)
+    (display-buffer speedo-review-buffer)))
 
 ;;;###autoload
 (defun speedo-review-last-attempts (&optional n attempts header)
   "Compare last N ATTEMPTS against target run.
 HEADER is displayed in review buffer."
-  (interactive "NLast N attempts?: ")
+  (interactive (list (progn (speedo-review--ensure-data)
+                            (read-number "Last N attempts: "))))
   (let ((attempts (last (or attempts (speedo--attempts)) n)))
     (speedo-review attempts (list (speedo--header-game-info)
                                   (or header
@@ -339,7 +349,8 @@ HEADER is displayed in review buffer."
 (defun speedo-review-last-runs (&optional n attempts header)
   "Compare last N complete ATTEMPTS.
 HEADER is displayed in review buffer."
-  (interactive "NLast N runs?: ")
+  (interactive (list (progn (speedo-review--ensure-data)
+                            (read-number "Last N runs: "))))
   (let ((attempts (nreverse (last (cl-remove-if-not #'speedo--attempt-complete-p
                                                     (or attempts (speedo--attempts)))
                                   n))))
@@ -350,7 +361,8 @@ HEADER is displayed in review buffer."
 ;;;###autoload
 (defun speedo-review-top-runs (&optional n attempts)
   "Compare top N complete ATTEMPTS."
-  (interactive "NHow many runs?: ")
+  (interactive (list (progn (speedo-review--ensure-data)
+                            (read-number "Top N runs: "))))
   (let* ((runs (cl-sort (or attempts (speedo--attempts #'speedo--attempt-incomplete-p))
                         #'<
                         :key (lambda (a) (speedo--splits-duration (plist-get a :splits)))))
