@@ -6,13 +6,13 @@ EMACS = emacs
 
 .PHONY: all
 all:  clean compile check
-compile: speedo.elc
-check: speedo.elc
+compile: *.elc
+check: *.elc
 	$(EMACS) -Q --batch -L . -L ./test \
 					 -l ert -l speedo-ert-print-hack -l speedo-test \
            --eval "(let ((ert-quiet t)) (ert-run-tests-batch-and-exit))"
 clean:
-	rm -f speedo.elc
+	rm -f */*.elc
 .SUFFIXES: .el .elc
 .el.elc:
-	$(EMACS) -Q --batch -L . -f batch-byte-compile $<
+	$(EMACS) -Q --batch -L . --batch --eval "(byte-recompile-directory \"./\" 0 t)"
