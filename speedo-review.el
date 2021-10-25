@@ -234,6 +234,34 @@ Returns a plist of form:
 (defvar speedo-review--attempts nil
   "Used to store attempts when manipulating views.")
 
+(defun speedo-review--sort-attempt-column (a b)
+  "Sort attempt column rows A and B by split durations."
+  (let* ((name (car tabulated-list-sort-key))
+         (col-index
+          (cl-position name (cl-coerce tabulated-list-format 'list)
+                       :test #'string= :key #'car))
+         (a (speedo--time-string-to-ms (aref (cadr a) col-index)))
+         (b (speedo--time-string-to-ms (aref (cadr b) col-index))))
+    (cond
+     ;; Duration of 0 is moved to end of list
+     ((zerop a) nil)
+     ((zerop b) t)
+     (t (< a b)))))
+
+(defun speedo-review--attempt-columns (attempts)
+  "Return list of columns for ATTEMPTS."
+  (let ((target-attempt (car attempts)))
+    (mapcar
+     (lambda (a)
+       (let ((alias (or (speedo--plist-get* a :alias)
+                        (format-time-string
+                         " %Y-%m-%d %I:%M%p "
+                         (/ (plist-get a :start) 1000)))))
+         (when (equal a target-attempt)
+           (setq alias (propertize alias 'face '(:weight bold))))
+         (list alias (1+ (length alias)) #'speedo-review--sort-attempt-column)))
+     attempts)))
+
 (defun speedo-review--columns (attempts)
   "Return Column format for ATTEMPTS.
 Used as `tabulated-list-format'."
@@ -247,21 +275,12 @@ Used as `tabulated-list-format'."
                                      (plist-get speedo--data :segments))
                              #'>))))
            8)
-          t))
-        (target-attempt (car attempts)))
+          t)))
     (vconcat
      (when speedo-review-include-id-column
        (list (list "ID" 4 (lambda (a b) (< (car a) (car b))))))
      (list segment-col)
-     (mapcar (lambda (a)
-               (let ((alias (or (speedo--plist-get* a :alias)
-                                (format-time-string
-                                 "%Y-%m-%d %I:%M%p  "
-                                 (/ (plist-get a :start) 1000)))))
-                 (when (equal a target-attempt)
-                   (setq alias (propertize alias 'face '(:weight bold))))
-                 (list alias (1+ (length alias)))))
-             attempts)
+     (speedo-review--attempt-columns attempts)
      (when speedo-review-include-average-column
        (list (list "Average" 20)))
      (when speedo-review-include-consistency-column
