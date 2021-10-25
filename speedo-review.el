@@ -346,9 +346,9 @@ HEADER is displayed in review buffer."
   (save-excursion
     (goto-char (point-min))
     (if (text-property-search-forward 'tabulated-list-column-name
-                                         name t)
+                                      name t)
         (progn (backward-char) (tabulated-list-sort))
-      (user-error "Could not find %S column." name))))
+      (user-error "Could not find %S column" name))))
 
 (defun speedo-review-sort-consistency ()
   "Toggle the sorting of the Consistency column."
@@ -382,11 +382,12 @@ HEADER is displayed in review buffer."
   (buffer-face-mode))
 
 ;;;; Key bindings
-(define-key speedo-review-mode-map (kbd "A")  'speedo-review-toggle-average-column)
-(define-key speedo-review-mode-map (kbd "c")  'speedo-review-sort-consistency)
-(define-key speedo-review-mode-map (kbd "i")  'speedo-review-sort-id)
-(define-key speedo-review-mode-map (kbd "s")  'speedo-review-sort-segment)
-(define-key speedo-review-mode-map (kbd "t")  'speedo-review-top-runs)
+(define-key speedo-review-mode-map (kbd "A") 'speedo-review-toggle-average-column)
+(define-key speedo-review-mode-map (kbd "C") 'speedo-review-toggle-consistency-column)
+(define-key speedo-review-mode-map (kbd "c") 'speedo-review-sort-consistency)
+(define-key speedo-review-mode-map (kbd "i") 'speedo-review-sort-id)
+(define-key speedo-review-mode-map (kbd "s") 'speedo-review-sort-segment)
+(define-key speedo-review-mode-map (kbd "t") 'speedo-review-top-runs)
 
 (provide 'speedo-review)
 ;;; speedo-review.el ends here
