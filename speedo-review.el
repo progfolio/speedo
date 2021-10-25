@@ -331,6 +331,30 @@ HEADER is displayed in review buffer."
         (not speedo-review-include-average-column))
   (speedo-review--ui-init speedo-review--attempts))
 
+(defun speedo-review--sort-col (name)
+  "Toggle sorting of column with NAME."
+  (save-excursion
+    (goto-char (point-min))
+    (if (text-property-search-forward 'tabulated-list-column-name
+                                         name t)
+        (progn (backward-char) (tabulated-list-sort))
+      (user-error "Could not find %S column." name))))
+
+(defun speedo-review-sort-consistency ()
+  "Toggle the sorting of the Consistency column."
+  (interactive)
+  (speedo-review--sort-col "Consistency"))
+
+(defun speedo-review-sort-id ()
+  "Toggle the sorting of the ID column."
+  (interactive)
+  (speedo-review--sort-col "ID"))
+
+(defun speedo-review-sort-segment ()
+  "Toggle the sorting of the ID column."
+  (interactive)
+  (speedo-review--sort-col "Segment"))
+
 (define-derived-mode speedo-review-mode tabulated-list-mode "speedo-review"
   "Major mode for reviewing speedo attempts.
 
@@ -349,5 +373,9 @@ HEADER is displayed in review buffer."
 
 ;;;; Key bindings
 (define-key speedo-review-mode-map (kbd "A")  'speedo-review-toggle-average-column)
+(define-key speedo-review-mode-map (kbd "c")  'speedo-review-sort-consistency)
+(define-key speedo-review-mode-map (kbd "i")  'speedo-review-sort-id)
+(define-key speedo-review-mode-map (kbd "s")  'speedo-review-sort-segment)
+
 (provide 'speedo-review)
 ;;; speedo-review.el ends here
