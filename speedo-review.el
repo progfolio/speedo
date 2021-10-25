@@ -33,6 +33,10 @@
   "Used to set custom `header-line-format' during comparisons.")
 (defvar speedo-review--totals-data nil "Workaround for post sorting data insertion.")
 (defvar speedo-review-buffer   (concat speedo-buffer "<review>"))
+(defvar speedo-review-include-totals-row t
+  "When non-nil, include total attempt durations at bottom of data table.")
+(defvar speedo-review-include-average-column t
+  "When non-nil, include Averages column in review.")
 (defvar speedo-review-mode-map (make-sparse-keymap) "Keymap for `speedo-review-mode'.")
 
 (defun speedo-review-read-attempts (&optional collection)
@@ -169,9 +173,6 @@ Returns a plist of form:
     (< (string-to-number (aref a (1- (length a))))
        (string-to-number (aref b (1- (length b)))))))
 
-(defvar speedo-review-include-totals t
-  "When non-nil, include total attempt durations at bottom of data table.")
-
 (defun speedo-review--insert-totals (rows)
   "Insert totals run for ROWS in review buffer."
   (with-current-buffer speedo-review-buffer
@@ -266,7 +267,7 @@ Returns a plist of form:
 (defun speedo-review--print-totals-maybe (&rest _)
   "Hack to insert info into buffer post sorting.
 If `tabulated-list-mode' offered a post-print hook, we could avoid this."
-  (when (and (derived-mode-p 'speedo-review-mode) speedo-review-include-totals)
+  (when (and (derived-mode-p 'speedo-review-mode) speedo-review-include-totals-row)
     (speedo-review--insert-totals speedo-review--totals-data)))
 
 ;;;###autoload
