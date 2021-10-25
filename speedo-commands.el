@@ -133,21 +133,20 @@ If no attempt is in progress, clear the UI times."
 (defun speedo-load-file (&optional file hide)
   "Load a splits FILE.
 If HIDE is non-nil, do not display `speedo-buffer' after loading."
-  (interactive (if speedo--attempt-in-progress
-                   (user-error "Cannot Load file while attempt is in progress")
-                 (list (read-file-name "Splits file: " speedo-directory))))
-  (cond
-   (speedo--attempt-in-progress (user-error "Cannot Load file while attempt is in progress"))
-   ((and (speedo--data-modified-p)
-         (y-or-n-p (format "%S modified. Save before loading %s? "
-                           speedo--data-file file)))
-    ;; Force because we just checked for modifications above
-    (speedo-save-file 'force)))
-  (speedo--load-file file)
-  (unless hide
-    (switch-to-buffer (get-buffer-create speedo-buffer))
-    (goto-char (point-min)))
-  (with-current-buffer speedo-buffer (speedo-mode)))
+  (interactive)
+  (when speedo--attempt-in-progress
+    (user-error "Cannot Load file while attempt is in progress"))
+  (let ((file (or file (read-file-name "Splits file: " speedo-directory))))
+    (when (and (speedo--data-modified-p)
+               (y-or-n-p (format "%S modified. Save before loading %s? "
+                                 speedo--data-file file)))
+      ;; Force because we just checked for modifications above
+      (speedo-save-file 'force))
+    (speedo--load-file file)
+    (unless hide
+      (switch-to-buffer (get-buffer-create speedo-buffer))
+      (goto-char (point-min)))
+    (with-current-buffer speedo-buffer (speedo-mode))))
 
 ;;;###autoload
 (defun speedo ()
