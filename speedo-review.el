@@ -339,12 +339,21 @@ HEADER is shown in the review buffer."
     (speedo-review--ui-init attempts 'cache)
     (display-buffer speedo-review-buffer)))
 
+
+(defun speedo-review--ensured-numeric-arg (prompt)
+  "Ensure `speedo--data' and return a numeric arg list.
+Return provided `current-prefix-arg' or a number the user enters at PROMPT.
+For use in `interactive' specs for commands which rely on `speedo--data'."
+  (speedo-review--ensure-data)
+  (list (if current-prefix-arg
+            (prefix-numeric-value current-prefix-arg)
+          (read-number prompt 1))))
+
 ;;;###autoload
 (defun speedo-review-last-attempts (&optional n attempts header)
   "Compare last N ATTEMPTS against target run.
 HEADER is displayed in review buffer."
-  (interactive (list (progn (speedo-review--ensure-data)
-                            (read-number "Last N attempts: "))))
+  (interactive (speedo-review--ensured-numeric-arg "Last N attempts: "))
   (let ((attempts (last (or attempts (speedo--attempts)) n)))
     (speedo-review attempts (list (speedo--header-game-info)
                                   (or header
@@ -354,8 +363,7 @@ HEADER is displayed in review buffer."
 (defun speedo-review-last-runs (&optional n attempts header)
   "Compare last N complete ATTEMPTS.
 HEADER is displayed in review buffer."
-  (interactive (list (progn (speedo-review--ensure-data)
-                            (read-number "Last N runs: "))))
+  (interactive (speedo-review--ensured-numeric-arg "Last N runs: "))
   (let ((attempts (nreverse (last (cl-remove-if-not #'speedo--attempt-complete-p
                                                     (or attempts (speedo--attempts)))
                                   n))))
@@ -366,8 +374,7 @@ HEADER is displayed in review buffer."
 ;;;###autoload
 (defun speedo-review-top-runs (&optional n attempts)
   "Compare top N complete ATTEMPTS."
-  (interactive (list (progn (speedo-review--ensure-data)
-                            (read-number "Top N runs: "))))
+  (interactive (speedo-review--ensured-numeric-arg "Top N runs: "))
   (let* ((runs (cl-sort (or attempts (speedo--attempts #'speedo--attempt-incomplete-p))
                         #'<
                         :key (lambda (a) (speedo--splits-duration (plist-get a :splits)))))
