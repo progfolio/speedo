@@ -326,7 +326,7 @@ If `tabulated-list-mode' offered a post-print hook, we could avoid this."
     (speedo-review--insert-totals speedo-review--totals-data)))
 
 ;;;###autoload
-(defun speedo-review (attempts &optional header)
+(defun speedo-review (&optional attempts header)
   "Compare ATTEMPTS.
 If ATTEMPTS is nil, prompt user.
 HEADER is shown in the review buffer."
