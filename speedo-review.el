@@ -299,6 +299,11 @@ If CACHE is non-nil, the attempts are saved in `speedo-review--attempts'."
       (setq tabulated-list-entries rows
             tabulated-list-format (speedo-review--columns attempts)
             tabulated-list-use-header-line nil)
+      ;; Clear the sort-key if the column it refrences has been removed.
+      (unless (cl-member (car tabulated-list-sort-key)
+                         (cl-coerce tabulated-list-format 'list)
+                         :test #'string= :key #'car)
+        (setq tabulated-list-sort-key nil))
       (tabulated-list-init-header)
       (advice-add 'tabulated-list-print :after 'speedo-review--print-totals-maybe)
       (tabulated-list-print 'remember-pos)
@@ -365,12 +370,6 @@ HEADER is displayed in review buffer."
                 (upcase name))
        (interactive)
        (setq ,var (not ,var))
-       ;; Clear the sort-key if the column it refrences has been removed.
-       (if (and (not ,var)
-                tabulated-list-sort-key
-                (string= (downcase ,name)
-                         (downcase (car tabulated-list-sort-key))))
-           (setq tabulated-list-sort-key nil))
        (speedo-review--ui-init speedo-review--attempts))))
 
 (dolist (colname '("average" "consistency" "id"))
