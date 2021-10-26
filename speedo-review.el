@@ -359,34 +359,43 @@ For use in `interactive' specs for commands which rely on `speedo--data'."
 
 ;;;###autoload
 (defun speedo-review-last-attempts (&optional n attempts header)
-  "Compare last N ATTEMPTS against target run.
+  "Compare last N ATTEMPTS.
+If N is positive, ATTEMPTS are sorted most recent first.
+If N is negative, they are sorted most recent last.
 HEADER is displayed in review buffer."
   (interactive (speedo-review--ensured-numeric-arg "Last N attempts: "))
-  (let ((attempts (last (or attempts (speedo--attempts)) n)))
-    (speedo-review attempts (list (speedo--header-game-info)
-                                  (or header
-                                      (format " Last %d Attempts" (length attempts)))))))
+  (let ((attempts (last (or attempts (speedo--attempts)) (abs n))))
+    (when (> n 0) (setq attempts (reverse attempts)))
+    (speedo-review attempts
+                   (list (speedo--header-game-info)
+                         (or header (format " Last %d Attempts" (length attempts)))))))
 
 ;;;###autoload
 (defun speedo-review-last-runs (&optional n attempts header)
   "Compare last N complete ATTEMPTS.
+If N is positive, ATTEMPTS are sorted most recent first.
+If N is negative, they are sorted most recent last.
 HEADER is displayed in review buffer."
   (interactive (speedo-review--ensured-numeric-arg "Last N runs: "))
-  (let ((attempts (nreverse (last (cl-remove-if-not #'speedo--attempt-complete-p
-                                                    (or attempts (speedo--attempts)))
-                                  n))))
+  (let ((attempts (last (cl-remove-if-not #'speedo--attempt-complete-p
+                                          (or attempts (speedo--attempts)))
+                        (abs n))))
+    (when (> n 0) (setq attempts (reverse attempts)))
     (speedo-review attempts (list (speedo--header-game-info)
                                   (or header
                                       (format " Last %d Runs" (length attempts)))))))
 
 ;;;###autoload
 (defun speedo-review-top-runs (&optional n attempts)
-  "Compare top N complete ATTEMPTS."
+  "Compare top N complete ATTEMPTS.
+If N is positive, ATTEMPTS are sorted most recent first.
+If N is negative, they are sorted most recent last."
   (interactive (speedo-review--ensured-numeric-arg "Top N runs: "))
   (let* ((runs (cl-sort (or attempts (speedo--attempts #'speedo--attempt-incomplete-p))
                         #'<
                         :key (lambda (a) (speedo--splits-duration (plist-get a :splits)))))
-         (top (cl-subseq runs 0 (min n (length runs)))))
+         (top (cl-subseq runs 0 (min (abs n) (length runs)))))
+    (when (< n 0) (setq top (reverse top)))
     (speedo-review top (list (speedo--header-game-info)
                              (format " Top %d Runs" (length top))))))
 
