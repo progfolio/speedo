@@ -461,6 +461,21 @@ If N is negative, they are sorted most recent last."
        (setq ,var (not ,var))
        (speedo-review--ui-init speedo-review--attempts))))
 
+(defmacro speedo-review-def-col-format-toggle (name)
+  "Define a toggle command for column format element represented by NAME."
+  (declare (indent 1))
+  (setq name (downcase name))
+  (let ((var (intern (format "speedo-review-include-%s" name))))
+    `(defun ,(intern (concat "speedo-review-toggle-" name)) ()
+       ,(format "Toggle display of %s in attempt columns."
+                (upcase name))
+       (interactive)
+       (setq ,var (not ,var))
+       (speedo-review--ui-init speedo-review--attempts))))
+
+(dolist (el '("mistakes"))
+  (eval `(speedo-review-def-col-format-toggle ,el)))
+
 (defun speedo-review--sort-col (name)
   "Toggle sorting of column with NAME."
   (save-excursion
@@ -501,6 +516,7 @@ If N is negative, they are sorted most recent last."
 (define-key speedo-review-mode-map (kbd "A") 'speedo-review-toggle-average-column)
 (define-key speedo-review-mode-map (kbd "C") 'speedo-review-toggle-consistency-column)
 (define-key speedo-review-mode-map (kbd "I") 'speedo-review-toggle-id-column)
+(define-key speedo-review-mode-map (kbd "M") 'speedo-review-toggle-mistakes)
 (define-key speedo-review-mode-map (kbd "a") 'speedo-review-sort-average)
 (define-key speedo-review-mode-map (kbd "c") 'speedo-review-sort-consistency)
 (define-key speedo-review-mode-map (kbd "i") 'speedo-review-sort-id)
