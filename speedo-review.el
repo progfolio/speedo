@@ -35,6 +35,8 @@
   "Used to set custom `header-line-format' during comparisons.")
 (defvar speedo-review--totals-data nil "Workaround for post sorting data insertion.")
 (defvar speedo-review-buffer   (concat speedo-buffer "<review>"))
+(defvar speedo-review-include-mistakes t
+  "When non-nil, include mistake counts for each segment.")
 (defvar speedo-review-include-totals-row t
   "When non-nil, include total attempt durations at bottom of data table.")
 (defvar speedo-review-include-average-column t
@@ -83,7 +85,7 @@ If COLLECTION is nil, use `speedo--data' or throw an error."
 (defun speedo-review--row-data (attempts)
   "Compute row data for ATTEMPTS.
 Returns a plist of form:
-\(:id :name :durations :average-durations :average-relative :consistency)."
+\(:id :name :mistakes :durations :average-durations :average-relative :consistency)."
   (let* ((segments          (plist-get speedo--data :segments))
          (segment-count     (length segments))
          (target            (car attempts))
@@ -96,11 +98,15 @@ Returns a plist of form:
         (push
          (list :id i
                :name (plist-get segment :name)
-               :durations
-               (mapcar (lambda (attempt)
-                         (plist-get (nth i (plist-get attempt :splits))
-                                    :duration))
-                       attempts)
+               :mistakes (mapcar (lambda (attempt)
+                                   (length
+                                    (plist-get (nth i (plist-get attempt :splits))
+                                               :mistakes)))
+                                 attempts)
+               :durations (mapcar (lambda (attempt)
+                                    (plist-get (nth i (plist-get attempt :splits))
+                                               :duration))
+                                  attempts)
                :relatives
                (when target-split-duration
                  (mapcar (lambda (attempt)
@@ -111,6 +117,9 @@ Returns a plist of form:
                          attempts)))
          rows)))
     (dolist (row rows)
+      (let ((mistakes (plist-get row :mistakes)))
+        (setf row (plist-put row :average-mistakes (/ (cl-reduce #'+ mistakes)
+                                                      (length mistakes)))))
       (when-let ((durations (plist-get row :durations))
                  (full-set-p (not (member nil durations))))
         (setf row (plist-put row :average-duration
@@ -156,24 +165,45 @@ Returns a plist of form:
                     (relatives (plist-get r :relatives)))
                 (dotimes (i (length durations))
                   (push (concat
-                         (format "%-8s"
+                         (format "%8s"
                                  (if-let ((duration (nth i durations)))
                                      (speedo--format-ms duration)
                                    speedo-text-place-holder))
                          (unless (zerop i)
                            (if-let ((relative (nth i relatives)))
-                               (concat " "  (speedo--relative-time relative 0)))))
+                               (format  " %9s"  (speedo--relative-time relative 0))))
+                         (when speedo-review-include-mistakes
+                           (when-let ((mistakes (plist-get r :mistakes))
+                                      (count (nth i mistakes))
+                                      (basis (car mistakes)))
+                             (format " %3s" (propertize
+                                             (number-to-string count)
+                                             'face
+                                             (cond
+                                              ((< count basis) 'speedo-ahead)
+                                              ((> count basis) 'speedo-behind)
+                                              (t 'speedo-neutral)))))))
                         times))
                 (nreverse times))
               (when speedo-review-include-average-column
                 (list
                  (concat
-                  (format "%-8s"
+                  (format "%8s"
                           (if-let ((average-duration (plist-get r :average-duration)))
                               (speedo--format-ms average-duration)
                             speedo-text-place-holder))
                   (when-let ((average-relative (plist-get r :average-relative)))
-                    (speedo--relative-time average-relative 0)))))
+                    (format " %9s" (speedo--relative-time average-relative 0)))
+                  (when speedo-review-include-mistakes
+                    (when-let ((average-mistakes (plist-get r :average-mistakes)))
+                      (let ((basis (or (car (plist-get r :mistakes)) 0)))
+                        (format " %3s"
+                                (propertize (number-to-string average-mistakes)
+                                            'face
+                                            (cond
+                                             ((< average-mistakes basis) 'speedo-ahead)
+                                             ((> average-mistakes basis) 'speedo-behind)
+                                             (t 'speedo-neutral))))))))))
               (when speedo-review-include-consistency-column
                 (list
                  (if-let ((consistency (plist-get r :consistency)))
@@ -209,6 +239,23 @@ Returns a plist of form:
                    ,@(mapcar (lambda (row) (plist-get row :durations)) rows))))
                (want-average-p (and speedo-review-include-average-column
                                     (> (length totals) 1)))
+               (mistakes
+                (let ((m (apply
+                          #'cl-mapcar
+                          `((lambda (&rest mistakes) (apply #'+ mistakes))
+                            ,@(mapcar (lambda (row) (plist-get row :mistakes))
+                                      rows)))))
+                  (setq m (append m
+                                  (when want-average-p (list (/ (cl-reduce #'+ m)
+                                                                (length m))))))
+                  (let ((basis (car m)))
+                    (mapcar (lambda (n)
+                              (propertize (number-to-string n)
+                                          'face (cond
+                                                 ((< n basis) 'speedo-ahead)
+                                                 ((> n basis) 'speedo-behind)
+                                                 (t 'speedo-neutral))))
+                            m))))
                (basis (car totals))
                (props (save-excursion
                         (forward-line -1)
@@ -238,14 +285,17 @@ Returns a plist of form:
               (insert (if (or (null total) (< total 0)) ;;no durations
                           speedo-text-place-holder
                         (concat
-                         (format "%-8s "
+                         (format "%8s"
                                  (propertize (speedo--format-ms total)
                                              'face (cond
                                                     ((> total basis) 'speedo-behind)
                                                     ((< total basis) 'speedo-ahead)
                                                     (t 'speedo-neutral))))
                          (unless (or (zerop i) (null basis))
-                           (speedo--relative-time basis (nth i totals)))))))))))))
+                           (format " %9s"
+                                   (speedo--relative-time basis (nth i totals))))
+                         (when speedo-review-include-mistakes
+                           (format " %3s" (nth i mistakes)))))))))))))
 
 (defvar speedo-review--attempts nil
   "Used to store attempts when manipulating views.")
@@ -275,7 +325,7 @@ Returns a plist of form:
                          (/ (plist-get a :start) 1000)))))
          (when (equal a target-attempt)
            (setq alias (propertize alias 'face '(:weight bold))))
-         (list alias (+ (length alias) 4) #'speedo-review--sort-attempt-column)))
+         (list alias 27 #'speedo-review--sort-attempt-column)))
      attempts)))
 
 (defun speedo-review--segment-col-length ()
@@ -295,7 +345,7 @@ Used as `tabulated-list-format'."
    (list (list "Segment" (speedo-review--segment-col-length) t))
    (speedo-review--attempt-columns attempts)
    (when speedo-review-include-average-column
-     (list (list "Average" 20 #'speedo-review--sort-attempt-column)))
+     (list (list "Average" 27 #'speedo-review--sort-attempt-column)))
    (when speedo-review-include-consistency-column
      (list (list "Consistency" 20 #'speedo-review--sort-consistencies)))))
 
