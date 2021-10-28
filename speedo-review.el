@@ -401,7 +401,9 @@ HEADER is shown in the review buffer."
           (or header
               (list (speedo--header-game-info)
                     (let ((len (length attempts)))
-                      (format " %d Attempt%s" len (if (> len 1) "s" ""))))))
+                      (propertize (format " %d Attempt%s" len
+                                          (if (> len 1) "s" ""))
+                                  'face 'speedo-neutral)))))
     (speedo-review--ui-init attempts 'cache)
     (display-buffer speedo-review-buffer)))
 
@@ -426,10 +428,12 @@ HEADER is displayed in review buffer."
     (speedo-review attempts
                    (list (speedo--header-game-info)
                          (or header
-                             (let ((len (length attempts)))
-                               (if (eq len 1)
-                                   "Last Attempt"
-                                 (format " Last %d Attempts" len))))))))
+                             (propertize
+                              (let ((len (length attempts)))
+                                (if (eq len 1)
+                                    "Last Attempt"
+                                  (format " Last %d Attempts" len)))
+                              'face 'speedo-ahead))))))
 
 ;;;###autoload
 (defun speedo-review-last-runs (&optional n attempts header)
@@ -444,10 +448,12 @@ HEADER is displayed in review buffer."
     (when (> n 0) (setq attempts (reverse attempts)))
     (speedo-review attempts (list (speedo--header-game-info)
                                   (or header
-                                      (let ((len (length attempts)))
-                                        (if (eq len 1)
-                                            " Last Run"
-                                          (format " Last %d Runs" len))))))))
+                                      (propertize
+                                       (let ((len (length attempts)))
+                                         (if (eq len 1)
+                                             " Last Run"
+                                           (format " Last %d Runs" len)))
+                                       'face 'speedo-ahead))))))
 
 ;;;###autoload
 (defun speedo-review-top-runs (&optional n attempts)
@@ -461,10 +467,12 @@ If N is negative, they are sorted most recent last."
          (top (cl-subseq runs 0 (min (abs n) (length runs)))))
     (when (< n 0) (setq top (reverse top)))
     (speedo-review top (list (speedo--header-game-info)
-                             (let ((len (length top)))
-                               (if (eq len 1)
-                                   " Personal Best"
-                                 (format " Top %d Runs" len)))))))
+                             (propertize
+                              (let ((len (length top)))
+                                (if (eq len 1)
+                                    " Personal Best"
+                                  (format " Top %d Runs" len)))
+                              'face 'speedo-ahead)))))
 
 (defmacro speedo-review-def-col-toggle (name)
   "Define a toggle command for column represented by NAME."
