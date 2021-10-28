@@ -285,24 +285,29 @@ Returns a plist of form:
             (insert (propertize " " 'display (pop props))))
           (insert (propertize "Totals" 'face '(:weight bold)))
           (dotimes (i (length totals))
-            (let ((total (nth i totals)))
-              (insert (propertize " " 'display (pop props)))
-              (insert (if (or (null total) (< total 0)) ;;no durations
-                          speedo-text-place-holder
-                        (concat
-                         (format "%8s"
-                                 (propertize (speedo--format-ms total)
-                                             'face (cond
-                                                    ((> total basis) 'speedo-behind)
-                                                    ((< total basis) 'speedo-ahead)
-                                                    (t 'speedo-neutral))))
-                         (when (and speedo-review-include-relative-times
-                                    basis
-                                    (> i 0))
-                           (format " %9s"
-                                   (speedo--relative-time basis (nth i totals))))
-                         (when speedo-review-include-mistakes
-                           (format " %3s" (nth i mistakes)))))))))))))
+            (let ((total (nth i totals))
+                  ;; Skip ID column
+                  (col (car (aref tabulated-list-format (1+ i)))))
+              (insert (propertize " " 'display (pop props)
+                                  'tabulated-list-column-name col))
+              (insert (propertize
+                       (if (or (null total) (< total 0)) ;;no durations
+                           speedo-text-place-holder
+                         (concat
+                          (format "%8s"
+                                  (propertize (speedo--format-ms total)
+                                              'face (cond
+                                                     ((> total basis) 'speedo-behind)
+                                                     ((< total basis) 'speedo-ahead)
+                                                     (t 'speedo-neutral))))
+                          (when (and speedo-review-include-relative-times
+                                     basis
+                                     (> i 0))
+                            (format " %9s"
+                                    (speedo--relative-time basis (nth i totals))))
+                          (when speedo-review-include-mistakes
+                            (format " %3s" (nth i mistakes)))))
+                       'tabulated-list-column-name col)))))))))
 
 (defvar speedo-review--attempts nil
   "Used to store attempts when manipulating views.")
@@ -509,6 +514,27 @@ If N is negative, they are sorted most recent last."
         (progn (backward-char) (tabulated-list-sort))
       (user-error "Could not find %S column" name))))
 
+(defun speedo-review-forward-col (&optional n)
+  "Move forward N columns."
+  (interactive "p")
+  (dotimes (_ n)
+    (text-property-search-forward 'tabulated-list-column-name)
+    (when (eolp) (forward-line 1))))
+
+(defun speedo-review-backward-col (&optional n)
+  "Move backward N columns."
+  (interactive "p")
+  (dotimes (_ n)
+    ;;@HACK: For whatever reason tabulated-list-search-backward will skip a
+    ;; column when searching backward from first col. Maybe it has something to
+    ;; do with the text property being contiguous between lines over the line
+    ;; break?. In any case, we just account for this case by searching forward.
+    (let ((first-col-p
+           (string= (get-text-property (point) 'tabulated-list-column-name)
+                    (car (aref tabulated-list-format 0)))))
+      (text-property-search-backward 'tabulated-list-column-name)
+      (when first-col-p (speedo-review-forward-col 1)))))
+
 (defmacro speedo-review-def-col-sorter (name)
   "Define a column sorting command for column with NAME."
   (declare (indent 1))
@@ -550,6 +576,8 @@ If N is negative, they are sorted most recent last."
 (define-key speedo-review-mode-map (kbd "la") 'speedo-review-last-attempts)
 (define-key speedo-review-mode-map (kbd "s") 'speedo-review-sort-segment)
 (define-key speedo-review-mode-map (kbd "t") 'speedo-review-top-runs)
+(define-key speedo-review-mode-map (kbd "<tab>") 'speedo-review-forward-col)
+(define-key speedo-review-mode-map (kbd "<backtab>") 'speedo-review-backward-col)
 
 (provide 'speedo-review)
 ;;; speedo-review.el ends here
