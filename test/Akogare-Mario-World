@@ -31,10 +31,7 @@
    ( :name "Stormcrow's Alcazar"))
   :config "./akogare-settings.el"
   :attempts
-  (( :start "2021-05-18 16:40:24" :splits nil :reset "26.583")
-   ( :start "2021-05-18 16:40:59" :splits nil :reset "23.724")
-   ( :start "2021-05-18 16:41:31" :splits nil :reset "41.736")
-   ( :start "2021-05-18 16:42:23"
+  (( :start "2021-05-18 16:42:23"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.746")
       ( :segment "Super Koopa Hills"
@@ -51,7 +48,6 @@
      (( :segment "Bullet Promenade" :duration "1:00.841")
       ( :segment "Super Koopa Hills" :duration "46.640"))
      :reset "2:40.641")
-   ( :start "2021-05-18 16:51:37" :splits nil :reset "26.247")
    ( :start "2021-05-18 16:52:12"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.779")
@@ -60,8 +56,6 @@
         :mistakes ("2:48.557")
         :duration "1:46.371"))
      :reset "4:03.656")
-   ( :start "2021-05-18 16:56:27" :splits nil :reset "26.297")
-   ( :start "2021-05-18 16:57:03" :splits nil :reset "26.562")
    ( :start "2021-05-18 16:57:40"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.286")
@@ -71,7 +65,6 @@
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.970"))
      :reset "1:24.107")
-   ( :start "2021-05-18 17:01:40" :splits nil :reset "45.760")
    ( :start "2021-05-18 17:02:35"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.645")
@@ -93,10 +86,6 @@
         :duration "1:31.108")
       ( :segment "Delfino Shores 2" :duration "59.419"))
      :reset "11:11.867")
-   ( :start "2021-05-18 17:13:57" :splits nil :reset "26.400")
-   ( :start "2021-05-18 17:14:32" :splits nil :reset "26.755")
-   ( :start "2021-05-18 17:15:10" :splits nil :reset "27.545")
-   ( :start "2021-05-18 17:15:47" :splits nil :reset "26.644")
    ( :start "2021-05-18 17:16:22"
      :splits
      (( :segment "Bullet Promenade" :duration "1:41.041")
@@ -108,7 +97,6 @@
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.827"))
      :reset "1:35.824")
-   ( :start "2021-05-18 17:22:37" :splits nil :reset "33.782")
    ( :start "2021-05-18 17:23:21"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.924")
@@ -175,23 +163,12 @@
      :splits
      (( :segment "Bullet Promenade" :duration "1:04.952"))
      :reset "1:11.691")
-   ( :start "2021-05-18 22:41:02" :splits nil :reset "45.428")
-   ( :start "2021-05-18 22:42:14" :splits nil :reset "25.928")
-   ( :start "2021-05-18 22:42:51" :splits nil :reset "39.096")
-   ( :start "2021-05-18 22:43:41" :splits nil :reset "1:21.477")
    ( :start "2021-05-18 22:45:04"
      :splits
      (( :segment "Bullet Promenade" :duration "0.636")
       ( :segment "Super Koopa Hills" :duration "0.403")
       ( :segment "Cloon Cavern" :duration "0.212"))
      :reset "2.061")
-   ( :start "2021-05-18 22:48:58" :splits nil :reset "39.412")
-   ( :start "2021-05-18 22:49:48" :splits nil :reset "25.856")
-   ( :start "2021-05-18 22:50:23" :splits nil :reset "25.567")
-   ( :start "2021-05-18 22:50:58" :splits nil :reset "25.932")
-   ( :start "2021-05-18 22:51:34" :splits nil :reset "26.249")
-   ( :start "2021-05-18 22:52:10" :splits nil :reset "14.267")
-   ( :start "2021-05-18 22:52:35" :splits nil :reset "25.898")
    ( :start "2021-05-18 22:53:10"
      :splits
      (( :segment "Bullet Promenade" :duration "1:01.043")
@@ -209,7 +186,6 @@
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.876"))
      :reset "1:27.366")
-   ( :start "2021-05-18 23:02:37" :splits nil :reset "26.150")
    ( :start "2021-05-18 23:03:12"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.942")
@@ -217,14 +193,11 @@
       ( :segment "Cloon Cavern" :duration "1:26.758")
       ( :segment "The Toxic Passage 1" :duration "34.311"))
      :reset "5:22.461")
-   ( :start "2021-05-18 23:08:44" :splits nil :reset "49.536")
-   ( :start "2021-05-18 23:09:43" :splits nil :reset "43.765")
    ( :start "2021-05-18 23:10:36"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.917")
       ( :segment "Super Koopa Hills" :duration "46.840"))
      :reset "3:06.430")
-   ( :start "2021-05-18 23:13:51" :splits nil :reset "26.992")
    ( :start "2021-05-18 23:14:29"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.798")
@@ -250,8 +223,6 @@
       ( :segment "Cloon Cavern" :duration "1:20.880")
       ( :segment "The Toxic Passage 1" :duration "34.426"))
      :reset "4:39.824")
-   ( :start "2021-05-21 19:00:13" :splits nil :reset "44.543")
-   ( :start "2021-05-21 19:01:07" :splits nil :reset "27.086")
    ( :start "2021-05-21 19:01:47"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.435")
@@ -310,12 +281,10 @@
         :mistakes ("35:13.389" "35:32.088" "35:58.569" "36:12.907" "36:25.140" "36:36.422" "37:23.338" "37:24.872" "37:31.453" "37:42.170" "38:02.685" "38:11.935" "38:36.543" "39:01.687")
         :duration "5:00.759")
       ( :segment "Stormcrow's Alcazar" :duration "52.086")))
-   ( :start "2021-05-23 21:22:39" :splits nil :reset "51.253")
    ( :start "2021-05-23 21:23:40"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.681"))
      :reset "1:17.441")
-   ( :start "2021-05-23 21:25:07" :splits nil :reset "26.384")
    ( :start "2021-05-23 21:25:44"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.949")
@@ -377,15 +346,10 @@
       ( :segment "Stormcrow's Alcazar"
         :mistakes ("35:50.235" "36:05.591" "36:41.782")
         :duration "1:30.638")))
-   ( :start "2021-05-27 20:15:09" :splits nil :reset "2.222")
-   ( :start "2021-05-27 20:15:21" :splits nil :reset "1.885")
-   ( :start "2021-05-27 20:15:37" :splits nil :reset "25.114")
-   ( :start "2021-05-27 20:16:16" :splits nil :reset "27.475")
    ( :start "2021-05-27 20:18:14"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.449"))
      :reset "1:25.579")
-   ( :start "2021-05-27 20:19:49" :splits nil :reset "44.878")
    ( :start "2021-05-27 20:20:43"
      :splits
      (( :segment "Bullet Promenade" :duration "1:01.519")
@@ -422,9 +386,6 @@
      (( :segment "Bullet Promenade" :duration "1:00.609")
       ( :segment "Super Koopa Hills" :duration "46.785"))
      :reset "2:18.494")
-   ( :start "2021-05-27 20:43:11" :splits nil :reset "49.094")
-   ( :start "2021-05-27 20:44:10" :splits nil :reset "33.092")
-   ( :start "2021-05-27 20:44:53" :splits nil :reset "32.766")
    ( :start "2021-05-27 20:45:36"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.479"))
@@ -517,7 +478,6 @@
         :mistakes ("6:18.475" "6:28.300")
         :duration "1:30.590"))
      :reset "8:13.977")
-   ( :start "2021-05-27 21:46:34" :splits nil :reset "26.233")
    ( :start "2021-05-27 21:47:10"
      :splits
      (( :segment "Bullet Promenade" :duration "1:01.066")
@@ -572,7 +532,6 @@
       ( :segment "Stormcrow's Alcazar"
         :mistakes ("35:51.619")
         :duration "1:05.038")))
-   ( :start "2021-05-28 20:48:45" :splits nil :reset "26.837")
    ( :start "2021-05-28 20:49:21"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.761"))
@@ -589,13 +548,10 @@
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.714"))
      :reset "1:19.809")
-   ( :start "2021-05-28 20:55:31" :splits nil :reset "45.072")
-   ( :start "2021-05-28 20:56:27" :splits nil :reset "25.722")
    ( :start "2021-05-28 20:57:02"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.487"))
      :reset "1:18.763")
-   ( :start "2021-05-28 20:58:30" :splits nil :reset "38.608")
    ( :start "2021-05-28 20:59:19"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.667")
@@ -621,7 +577,6 @@
      (( :segment "Bullet Promenade" :duration "1:00.979")
       ( :segment "Super Koopa Hills" :duration "46.895"))
      :reset "1:56.934")
-   ( :start "2021-05-28 21:15:13" :splits nil :reset "26.845")
    ( :start "2021-05-28 21:15:50"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.970")
@@ -646,7 +601,6 @@
         :mistakes ("13:19.065")
         :duration "1:47.448"))
      :reset "16:45.587")
-   ( :start "2021-05-28 21:33:01" :splits nil :reset "26.566")
    ( :start "2021-05-28 21:33:37"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.519")
@@ -672,21 +626,16 @@
         :mistakes ("3:53.486")
         :duration "47.032"))
      :reset "4:47.359")
-   ( :start "2021-05-28 21:46:43" :splits nil :reset "25.747")
-   ( :start "2021-06-01 22:24:33" :splits nil :reset "26.929")
    ( :start "2021-06-01 22:25:09"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.640")
       ( :segment "Super Koopa Hills" :duration "46.773"))
      :reset "2:49.629")
-   ( :start "2021-06-01 22:28:09" :splits nil :reset "26.218")
-   ( :start "2021-06-01 22:28:45" :splits nil :reset "27.390")
    ( :start "2021-06-01 22:29:23"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.719")
       ( :segment "Super Koopa Hills" :duration "46.669"))
      :reset "2:57.305")
-   ( :start "2021-06-01 22:32:30" :splits nil :reset "28.869")
    ( :start "2021-06-01 22:33:08"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.778")
@@ -707,12 +656,6 @@
         :mistakes ("6:46.579" "7:26.933")
         :duration "1:39.771"))
      :reset "8:54.997")
-   ( :start "2021-06-01 22:42:12" :splits nil :reset "45.161")
-   ( :start "2021-06-02 11:33:42" :splits nil :reset "0.256")
-   ( :start "2021-06-19 19:16:42" :splits nil :reset "26.486")
-   ( :start "2021-06-19 19:17:17" :splits nil :reset "43.720")
-   ( :start "2021-06-19 19:18:10" :splits nil :reset "2.866")
-   ( :start "2021-06-19 19:18:25" :splits nil :reset "32.300")
    ( :start "2021-06-19 19:19:06"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.874")
@@ -720,14 +663,10 @@
         :mistakes ("1:18.788")
         :duration "58.434"))
      :reset "2:49.505")
-   ( :start "2021-06-19 19:22:06" :splits nil :reset "33.529")
-   ( :start "2021-06-19 19:22:50" :splits nil :reset "23.880")
-   ( :start "2021-06-19 19:23:29" :splits nil :reset "44.959")
    ( :start "2021-06-19 19:24:23"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.248"))
      :reset "1:32.889")
-   ( :start "2021-06-19 19:26:05" :splits nil :reset "22.093")
    ( :start "2021-06-19 19:26:37"
      :splits
      (( :segment "Bullet Promenade" :duration "1:01.433"))
@@ -747,24 +686,18 @@
         :mistakes ("3:48.073")
         :duration "45.220"))
      :reset "4:27.052")
-   ( :start "2021-06-19 19:34:20" :splits nil :reset "26.671")
    ( :start "2021-06-19 19:35:08"
      :splits
      (( :segment "Bullet Promenade" :duration "1:01.080"))
      :reset "1:19.524")
-   ( :start "2021-06-19 19:36:37" :splits nil :reset "26.690")
    ( :start "2021-06-19 19:37:14"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.846"))
      :reset "1:18.598")
-   ( :start "2021-06-19 19:38:42" :splits nil :reset "34.425")
-   ( :start "2021-06-19 19:39:26" :splits nil :reset "43.821")
-   ( :start "2021-06-19 19:40:20" :splits nil :reset "26.186")
    ( :start "2021-06-19 19:40:56"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.453"))
      :reset "1:17.498")
-   ( :start "2021-06-19 19:42:23" :splits nil :reset "26.685")
    ( :start "2021-06-19 19:42:59"
      :splits
      (( :segment "Bullet Promenade" :duration "1:00.899"))
