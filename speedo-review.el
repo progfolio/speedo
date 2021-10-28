@@ -561,6 +561,8 @@ If N is negative, they are sorted most recent last."
     (hl-line-mode))
   (setq buffer-face-mode-face 'speedo-default
         default-directory (file-name-directory speedo--data-file))
+  (add-hook 'kill-emacs-hook  #'speedo--ask-to-save)
+  (add-hook 'kill-buffer-hook #'speedo--confirm-kill-buffer nil t)
   (buffer-face-mode))
 
 ;;;; Key bindings
