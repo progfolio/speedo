@@ -404,7 +404,6 @@ HEADER is shown in the review buffer."
     (speedo-review--ui-init attempts 'cache)
     (display-buffer speedo-review-buffer)))
 
-
 (defun speedo-review--ensured-numeric-arg (prompt)
   "Ensure `speedo--data' and return a numeric arg list.
 Return provided `current-prefix-arg' or a number the user enters at PROMPT.
