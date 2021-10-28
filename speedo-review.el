@@ -37,6 +37,8 @@
 (defvar speedo-review-buffer   (concat speedo-buffer "<review>"))
 (defvar speedo-review-include-mistakes t
   "When non-nil, include mistake counts for each segment.")
+(defvar speedo-review-include-relative-times t
+  "When non-nil, include relative-times for each segment.")
 (defvar speedo-review-include-totals-row t
   "When non-nil, include total attempt durations at bottom of data table.")
 (defvar speedo-review-include-average-column t
@@ -169,7 +171,8 @@ Returns a plist of form:
                                  (if-let ((duration (nth i durations)))
                                      (speedo--format-ms duration)
                                    speedo-text-place-holder))
-                         (unless (zerop i)
+                         (when (and speedo-review-include-relative-times
+                                    (not (zerop i)))
                            (if-let ((relative (nth i relatives)))
                                (format  " %9s"  (speedo--relative-time relative 0))))
                          (when speedo-review-include-mistakes
@@ -192,18 +195,20 @@ Returns a plist of form:
                           (if-let ((average-duration (plist-get r :average-duration)))
                               (speedo--format-ms average-duration)
                             speedo-text-place-holder))
-                  (when-let ((average-relative (plist-get r :average-relative)))
-                    (format " %9s" (speedo--relative-time average-relative 0)))
+                  (when speedo-review-include-relative-times
+                    (when-let ((average-relative (plist-get r :average-relative)))
+                      (format " %9s" (speedo--relative-time average-relative 0))))
                   (when speedo-review-include-mistakes
                     (when-let ((average-mistakes (plist-get r :average-mistakes)))
                       (let ((basis (or (car (plist-get r :mistakes)) 0)))
                         (format " %3s"
-                                (propertize (number-to-string average-mistakes)
-                                            'face
-                                            (cond
-                                             ((< average-mistakes basis) 'speedo-ahead)
-                                             ((> average-mistakes basis) 'speedo-behind)
-                                             (t 'speedo-neutral))))))))))
+                                (propertize
+                                 (number-to-string average-mistakes)
+                                 'face
+                                 (cond
+                                  ((< average-mistakes basis) 'speedo-ahead)
+                                  ((> average-mistakes basis) 'speedo-behind)
+                                  (t 'speedo-neutral))))))))))
               (when speedo-review-include-consistency-column
                 (list
                  (if-let ((consistency (plist-get r :consistency)))
@@ -291,7 +296,9 @@ Returns a plist of form:
                                                     ((> total basis) 'speedo-behind)
                                                     ((< total basis) 'speedo-ahead)
                                                     (t 'speedo-neutral))))
-                         (unless (or (zerop i) (null basis))
+                         (when (and speedo-review-include-relative-times
+                                    basis
+                                    (> i 0))
                            (format " %9s"
                                    (speedo--relative-time basis (nth i totals))))
                          (when speedo-review-include-mistakes
@@ -473,7 +480,7 @@ If N is negative, they are sorted most recent last."
        (setq ,var (not ,var))
        (speedo-review--ui-init speedo-review--attempts))))
 
-(dolist (el '("mistakes"))
+(dolist (el '("mistakes" "relative-times"))
   (eval `(speedo-review-def-col-format-toggle ,el)))
 
 (defun speedo-review--sort-col (name)
@@ -517,6 +524,7 @@ If N is negative, they are sorted most recent last."
 (define-key speedo-review-mode-map (kbd "C") 'speedo-review-toggle-consistency-column)
 (define-key speedo-review-mode-map (kbd "I") 'speedo-review-toggle-id-column)
 (define-key speedo-review-mode-map (kbd "M") 'speedo-review-toggle-mistakes)
+(define-key speedo-review-mode-map (kbd "R") 'speedo-review-toggle-relative-times)
 (define-key speedo-review-mode-map (kbd "a") 'speedo-review-sort-average)
 (define-key speedo-review-mode-map (kbd "c") 'speedo-review-sort-consistency)
 (define-key speedo-review-mode-map (kbd "i") 'speedo-review-sort-id)
