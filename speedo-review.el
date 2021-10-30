@@ -24,8 +24,6 @@
 ;;; Code:
 (require 'speedo)
 
-(declare-function speedo-load-file "speedo-commands" (&optional file hide))
-
 (defcustom speedo-review-include-target t
   "If non-nil, consider `speedo--comparison-target' implicit target of comparisons."
   :type  'boolean
@@ -49,12 +47,6 @@
   "When non-nil, include Consistency column in review.")
 (defvar speedo-review-mode-map (make-sparse-keymap) "Keymap for `speedo-review-mode'.")
 
-(defun speedo-review--ensure-data ()
-  "Ensure `speedo--data' is set and return it."
-  (unless speedo--data (speedo-load-file nil 'hide))
-  (unless (plist-get speedo--data :attempts)
-    (user-error "No attempts in speedo DB %S" speedo--data-file))
-  speedo--data)
 
 (defun speedo-review-read-attempts (&optional collection)
   "Return a list of attempts from COLLECTION.
@@ -79,7 +71,7 @@ If COLLECTION is nil, use `speedo--data' or throw an error."
                                  (plist-get attempt :tags) " "))
                      " "))
                    attempt))
-           (or collection (plist-get (speedo-review--ensure-data) :attempts))))
+           (or collection (plist-get (speedo--ensure-data) :attempts))))
          (selections (delete-dups (completing-read-multiple "Attempts: " candidates))))
     (mapcar (lambda (selection) (alist-get selection candidates nil nil #'string=))
             selections)))
@@ -416,7 +408,7 @@ HEADER is shown in the review buffer."
   "Ensure `speedo--data' and return a numeric arg list.
 Return provided `current-prefix-arg' or a number the user enters at PROMPT.
 For use in `interactive' specs for commands which rely on `speedo--data'."
-  (speedo-review--ensure-data)
+  (speedo--ensure-data)
   (list (if current-prefix-arg
             (prefix-numeric-value current-prefix-arg)
           (read-number prompt 1))))

@@ -836,6 +836,15 @@ Negative N cycles backward, positive forward."
         (speedo--target-attempt (cdr speedo--comparison-target)))
     (error "Could not load: %S. Malformed?" file)))
 
+(defun speedo--ensure-data ()
+  "Ensure `speedo--data' is set and return it."
+  (unless speedo--data
+    (speedo--load-file
+     (read-file-name "Splits file: " speedo-directory )))
+  (unless (plist-get speedo--data :attempts)
+    (user-error "No attempts in speedo DB %S" speedo--data-file))
+  speedo--data)
+
 (defun speedo--timer-columns-init ()
   "Initialize format of the UI."
   (setq tabulated-list-format
