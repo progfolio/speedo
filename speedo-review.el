@@ -404,22 +404,14 @@ HEADER is shown in the review buffer."
     (speedo-review--ui-init attempts 'cache)
     (display-buffer speedo-review-buffer)))
 
-(defun speedo-review--ensured-numeric-arg (prompt)
-  "Ensure `speedo--data' and return a numeric arg list.
-Return provided `current-prefix-arg' or a number the user enters at PROMPT.
-For use in `interactive' specs for commands which rely on `speedo--data'."
-  (speedo--ensure-data)
-  (list (if current-prefix-arg
-            (prefix-numeric-value current-prefix-arg)
-          (read-number prompt 1))))
-
 ;;;###autoload
 (defun speedo-review-last-attempts (&optional n attempts header)
   "Compare last N ATTEMPTS.
 If N is positive, ATTEMPTS are sorted most recent first.
 If N is negative, they are sorted most recent last.
 HEADER is displayed in review buffer."
-  (interactive (speedo-review--ensured-numeric-arg "Last N attempts: "))
+  (interactive "p")
+  (speedo--ensure-data)
   (let ((attempts (last (or attempts (speedo--attempts)) (abs n))))
     (when (> n 0) (setq attempts (reverse attempts)))
     (speedo-review attempts
@@ -438,7 +430,8 @@ HEADER is displayed in review buffer."
 If N is positive, ATTEMPTS are sorted most recent first.
 If N is negative, they are sorted most recent last.
 HEADER is displayed in review buffer."
-  (interactive (speedo-review--ensured-numeric-arg "Last N runs: "))
+  (interactive "p")
+  (speedo--ensure-data)
   (let ((attempts (last (cl-remove-if-not #'speedo--attempt-complete-p
                                           (or attempts (speedo--attempts)))
                         (abs n))))
@@ -457,7 +450,8 @@ HEADER is displayed in review buffer."
   "Compare top N complete ATTEMPTS.
 If N is positive, ATTEMPTS are sorted most recent first.
 If N is negative, they are sorted most recent last."
-  (interactive (speedo-review--ensured-numeric-arg "Top N runs: "))
+  (interactive "p")
+  (speedo--ensure-data)
   (let* ((runs (cl-sort (or attempts (speedo--attempts #'speedo--attempt-incomplete-p))
                         #'<
                         :key (lambda (a) (speedo--splits-duration (plist-get a :splits)))))
