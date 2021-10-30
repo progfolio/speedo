@@ -46,7 +46,11 @@
 (defvar speedo-review-include-consistency-column t
   "When non-nil, include Consistency column in review.")
 (defvar speedo-review-mode-map (make-sparse-keymap) "Keymap for `speedo-review-mode'.")
-
+(defvar speedo-review-include-relative-split-times nil
+  "When non-nil, split durations are displayed relative to start of the run.
+Otherwise they are abolute times.")
+(defvar speedo-review--attempts nil
+  "Used to store attempts when manipulating views.")
 
 (defun speedo-review-read-attempts (&optional collection)
   "Return a list of attempts from COLLECTION.
@@ -161,7 +165,14 @@ Returns a plist of form:
                   (push (concat
                          (format "%8s"
                                  (if-let ((duration (nth i durations)))
-                                     (speedo--format-ms duration)
+                                     (speedo--format-ms
+                                      (if speedo-review-include-relative-split-times
+                                          (speedo--splits-duration
+                                           (cl-subseq
+                                            (plist-get (nth i speedo-review--attempts)
+                                                       :splits)
+                                            0 (1+ id)))
+                                        duration))
                                    speedo-text-place-holder))
                          (when (and speedo-review-include-relative-times
                                     (not (zerop i)))
@@ -185,7 +196,13 @@ Returns a plist of form:
                  (concat
                   (format "%8s"
                           (if-let ((average-duration (plist-get r :average-duration)))
-                              (speedo--format-ms average-duration)
+                              (speedo--format-ms
+                               (if speedo-review-include-relative-split-times
+                                   (cl-reduce
+                                    #'+
+                                    (cl-subseq data 0 (1+ id))
+                                    :key (lambda (r) (or (plist-get r :average-duration) 0)))
+                                 average-duration))
                             speedo-text-place-holder))
                   (when speedo-review-include-relative-times
                     (when-let ((average-relative (plist-get r :average-relative)))
@@ -300,9 +317,6 @@ Returns a plist of form:
                           (when speedo-review-include-mistakes
                             (format " %3s" (nth i mistakes)))))
                        'tabulated-list-column-name col)))))))))
-
-(defvar speedo-review--attempts nil
-  "Used to store attempts when manipulating views.")
 
 (defun speedo-review--sort-attempt-column (a b)
   "Sort attempt column rows A and B by split durations."
@@ -489,7 +503,7 @@ If N is negative, they are sorted most recent last."
        (setq ,var (not ,var))
        (speedo-review--ui-init speedo-review--attempts))))
 
-(dolist (el '("mistakes" "relative-times"))
+(dolist (el '("mistakes" "relative-times" "relative-split-times"))
   (eval `(speedo-review-def-col-format-toggle ,el)))
 
 (defun speedo-review--sort-col (name)
@@ -554,9 +568,11 @@ If N is negative, they are sorted most recent last."
 ;;;; Key bindings
 (define-key speedo-review-mode-map (kbd "A") 'speedo-review-toggle-average-column)
 (define-key speedo-review-mode-map (kbd "C") 'speedo-review-toggle-consistency-column)
+;;(define-key speedo-review-mode-map (kbd "E") 'speedo-review-toggle-consistency-column)
 (define-key speedo-review-mode-map (kbd "I") 'speedo-review-toggle-id-column)
 (define-key speedo-review-mode-map (kbd "M") 'speedo-review-toggle-mistakes)
 (define-key speedo-review-mode-map (kbd "R") 'speedo-review-toggle-relative-times)
+(define-key speedo-review-mode-map (kbd "T") 'speedo-review-toggle-relative-split-times)
 (define-key speedo-review-mode-map (kbd "a") 'speedo-review-sort-average)
 (define-key speedo-review-mode-map (kbd "c") 'speedo-review-sort-consistency)
 (define-key speedo-review-mode-map (kbd "i") 'speedo-review-sort-id)
