@@ -137,6 +137,8 @@ It must be a non-empty plist with at least the following keys:
 (defun speedo--parse-time-string (time-string)
   "Convert TIME-STRING into list of form:
 \\(milliseconds seconds minutes hours)."
+  (when (string-match-p "[^.0-:]" time-string)
+    (error "Invalid character in time-string"))
   (let ((result
          (list (if (string-match "\\(?:\\([[:digit:]]\\)\\.\\([[:digit:]]*\\)$\\)"
                                  time-string)
