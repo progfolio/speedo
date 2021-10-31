@@ -161,6 +161,7 @@ If HIDE is non-nil, do not display `speedo-buffer' after loading."
      (when speedo-default-splits-file
        (expand-file-name speedo-default-splits-file speedo-directory)))))
 
+;;;###autoload
 (defun speedo-save-file (&optional force)
   "Save `speedo--data' to `speedo--data-file'.
 If FORCE is non-nil, save without checking if data has been modified."

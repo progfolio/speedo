@@ -343,7 +343,8 @@ Returns a plist of form:
                          (/ (plist-get a :start) 1000)))))
          (when (equal a target-attempt)
            (setq alias (propertize alias 'face '(:weight bold))))
-         (list alias 27 #'speedo-review--sort-attempt-column)))
+         (list (propertize alias 'speedo-attempt a)
+               27 #'speedo-review--sort-attempt-column)))
      attempts)))
 
 (defun speedo-review--segment-col-length ()
@@ -547,6 +548,18 @@ If N is negative, they are sorted most recent last."
   (eval `(progn (speedo-review-def-col-toggle ,colname)
                 (speedo-review-def-col-sorter ,colname))))
 
+(declare-function speedo-edit-attempt "speedo-edit" (attempt))
+(defun speedo-review-edit-attempt ()
+  "Edit attempt at current column."
+  (interactive)
+  (let ((col (current-column)))
+    (save-excursion
+      (goto-char (point-min))
+      (move-to-column col)
+      (if-let ((attempt (get-text-property (point) 'speedo-attempt)))
+          (speedo-edit-attempt attempt)
+        (user-error "No attempt found in current column")))))
+
 (define-derived-mode speedo-review-mode tabulated-list-mode "speedo-review"
   "Major mode for reviewing speedo attempts.
 
@@ -568,7 +581,7 @@ If N is negative, they are sorted most recent last."
 ;;;; Key bindings
 (define-key speedo-review-mode-map (kbd "A") 'speedo-review-toggle-average-column)
 (define-key speedo-review-mode-map (kbd "C") 'speedo-review-toggle-consistency-column)
-;;(define-key speedo-review-mode-map (kbd "E") 'speedo-review-toggle-consistency-column)
+(define-key speedo-review-mode-map (kbd "E") 'speedo-review-edit-attempt)
 (define-key speedo-review-mode-map (kbd "I") 'speedo-review-toggle-id-column)
 (define-key speedo-review-mode-map (kbd "M") 'speedo-review-toggle-mistakes)
 (define-key speedo-review-mode-map (kbd "R") 'speedo-review-toggle-relative-times)
