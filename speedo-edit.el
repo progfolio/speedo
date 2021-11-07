@@ -261,17 +261,5 @@ Else append NEW to DATA."
 (define-key speedo-edit-mode-map (kbd "C-c C-c")   'speedo-edit-finalize)
 (define-key speedo-edit-mode-map (kbd "C-c C-k")   'speedo-edit-abort)
 
-;;@REMOVE: when done testing basics
-(defun speedo-edit-test ()
-  "Test."
-  (interactive)
-  (speedo-edit-attempt '(:start 1621370543000 :splits
-                                ((:segment "Bullet Promenade" :duration 60746)
-                                 (:segment "Super Koopa Hills" :mistakes
-                                           (71762)
-                                           :duration 50884))
-                                :reset 173977
-                                :alias "My Test Run"
-                                :tags ("one" "two" "three"))))
 (provide 'speedo-edit)
 ;;; speedo-edit.el ends here
