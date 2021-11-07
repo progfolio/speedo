@@ -29,6 +29,7 @@
 (require 'cl-seq)
 (require 'speedo)
 
+(defvar speedo-edit-buffer "*speedo-edit*" "Buffer for editing attempts.")
 (defvar speedo-edit-mode-map (make-sparse-keymap) "Keymap for `speedo-edit-mode'.")
 (defvar speedo-edit-field-placeholder (propertize " " 'display
                                                   (propertize speedo-text-place-holder
@@ -87,7 +88,7 @@
 (defun speedo-edit-attempt (attempt)
   "Edit ATTEMPT."
   (interactive (list (speedo-read-attempt)))
-  (switch-to-buffer "*speedo-edit*")
+  (switch-to-buffer speedo-edit-buffer)
   (kill-all-local-variables)
   (let ((inhibit-read-only t))
     (erase-buffer))
@@ -235,8 +236,11 @@ Else append NEW to DATA."
 
 (defun speedo-edit-abort ()
   "Abort the current edit."
-  ;;(kill-buffer speedo-edit-buffer)
-  (ignore))
+  (interactive)
+  (when (buffer-live-p (get-buffer speedo-edit-buffer))
+    ;; Since `speedo-edit--attempt' is buffer-local, we shouldn't have to reset it.
+    (kill-buffer speedo-edit-buffer)
+    (message "Speedo edit aborted")))
 
 (define-derived-mode speedo-edit-mode fundamental-mode "speedo-edit"
   "Major mode for editing speedo attempts.
@@ -255,6 +259,7 @@ Else append NEW to DATA."
 (define-key speedo-edit-mode-map (kbd "<tab>")     'speedo-edit-forward)
 (define-key speedo-edit-mode-map (kbd "<backtab>") 'speedo-edit-backward)
 (define-key speedo-edit-mode-map (kbd "C-c C-c")   'speedo-edit-finalize)
+(define-key speedo-edit-mode-map (kbd "C-c C-k")   'speedo-edit-abort)
 
 ;;@REMOVE: when done testing basics
 (defun speedo-edit-test ()
