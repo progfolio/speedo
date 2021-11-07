@@ -86,7 +86,7 @@
 ;;;###autoload
 (defun speedo-edit-attempt (attempt)
   "Edit ATTEMPT."
-  (interactive)
+  (interactive (list (speedo-read-attempt)))
   (switch-to-buffer "*speedo-edit*")
   (kill-all-local-variables)
   (let ((inhibit-read-only t))

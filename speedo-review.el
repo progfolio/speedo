@@ -52,34 +52,6 @@ Otherwise they are abolute times.")
 (defvar speedo-review--attempts nil
   "Used to store attempts when manipulating views.")
 
-(defun speedo-review-read-attempts (&optional collection)
-  "Return a list of attempts from COLLECTION.
-If COLLECTION is nil, use `speedo--data' or throw an error."
-  (let* ((candidates
-          (mapcar
-           (lambda (attempt)
-             (cons (string-trim
-                    (string-join
-                     (list
-                      (format-time-string "%Y-%m-%d %I:%M%p"
-                                          (/ (plist-get attempt :start) 1000))
-                      (if-let ((duration (speedo--format-ms
-                                          (speedo--splits-duration
-                                           (plist-get attempt :splits)))))
-                          duration
-                        "       ")
-                      (if (speedo--attempt-complete-p attempt)
-                          (propertize "complete" 'face '(:weight bold))
-                        "reset")
-                      (mapconcat (lambda (tag) (format "%S" tag))
-                                 (plist-get attempt :tags) " "))
-                     " "))
-                   attempt))
-           (or collection (plist-get (speedo--ensure-data) :attempts))))
-         (selections (delete-dups (completing-read-multiple "Attempts: " candidates))))
-    (mapcar (lambda (selection) (alist-get selection candidates nil nil #'string=))
-            selections)))
-
 (defun speedo-review--row-data (attempts)
   "Compute row data for ATTEMPTS.
 Returns a plist of form:
@@ -408,7 +380,7 @@ If `tabulated-list-mode' offered a post-print hook, we could avoid this."
 If ATTEMPTS is nil, prompt user.
 HEADER is shown in the review buffer."
   (interactive)
-  (let ((attempts (or attempts (speedo-review-read-attempts))))
+  (let ((attempts (or attempts (speedo-read-attempt nil 'multiple))))
     (setq speedo-review--header
           (or header
               (list (speedo--header-game-info)

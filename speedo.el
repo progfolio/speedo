@@ -128,6 +128,44 @@ It must be a non-empty plist with at least the following keys:
               (signal 'wrong-type-argument (list 'speedo--database-p obj))))))
     (error (user-error "Speedo could not read %S: %S" file err))))
 
+(defun speedo-read-attempt (&optional collection multiple)
+  "Read attempts from COLLECTION.
+If COLLECTION is nil, use `speedo--data' or throw an error.
+IF MULTIPLE is non-nil, use `completing-read-multiple', else `completing-read'.
+MULTIPLE results are returned in a list, single results are not."
+  (let* ((candidates
+          (mapcar
+           (lambda (attempt)
+             (cons (string-trim
+                    (string-join
+                     (list
+                      (format-time-string "%Y-%m-%d %I:%M%p"
+                                          (/ (plist-get attempt :start) 1000))
+                      (if-let ((duration (speedo--format-ms
+                                          (speedo--splits-duration
+                                           (plist-get attempt :splits)))))
+                          duration
+                        "       ")
+                      (if (speedo--attempt-complete-p attempt)
+                          (propertize "complete" 'face '(:weight bold))
+                        "reset")
+                      (mapconcat (lambda (tag) (format "%S" tag))
+                                 (plist-get attempt :tags) " "))
+                     " "))
+                   attempt))
+           (or collection (plist-get (speedo--ensure-data) :attempts))))
+         (selections (funcall (if multiple #'completing-read-multiple
+                                #'completing-read)
+                              (if multiple "Attempts: " "Attempt: ")
+                              candidates))
+         result)
+    (unless multiple (setq selections (list selections)))
+    (setq result
+          (delete-dups
+           (mapcar (lambda (selection) (alist-get selection candidates nil nil #'string=))
+                   selections)))
+    (if multiple result (car result))))
+
 ;;;; Timer
 (defun speedo--formatter-sub-hour (_hours minutes seconds ms)
   "Display MINUTES:SECONDS.MS."
