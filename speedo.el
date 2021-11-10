@@ -140,8 +140,9 @@ MULTIPLE results are returned in a list, single results are not."
              (cons (string-trim
                     (string-join
                      (list
-                      (format-time-string "%Y-%m-%d %I:%M%p"
-                                          (/ (plist-get attempt :start) 1000))
+                      (or (plist-get attempt :alias)
+                          (format-time-string "%Y-%m-%d %I:%M%p"
+                                              (/ (plist-get attempt :start) 1000)))
                       (if-let ((duration (speedo--format-ms
                                           (speedo--splits-duration
                                            (plist-get attempt :splits)))))
