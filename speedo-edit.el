@@ -105,6 +105,13 @@
        (speedo--ms-to-date (plist-get speedo-edit--attempt :start))))))
 
 ;;;###autoload
+(defun speedo-edit-new ()
+  "Add a new attempt to currently loaded Speedo DB."
+  (interactive)
+  (speedo--ensure-data)
+  (speedo-edit-attempt (list :start (speedo--timestamp))))
+
+;;;###autoload
 (defun speedo-edit-attempt (attempt)
   "Edit ATTEMPT."
   (interactive (list (speedo-read-attempt)))

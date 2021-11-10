@@ -566,6 +566,7 @@ If N is negative, they are sorted most recent last."
 (define-key speedo-review-mode-map (kbd "r") 'speedo-review)
 (define-key speedo-review-mode-map (kbd "s") 'speedo-review-sort-segment)
 (define-key speedo-review-mode-map (kbd "t") 'speedo-review-top-runs)
+(define-key speedo-review-mode-map (kbd "+") 'speedo-edit-new)
 (define-key speedo-review-mode-map (kbd "<tab>") 'speedo-review-forward-col)
 (define-key speedo-review-mode-map (kbd "<backtab>") 'speedo-review-backward-col)
 
