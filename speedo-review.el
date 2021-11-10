@@ -521,16 +521,26 @@ If N is negative, they are sorted most recent last."
                 (speedo-review-def-col-sorter ,colname))))
 
 (declare-function speedo-edit-attempt "speedo-edit" (attempt))
-(defun speedo-review-edit-attempt ()
-  "Edit attempt at current column."
-  (interactive)
-  (let ((col (current-column)))
-    (save-excursion
-      (goto-char (point-min))
-      (move-to-column col)
-      (if-let ((attempt (get-text-property (point) 'speedo-attempt)))
-          (speedo-edit-attempt attempt)
-        (user-error "No attempt found in current column")))))
+(defun speedo-review-edit-attempt (&optional n)
+  "Edit Nth attempt column.
+Note other columns (e.g. ID, Segment) are not counted toward N.
+If there is only one atttempt, edit it.
+If N is nil, attempt to edit attempt associated with column at point.
+If no attempt is assoicated with that column, read an attempt."
+  (interactive "P")
+  (let* ((attempt-count (length speedo-review--attempts))
+         (attempt
+          (cond
+           ((eq attempt-count 1) (car speedo-review--attempts))
+           (n (nth (1- (max 1 (min (abs (prefix-numeric-value n)) attempt-count)))
+                   speedo-review--attempts))
+           (t (let ((col (current-column)))
+                (save-excursion
+                  (goto-char (point-min))
+                  (move-to-column col)
+                  (or (get-text-property (point) 'speedo-attempt)
+                      (speedo-read-attempt speedo-review--attempts))))))))
+    (speedo-edit-attempt attempt)))
 
 (define-derived-mode speedo-review-mode tabulated-list-mode "speedo-review"
   "Major mode for reviewing speedo attempts.
