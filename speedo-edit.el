@@ -60,6 +60,26 @@
                         speedo-edit-field-placeholder)
                        (t val)))))
 
+(defun speedo-edit--validate-mistakes (widget &rest _)
+  "Validate WIDGET's mistakes string."
+  (widget-value-set
+   widget
+   (string-join
+    (mapcar (lambda (time)
+              (if-let ((valid (ignore-errors
+                                (speedo--time-string-to-ms
+                                 (replace-regexp-in-string "[^.0-:]*" "" time)))))
+                  (speedo--format-ms valid)
+                (propertize
+                 time
+                 'invalid t
+                 'display (propertize
+                           time
+                           'face
+                           '(:inherit speedo-behind :weight extrabold)))))
+            (split-string (widget-value widget) "," 'omit-nulls "[[:space:]]+"))
+    ", ")))
+
 (defun speedo-edit--validate-alias (widget &rest _)
   "Validate WIDGET's alias string."
   (let ((input (string-trim (widget-value widget))))
@@ -136,15 +156,18 @@
                        (string-join tags ", ")
                      speedo-edit-field-placeholder))
     (widget-insert "\n")
-    ;;@TODO: insert editable list for mistakes
-    ;; (widget-create 'speedo-field
-    ;;                :type 'mistakes
-    ;;                :index i
-    ;;                :format "Mistakes: %v "
-    ;;                (if-let ((mistakes (plist-get split :mistakes)))
-    ;;                    (string-join (mapcar #'speedo--format-ms mistakes) ",")
-    ;;                  speedo-edit-field-placeholder))
-    ;; (widget-insert "\n")
+    (widget-create 'speedo-field
+                   :type 'mistakes
+                   :action #'speedo-edit--validate-mistakes
+                   :format "Mistakes: %v "
+                   (string-join
+                    (apply #'append
+                           (mapcar (lambda (split)
+                                     (mapcar #'speedo--format-ms
+                                             (plist-get split :mistakes)))
+                                   splits))
+                    ", "))
+    (widget-insert "\n")
     (use-local-map widget-keymap)
     (widget-setup)
     (goto-char (point-min))
@@ -226,6 +249,19 @@ Else append NEW to DATA."
             ('tags  (setq attempt (plist-put attempt :tags
                                              (mapcar #'string-trim
                                                      (split-string val ",")))))
+            ('mistakes (let ((mistakes (mapcar #'speedo--time-string-to-ms
+                                               (split-string val "," 'omit-nulls "[[:space:]]")))
+                             (total 0))
+                         (dolist (split (reverse splits))
+                           (when-let ((duration (plist-get split :duration))
+                                      (mistakes
+                                       (progn
+                                         (setq total (+ total duration))
+                                         (cl-remove-if (lambda (mistake)
+                                                         (or (> mistake total)
+                                                             (< mistake (- total duration))))
+                                                       mistakes))))
+                             (setf split (plist-put split :mistakes mistakes))))))
             (_ (error "Uknown widget type!"))))
         (setq not-end (zerop (forward-line 1)))))
     (setq attempt (plist-put attempt :splits (reverse splits)))
