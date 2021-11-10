@@ -218,7 +218,7 @@ Else append NEW to DATA."
     (if-let ((index (cl-position target attempts :test #'equal)))
         (setf (nth index (plist-get data :attempts)) new)
       (setq data (plist-put data :attempts
-                            (append attempts (list target)))))))
+                            (append attempts (list new)))))))
 
 (declare-function speedo-review "speedo-review" (&optional attempts header))
 (defun speedo-edit-finalize ()
