@@ -34,6 +34,7 @@
 (defvar speedo-edit-field-placeholder (propertize " " 'display
                                                   (propertize speedo-text-place-holder
                                                               'face 'speedo-behind)))
+(defvar speedo-edit--in-progress nil "Non-nil when edit is in progress.")
 (defvar-local speedo-edit--attempt nil "Buffer-local record of the attempt being edited.")
 
 (define-widget 'speedo-field 'editable-field "A speedo edit field."
@@ -111,10 +112,14 @@
   (speedo--ensure-data)
   (speedo-edit-attempt (list :start (speedo--timestamp))))
 
+(defvar speedo--attempt-in-progress)
 ;;;###autoload
 (defun speedo-edit-attempt (attempt)
   "Edit ATTEMPT."
   (interactive (list (speedo-read-attempt)))
+  (when speedo--attempt-in-progress
+    (user-error "Cannot edit while attempt in progress"))
+  (setq speedo-edit--in-progress t)
   (switch-to-buffer speedo-edit-buffer)
   (kill-all-local-variables)
   (let ((inhibit-read-only t))
@@ -273,6 +278,7 @@ Else append NEW to DATA."
         (setq not-end (zerop (forward-line 1)))))
     (setq attempt (plist-put attempt :splits (reverse splits)))
     (speedo--edit-replace-or-append-attempt speedo--data speedo-edit--attempt attempt)
+    (setq speedo-edit--in-progress nil)
     (message "Attempt saved in memory.")
     (kill-buffer)
     (speedo-review (list attempt) "Last Edit")))
@@ -283,6 +289,7 @@ Else append NEW to DATA."
   (when (buffer-live-p (get-buffer speedo-edit-buffer))
     ;; Since `speedo-edit--attempt' is buffer-local, we shouldn't have to reset it.
     (kill-buffer speedo-edit-buffer)
+    (setq speedo-edit--in-progress nil)
     (message "Speedo edit aborted")))
 
 (define-derived-mode speedo-edit-mode fundamental-mode "speedo-edit"
