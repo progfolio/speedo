@@ -105,6 +105,17 @@
          input
        (speedo--ms-to-date (plist-get speedo-edit--attempt :start))))))
 
+(declare-function speedo-delete-attempts "speedo-commands")
+(defun speedo-edit-delete ()
+  "Delete current attempt."
+  (interactive)
+  (unless (string= (buffer-name) speedo-edit-buffer)
+    (user-error "Not in speedo editing buffer"))
+  (when (y-or-n-p "Delete current attempt?")
+    (speedo-delete-attempts (list speedo-edit--attempt))
+    (setq speedo-edit--in-progress nil)
+    (kill-this-buffer)))
+
 ;;;###autoload
 (defun speedo-edit-new ()
   "Add a new attempt to currently loaded Speedo DB."
@@ -310,6 +321,7 @@ Else append NEW to DATA."
 (define-key speedo-edit-mode-map (kbd "<backtab>") 'speedo-edit-backward)
 (define-key speedo-edit-mode-map (kbd "C-c C-c")   'speedo-edit-finalize)
 (define-key speedo-edit-mode-map (kbd "C-c C-k")   'speedo-edit-abort)
+(define-key speedo-edit-mode-map (kbd "C-c C-d")   'speedo-edit-delete)
 
 (provide 'speedo-edit)
 ;;; speedo-edit.el ends here

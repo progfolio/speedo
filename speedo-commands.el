@@ -112,6 +112,14 @@ If no attempt is in progress, clear the UI times."
   (speedo--clear)
   (goto-char (point-min)))
 
+;;;###autoload
+(defun speedo-delete-attempts (attempts)
+  "Delete ATTEMPTS from current DB."
+  (interactive (list (speedo-read-attempt nil 'multiple)))
+  (setq speedo--data (speedo--delete-attempts attempts speedo--data))
+  (let ((len (length attempts)))
+    (message "Deleted %d attempt%s" len (if (eq len 1) "" "s"))))
+
 (defun speedo-bury ()
   "Bury the `speedo-buffer'."
   (interactive)
