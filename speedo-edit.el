@@ -282,7 +282,7 @@ Else append NEW to DATA."
                                          (setq total (+ total duration))
                                          (cl-remove-if (lambda (mistake)
                                                          (or (> mistake total)
-                                                             (< mistake (- total duration))))
+                                                             (<= mistake (- total duration))))
                                                        mistakes))))
                              (setf split (plist-put split :mistakes mistakes))))))
             (_ (error "Uknown widget type!"))))
