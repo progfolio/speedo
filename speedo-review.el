@@ -325,7 +325,7 @@ Returns a plist of form:
                   (cl-sort (mapcar (lambda (segment) (length (plist-get segment :name)))
                                    (plist-get speedo--data :segments))
                            #'>))))
-    (max (floor (* 1.2 longest)) (length "Segment"))))
+    (max (floor (* 1.2 longest)) (+ (length "Segment") 2))))
 
 (defun speedo-review--columns (attempts)
   "Return Column format for ATTEMPTS.
