@@ -62,6 +62,27 @@ When called interactivley, prompt for optional values."
                              segments))
      file nil nil nil 'must-be-new)))
 
+;;;###autoload
+(defun speedo-import-splits (file)
+  "Import splits from JSON FILE.
+Assumes splits.io exchange fomat:
+https://github.com/glacials/splits-io/tree/master/public/schema"
+  (interactive "f")
+  (if-let* ((data (ignore-errors
+                    (json-parse-string
+                     (with-current-buffer (find-file-noselect file 'nowarn 'raw)
+                       (buffer-string))
+                     :object-type 'plist
+                     :array-type 'list
+                     :null-object nil
+                     :false-object nil)))
+            (title (plist-get (plist-get data :game) :longname))
+            (category (plist-get (plist-get data :category) :longname))
+            (segments (mapcar (lambda (segment) (plist-get segment :name))
+                              (plist-get data :segments))))
+      (apply #'speedo-new-db (append (list title category nil) segments))
+    (user-error "Unable to parse %S" file)))
+
 (defun speedo-next ()
   "Start the next segment or a new attempt."
   (interactive)
