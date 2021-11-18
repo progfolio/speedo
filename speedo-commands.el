@@ -26,17 +26,29 @@
 ;;; Commands
 (require 'speedo)
 
-(defun speedo-new-game (title &optional category dir &rest segments)
+;;;###autoload
+(defun speedo-new-db (title &optional category dir &rest segments)
   "Write new database for game with TITLE to DIR.
 DIR is optional and defaults to `speedo-directory'.
 CATEGORY and SEGMENTS are added to the DB structure if provided.
 When called interactivley, prompt for optional values."
   (interactive "stitle: \nscategory: ")
-  (let ((file (expand-file-name
-               (replace-regexp-in-string "\\(?:[[:space:]]+\\)" "-" title)
-               (or dir speedo-directory)))
-        (index 0)
-        segment)
+  (let* ((dir (expand-file-name (or dir speedo-directory default-directory)))
+         (category (if (string-empty-p category) nil category))
+         (default-file (let ((name
+                              (replace-regexp-in-string
+                               "\\(?:[[:space:]]+\\)" "-"
+                               (concat title (when category (format "-%s" category)))))
+                             (i 0)
+                             (id ""))
+                         (while (file-exists-p (expand-file-name name dir))
+                           (setq name (string-remove-suffix id name)
+                                 name (concat name
+                                              (setq id (format "<%d>" (cl-incf i))))))
+                         name))
+         (file (read-file-name "Write DB to: " dir nil nil default-file))
+         (index 0)
+         segment)
     (unless (or segments (not (called-interactively-p 'interactive)))
       (while (not (string-empty-p
                    (setq segment (read-string (format "segment %d (empty to exit): "
