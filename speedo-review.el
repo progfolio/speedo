@@ -148,8 +148,18 @@ Returns a plist of form:
                                    speedo-text-place-holder))
                          (when (and speedo-review-include-relative-times
                                     (not (zerop i)))
-                           (if-let ((relative (nth i relatives)))
-                               (format  " %9s"  (speedo--relative-time relative 0))))
+                           (when-let ((relative (nth i relatives)))
+                             (format
+                              " %9s"
+                              (speedo--relative-time
+                               (if speedo-review-include-relative-split-times
+                                   (cl-reduce #'+
+                                              (mapcar (lambda (r)
+                                                        (nth i (plist-get r :relatives)))
+                                                      (cl-subseq data 0 (1+ id)))
+                                              :initial-value 0)
+                                 relative)
+                               0))))
                          (when speedo-review-include-mistakes
                            (when-let ((mistakes (plist-get r :mistakes))
                                       (count (nth i mistakes))
