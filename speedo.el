@@ -169,11 +169,28 @@ MULTIPLE results are returned in a list, single results are not."
     (if multiple result (car result))))
 
 ;;;; Timer
+(defun speedo--formatter-lossless (h m s ms)
+  "Return lossless H:M:S.MS timestring for storing data."
+  (format "%02d:%02d:%02d.%03d" h m s ms))
+
+(defun speedo--formatter-compact (h m s ms)
+  "Return shortest time string from H M S MS."
+  (let ((time (concat
+               (cond ((> h 0) (format "%d:%02d:" h m))
+                     ((> m 0) (format "%d:" m)))
+               (format "%04.1f" (+ s (/ ms 1000.0))))))
+    (replace-regexp-in-string
+     "\\(?:^0\\([^z-a]+?$\\)\\)" "\\1" time)))
+
+(defun speedo--formatter-rounded (hours minutes seconds ms)
+  "Display rounded HOURS MINUTES SECONDS MS."
+  (let ((seconds (round (+ seconds (/ ms 1000.0)))))
+    (speedo--formatter-compact hours minutes seconds 0)))
+
 (defun speedo--formatter-sub-hour (_hours minutes seconds ms)
   "Display MINUTES:SECONDS.MS."
   (format "%d:%02d.%1d"  minutes seconds (/ ms 100)))
 
-;;@INCOMPLETE: still not ready, ms times may be too fine grained for refresh rate of timer...
 (defun speedo--parse-time-string (time-string)
   "Convert TIME-STRING into list of form:
 \\(milliseconds seconds minutes hours)."
@@ -187,7 +204,7 @@ MULTIPLE results are returned in a list, single results are not."
                      (truncate (* (string-to-number (concat "0." ms)) 1000)))
                  0)))
         (components (nreverse (split-string time-string ":"))))
-    ;; 3 because We have ms at this point and need sec, min, hr
+    ;; 3 because we have ms at this point and need sec, min, hr
     (dotimes (_ 3 (nreverse result))
       (push (let ((el (pop components)))
               (cond
@@ -221,14 +238,6 @@ MULTIPLE results are returned in a list, single results are not."
   "Return TIME since unix epoch in milliseconds."
   (+ (* 1000 (string-to-number (format-time-string "%s" time)))
      (string-to-number (format-time-string "%3N" time))))
-
-(defun speedo--formatter-compact (h m s ms)
-  "Return shortest time string from H M S MS."
-  (concat
-   (cond ((> h 0) (format "%d:%02d:%02d" h m s))
-         ((> m 0) (format "%d:%02d" m s))
-         (t (format "%d" s)))
-   (when (> ms 0) (format ".%03d" ms))))
 
 (defun speedo--format-ms (n)
   "Format N milliseconds with `speedo--time-formatter'.
@@ -426,7 +435,7 @@ If CACHE is non-nil, use the cache."
                                        (if (zerop speedo--segment-index)
                                            0
                                          target-previous-duration)))
-                      (speedo--time-formatter #'speedo--formatter-sub-hour))
+                      (speedo--time-formatter #'speedo--formatter-compact))
             (let ((current-segment-behind (> split-duration target-split-duration)))
               (setq ahead   (< current-total target-total)
                     behind  (> current-total target-total)
@@ -695,10 +704,6 @@ Reset timers."
                :key (lambda (split) (plist-get split :duration))
                :initial-value 0)))
 
-(defun speedo--time-format-rounded (_hours minutes seconds ms)
-  "Display rounded MINUTES SECONDS MS."
-  (format "%02d:%02d" minutes (min 59 (round (+ seconds (/ ms 1000.0))))))
-
 (defun speedo--timer-rows ()
   "Return a list of table rows for timer."
   (let* ((segments (plist-get speedo--data :segments))
@@ -731,7 +736,7 @@ Reset timers."
                          speedo-text-place-holder)))
                 (when current-line (setq s (propertize s 'comparison-timer t)))
                 (if best-split (propertize s 'face 'speedo-pb) s)))
-             (speedo--time-formatter #'speedo--time-format-rounded)
+             (speedo--time-formatter #'speedo--formatter-compact)
              (split-time
               (let ((s (or (when-let ((current (speedo--split-time-relative attempt index)))
                              (speedo--format-ms current))
@@ -806,8 +811,7 @@ sacrificing performance at runtime."
   (let ((data (copy-tree data))
         (fn (if human #'speedo--format-ms
               #'speedo--time-string-to-ms))
-        ;; losless formatter
-        (speedo--time-formatter #'speedo--formatter-compact))
+        (speedo--time-formatter #'speedo--formatter-lossless))
     (dolist (attempt (plist-get data :attempts) data)
       (setq attempt
             (plist-put attempt :start

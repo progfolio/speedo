@@ -225,16 +225,17 @@ It must be a non-empty plist with at least the following keys:
   :tags '(internal)
   (speedo-test-with-transput
       (should (string= (speedo--formatter-compact ,@in) ,out))
-    (0 0 0 0)   "0"
-    (0 0 0 1)   "0.001"
-    (0 0 0 100) "0.100" ;@BUG?: should this drop trailing zeros?
-    (0 0 1 0)   "1"
-    (0 0 1 1)   "1.001"
-    (0 0 1 100) "1.100"
-    (0 0 59 0)  "59"
-    (0 1 0 0)   "1:00"
-    (1 0 0 0)   "1:00:00"
-    (1 1 1 1)   "1:01:01.001"))
+    (0 0 0 0)   "0.0"
+    (0 0 0 1)   "0.0" ;below tenth of a second discarded
+    (0 0 0 100) "0.1"
+    (0 0 1 0)   "1.0"
+    (0 0 1 1)   "1.0"
+    (0 0 1 100) "1.1"
+    (0 0 59 0)  "59.0"
+    (0 1 0 0)   "1:00.0"
+    (1 0 0 0)   "1:00:00.0"
+    (1 1 1 1)   "1:01:01.0"
+    (1 1 1 100) "1:01:01.1"))
 
 (ert-deftest speedo--format-ms ()
   "Format N milliseconds with `speedo--time-formatter'."
@@ -243,8 +244,8 @@ It must be a non-empty plist with at least the following keys:
    (let* ((speedo--time-formatter ',formatter))
      (should (string= (speedo--format-ms ,in) ,out)))
    (formatter                     in    out)
-   nil                            60000 "1:00"
-   speedo--formatter-compact 60000 "1:00"
+   nil                            60000 "1:00.0"
+   speedo--formatter-compact      60000 "1:00.0"
    speedo--formatter-sub-hour     60000 "1:00.0"))
 
 (provide 'speedo-test)

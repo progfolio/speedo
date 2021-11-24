@@ -164,8 +164,8 @@ Note this includes the last segment."
 (defvar speedo--segment-start nil "Timestamp marking new segment start.")
 (defvar speedo--target-attempt  nil "The cached target attempt.")
 (defvar speedo--target-attempts nil "Cache for target attempts.")
-(declare-function speedo--formatter-sub-hour "speedo")
-(defvar speedo--time-formatter #'speedo--formatter-sub-hour
+(declare-function speedo--formatter-compact "speedo")
+(defvar speedo--time-formatter #'speedo--formatter-compact
   "Function to format time from timer.
 It must accept four arguments: hours, minutes, seconds, milliseconds.")
 (defvar speedo--timer nil "The global timer.")
