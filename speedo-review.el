@@ -621,7 +621,7 @@ If no attempt is assoicated with that column, read an attempt."
 ;;;###autoload
 (defun speedo-review-bookmark-handler (record)
   "Jump to a speedo review from RECORD."
-  (speedo--load-file (bookmark-prop-get record 'database))
+  (speedo-load-file (bookmark-prop-get record 'database) 'hide)
   (let ((command (bookmark-prop-get record 'command)))
     (speedo-review--repeat-command command (eq (car command) 'speedo-review))))
 
