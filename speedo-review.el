@@ -23,6 +23,8 @@
 
 ;;; Code:
 (require 'speedo)
+(require 'bookmark)
+(bookmark-maybe-load-default-file)
 
 (defcustom speedo-review-include-target t
   "If non-nil, consider `speedo--comparison-target' implicit target of comparisons."
@@ -391,7 +393,6 @@ Otherwise, COMMAND is recalculated."
   (unless static
     ;; ignore last two args: attempts and header
     (setq command (cl-subseq command 0 -2)))
-  (setq speedo-review--last-command nil)
   (eval command))
 
 ;;;###autoload
@@ -409,7 +410,7 @@ HEADER is shown in the review buffer."
                       (propertize (format " %d Attempt%s" len
                                           (if (> len 1) "s" ""))
                                   'face 'speedo-neutral)))))
-    (when save (setq speedo-review--last-command `(speedo-review ,attempts ',header)))
+    (when save (setq speedo-review--last-command `(speedo-review nil ',attempts ',header)))
     (speedo-review--ui-init attempts 'cache)
     (display-buffer speedo-review-buffer)))
 
@@ -430,7 +431,7 @@ HEADER is displayed in review buffer."
                                               'face 'speedo-ahead)))))
     (when (> n 0) (setq attempts (reverse attempts)))
     (setq speedo-review--last-command
-          `(speedo-review-last-attempts ,n ,'attempts ',header))
+          `(speedo-review-last-attempts ,n ',attempts ',header))
     (speedo-review nil attempts header)))
 
 ;;;###autoload
@@ -583,6 +584,7 @@ If no attempt is assoicated with that column, read an attempt."
         default-directory (file-name-directory speedo--data-file))
   (add-hook 'kill-emacs-hook  #'speedo--ask-to-save)
   (add-hook 'kill-buffer-hook #'speedo--confirm-kill-buffer nil t)
+  (setq-local bookmark-make-record-function #'speedo-review-bookmark-make-record)
   (buffer-face-mode))
 
 ;;;; Key bindings
@@ -604,6 +606,24 @@ If no attempt is assoicated with that column, read an attempt."
 (define-key speedo-review-mode-map (kbd "+") 'speedo-edit-new)
 (define-key speedo-review-mode-map (kbd "<tab>") 'speedo-review-forward-col)
 (define-key speedo-review-mode-map (kbd "<backtab>") 'speedo-review-backward-col)
+
+;;;; Bookmarks
+
+;;;###autoload
+(defun speedo-review-bookmark-handler (record)
+  "Jump to a speedo review from RECORD."
+  (speedo--load-file (bookmark-prop-get record 'database))
+  (let ((command (bookmark-prop-get record 'command)))
+    (speedo-review--repeat-command command (eq (car command) 'speedo-review))))
+
+(defun speedo-review-bookmark-make-record ()
+  "Return a bookmark record for the current `speedo-review' buffer."
+  `(,(substring-no-properties (format-mode-line header-line-format))
+    (buf      . ,speedo-review-buffer)
+    (database . ,speedo--data-file)
+    (command  . ,speedo-review--last-command)
+    (location . ,speedo-review--last-command)
+    (handler  . speedo-review-bookmark-handler)))
 
 (provide 'speedo-review)
 ;;; speedo-review.el ends here
