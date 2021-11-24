@@ -308,7 +308,7 @@ Returns a plist of form:
                             (format " %9s"
                                     (speedo--relative-time basis (nth i totals))))
                           (when speedo-review-include-mistakes
-                            (format " %3s " (nth i mistakes)))))
+                            (format " %3s" (nth i mistakes)))))
                        'tabulated-list-column-name col)))))))))
 
 (defun speedo-review--sort-attempt-column (a b)
