@@ -106,6 +106,8 @@
        (speedo--ms-to-date (plist-get speedo-edit--attempt :start))))))
 
 (declare-function speedo-delete-attempts "speedo-commands")
+(declare-function speedo-review--repeat-command "speedo-review")
+(defvar speedo-review--last-command)
 (defun speedo-edit-delete ()
   "Delete current attempt."
   (interactive)
@@ -114,7 +116,9 @@
   (when (y-or-n-p "Delete current attempt?")
     (speedo-delete-attempts (list speedo-edit--attempt))
     (setq speedo-edit--in-progress nil)
-    (kill-this-buffer)))
+    (kill-this-buffer)
+    (when speedo-review--last-command
+      (speedo-review--repeat-command speedo-review--last-command))))
 
 ;;;###autoload
 (defun speedo-edit-new ()
@@ -292,7 +296,9 @@ Else append NEW to DATA."
     (setq speedo-edit--in-progress nil)
     (message "Attempt saved in memory.")
     (kill-buffer)
-    (speedo-review (list attempt) "Last Edit")))
+    (if speedo-review--last-command
+        (speedo-review--repeat-command speedo-review--last-command)
+      (speedo-review (list attempt) "Last Edit"))))
 
 (defun speedo-edit-abort ()
   "Abort the current edit."

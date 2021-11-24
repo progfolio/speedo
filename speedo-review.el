@@ -51,6 +51,7 @@
 Otherwise they are abolute times.")
 (defvar speedo-review--attempts nil
   "Used to store attempts when manipulating views.")
+(defvar speedo-review--last-command nil "Last review command and its args.")
 
 (defun speedo-review--row-data (attempts)
   "Compute row data for ATTEMPTS.
@@ -384,12 +385,22 @@ If `tabulated-list-mode' offered a post-print hook, we could avoid this."
   (when (and (derived-mode-p 'speedo-review-mode) speedo-review-include-totals-row)
     (speedo-review--insert-totals speedo-review--totals-data)))
 
+(defun speedo-review--repeat-command (command &optional static)
+  "Repeat COMMAND. If STATIC is non-nil, re-use attempts if possible.
+Otherwise, COMMAND is recalculated."
+  (unless static
+    ;; ignore last two args: attempts and header
+    (setq command (cl-subseq command 0 -2)))
+  (setq speedo-review--last-command nil)
+  (eval command))
+
 ;;;###autoload
-(defun speedo-review (&optional attempts header)
+(defun speedo-review (&optional save attempts header)
   "Compare ATTEMPTS.
+If SAVE is non-nil, the command is recorded in `speedo-review--last-command'.
 If ATTEMPTS is nil, prompt user.
 HEADER is shown in the review buffer."
-  (interactive)
+  (interactive "p")
   (let ((attempts (or attempts (speedo-read-attempt nil 'multiple))))
     (setq speedo-review--header
           (or header
@@ -398,6 +409,7 @@ HEADER is shown in the review buffer."
                       (propertize (format " %d Attempt%s" len
                                           (if (> len 1) "s" ""))
                                   'face 'speedo-neutral)))))
+    (when save (setq speedo-review--last-command `(speedo-review ,attempts ',header)))
     (speedo-review--ui-init attempts 'cache)
     (display-buffer speedo-review-buffer)))
 
@@ -409,17 +421,17 @@ If N is negative, they are sorted most recent last.
 HEADER is displayed in review buffer."
   (interactive "p")
   (speedo--ensure-data)
-  (let ((attempts (last (or attempts (speedo--attempts)) (abs n))))
+  (let* ((attempts (last (or attempts (speedo--attempts)) (abs n)))
+         (header (or header (list (speedo--header-game-info)
+                                  (propertize (let ((len (length attempts)))
+                                                (if (eq len 1)
+                                                    "Last Attempt"
+                                                  (format " Last %d Attempts" len)))
+                                              'face 'speedo-ahead)))))
     (when (> n 0) (setq attempts (reverse attempts)))
-    (speedo-review attempts
-                   (list (speedo--header-game-info)
-                         (or header
-                             (propertize
-                              (let ((len (length attempts)))
-                                (if (eq len 1)
-                                    "Last Attempt"
-                                  (format " Last %d Attempts" len)))
-                              'face 'speedo-ahead))))))
+    (setq speedo-review--last-command
+          `(speedo-review-last-attempts ,n ,'attempts ',header))
+    (speedo-review nil attempts header)))
 
 ;;;###autoload
 (defun speedo-review-last-runs (&optional n attempts header)
@@ -429,38 +441,41 @@ If N is negative, they are sorted most recent last.
 HEADER is displayed in review buffer."
   (interactive "p")
   (speedo--ensure-data)
-  (let ((attempts (last (cl-remove-if-not #'speedo--attempt-complete-p
-                                          (or attempts (speedo--attempts)))
-                        (abs n))))
+  (let* ((attempts (last (cl-remove-if-not #'speedo--attempt-complete-p
+                                           (or attempts (speedo--attempts)))
+                         (abs n)))
+         (header (or header (list (speedo--header-game-info)
+                                  (propertize (let ((len (length attempts)))
+                                                (if (eq len 1)
+                                                    " Last Run"
+                                                  (format " Last %d Runs" len)))
+                                              'face 'speedo-ahead)))))
     (when (> n 0) (setq attempts (reverse attempts)))
-    (speedo-review attempts (list (speedo--header-game-info)
-                                  (or header
-                                      (propertize
-                                       (let ((len (length attempts)))
-                                         (if (eq len 1)
-                                             " Last Run"
-                                           (format " Last %d Runs" len)))
-                                       'face 'speedo-ahead))))))
+    (setq speedo-review--last-command `(speedo-review-last-runs ,n ',attempts ',header))
+    (speedo-review nil attempts header)))
 
 ;;;###autoload
-(defun speedo-review-top-runs (&optional n attempts)
+(defun speedo-review-top-runs (&optional n attempts header)
   "Compare top N complete ATTEMPTS.
 If N is positive, ATTEMPTS are sorted most recent first.
-If N is negative, they are sorted most recent last."
+If N is negative, they are sorted most recent last.
+HEADER is displayed in review buffer."
   (interactive "p")
   (speedo--ensure-data)
   (let* ((runs (cl-sort (or attempts (speedo--attempts #'speedo--attempt-incomplete-p))
                         #'<
                         :key (lambda (a) (speedo--splits-duration (plist-get a :splits)))))
-         (top (cl-subseq runs 0 (min (abs n) (length runs)))))
+         (top (cl-subseq runs 0 (min (abs n) (length runs))))
+         (header (or header
+                     (list (speedo--header-game-info)
+                           (propertize (let ((len (length top)))
+                                         (if (eq len 1)
+                                             " Personal Best"
+                                           (format " Top %d Runs" len)))
+                                       'face 'speedo-ahead)))))
     (when (< n 0) (setq top (reverse top)))
-    (speedo-review top (list (speedo--header-game-info)
-                             (propertize
-                              (let ((len (length top)))
-                                (if (eq len 1)
-                                    " Personal Best"
-                                  (format " Top %d Runs" len)))
-                              'face 'speedo-ahead)))))
+    (setq speedo-review--last-command `(speedo-review-top-runs ,n ',runs ',header))
+    (speedo-review nil top header)))
 
 (defmacro speedo-review-def-col-toggle (name)
   "Define a toggle command for column represented by NAME."
