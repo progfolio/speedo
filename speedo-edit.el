@@ -272,7 +272,7 @@ Else append NEW to DATA."
                        splits))))
             ('start (setq attempt (plist-put attempt :start
                                              (speedo--date-to-ms val))))
-            ('alias (setq attempt (plist-put attempt :alias val)))
+            ('alias (setq attempt (plist-put attempt :alias (unless (string-empty-p val) val))))
             ('tags  (setq attempt (plist-put attempt :tags
                                              (mapcar #'string-trim
                                                      (split-string val ",")))))
