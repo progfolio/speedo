@@ -264,7 +264,8 @@ Return DATA."
                                (string-trim (widget-value w)))))
           (pcase type
             ('segment
-             (unless (string-empty-p val)
+             (if (string-empty-p val)
+                 (setq attempt (plist-put attempt :reset total))
                ;; Convert absoulte time into duration
                (let ((duration (- (speedo--time-string-to-ms val) total)))
                  (setq total (+ total duration))
