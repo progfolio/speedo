@@ -618,6 +618,7 @@ If no attempt is assoicated with that column, read an attempt."
 
 ;;;; Bookmarks
 
+(declare-function speedo-load-file "speedo-commands")
 ;;;###autoload
 (defun speedo-review-bookmark-handler (record)
   "Jump to a speedo review from RECORD."
