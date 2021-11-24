@@ -232,13 +232,16 @@
   (speedo-edit--focus 'backward n))
 
 (defun speedo--edit-replace-or-append-attempt (data target new)
-  "Replace TARGET in DATA with NEW if it is found.
-Else append NEW to DATA."
+  "Return copy of DATA with TARGET replacing NEW if it is found.
+Else append NEW to DATA.
+Return DATA."
+  (setq data (copy-tree data))
   (let ((attempts (plist-get data :attempts)))
     (if-let ((index (cl-position target attempts :test #'equal)))
         (setf (nth index (plist-get data :attempts)) new)
       (setq data (plist-put data :attempts
-                            (append attempts (list new)))))))
+                            (append attempts (list new))))))
+  data)
 
 (declare-function speedo-review "speedo-review" (&optional attempts header))
 (defun speedo-edit-finalize ()
@@ -292,7 +295,7 @@ Else append NEW to DATA."
             (_ (error "Uknown widget type!"))))
         (setq not-end (zerop (forward-line 1)))))
     (setq attempt (plist-put attempt :splits (reverse splits)))
-    (speedo--edit-replace-or-append-attempt speedo--data speedo-edit--attempt attempt)
+    (setq speedo--data (speedo--edit-replace-or-append-attempt speedo--data speedo-edit--attempt attempt))
     (setq speedo-edit--in-progress nil)
     (message "Attempt saved in memory.")
     (kill-buffer)
