@@ -111,6 +111,12 @@ It must be a non-empty plist with at least the following keys:
        (cl-every (lambda (requirement) (plist-member obj requirement))
                  '(:title :segments))))
 
+(defun speedo--db-file-p (file)
+  "Return t if FILE ends with `speedo--file-extension' or is a directory.
+Used to filter candidates during `speedo-load-file'."
+  (or (file-directory-p file)
+      (string-suffix-p speedo--file-extension file 'ignore-case)))
+
 (defun speedo--data-modified-p ()
   "Return t if `speedo--data' and `speedo--data-file' are not `equal'."
   (when (and speedo--data speedo--data-file)

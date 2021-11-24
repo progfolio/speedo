@@ -179,7 +179,9 @@ If HIDE is non-nil, do not display `speedo-buffer' after loading."
     (user-error "Cannot Load file while attempt is in progress"))
   (when (bound-and-true-p speedo-edit--in-progress)
     (user-error "Cannot Load file while attempt edit in progress"))
-  (let ((file (or file (read-file-name "Splits file: " speedo-directory))))
+  (let ((file (or file (read-file-name "Splits file: " speedo-directory
+                                       nil 'must-match nil
+                                       #'speedo--db-file-p))))
     (when (and (speedo--data-modified-p)
                (yes-or-no-p (format "%S modified. Save before loading %s? "
                                  speedo--data-file file)))
