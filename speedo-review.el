@@ -157,9 +157,8 @@ Returns a plist of form:
                               (speedo--relative-time
                                (if speedo-review-include-relative-split-times
                                    (cl-reduce #'+
-                                              (mapcar (lambda (r)
-                                                        (nth i (plist-get r :relatives)))
-                                                      (cl-subseq data 0 (1+ id)))
+                                              (cl-subseq data 0 (1+ id))
+                                              :key (lambda (r) (nth i (plist-get r :relatives)))
                                               :initial-value 0)
                                  relative)
                                0))))
@@ -186,12 +185,21 @@ Returns a plist of form:
                                    (cl-reduce
                                     #'+
                                     (cl-subseq data 0 (1+ id))
-                                    :key (lambda (r) (or (plist-get r :average-duration) 0)))
+                                    :key (lambda (r) (or (plist-get r :average-duration) 0))
+                                    :initial-value 0)
                                  average-duration))
                             speedo-text-place-holder))
                   (when speedo-review-include-relative-times
                     (when-let ((average-relative (plist-get r :average-relative)))
-                      (format " %9s" (speedo--relative-time average-relative 0))))
+                      (format " %9s"
+                              (speedo--relative-time
+                               (if speedo-review-include-relative-split-times
+                                   (cl-reduce
+                                    #'+
+                                    (cl-subseq data 0 (1+ id))
+                                    :key (lambda (r) (or (plist-get r :average-relative) 0)))
+                                 average-relative)
+                               0))))
                   (when speedo-review-include-mistakes
                     (when-let ((average-mistakes (plist-get r :average-mistakes)))
                       (let ((basis (or (car (plist-get r :mistakes)) 0)))
