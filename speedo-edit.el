@@ -113,7 +113,7 @@
   (interactive)
   (unless (string= (buffer-name) speedo-edit-buffer)
     (user-error "Not in speedo editing buffer"))
-  (when (y-or-n-p "Delete current attempt?")
+  (when (yes-or-no-p "Delete current attempt?")
     (speedo-delete-attempts (list speedo-edit--attempt))
     (setq speedo-edit--in-progress nil)
     (kill-this-buffer)
