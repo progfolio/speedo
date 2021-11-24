@@ -919,8 +919,8 @@ Negative N cycles backward, positive forward."
               (car (cl-sort (mapcar (lambda (segment) (length (plist-get segment :name)))
                                     (plist-get speedo--data :segments))
                             #'>)))))
-         '("Comparison" 10)
-         '("Time" 25))))
+         '("Comparison" 12)
+         '("Time" 12 nil :right-align t))))
 
 (defun speedo--confirm-kill-buffer ()
   "Clean up before killing `speedo-buffer'."
