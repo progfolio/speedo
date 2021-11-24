@@ -471,8 +471,8 @@ If N is negative, they are sorted most recent last.
 HEADER is displayed in review buffer."
   (interactive "p")
   (speedo--ensure-data)
-  (let* ((runs (cl-sort (or (copy-tree attempts)
-                            (speedo--attempts #'speedo--attempt-incomplete-p))
+  (let* ((runs (cl-sort (copy-tree
+                         (or attempts (speedo--attempts #'speedo--attempt-incomplete-p)))
                         #'<
                         :key (lambda (a) (speedo--splits-duration (plist-get a :splits)))))
          (top (cl-subseq runs 0 (min (abs n) (length runs))))
