@@ -141,7 +141,7 @@ current segment's time to the target's time for that segement."
   :type 'hook
   :group 'speedo)
 
-(defcustom speedo-text-place-holder "⸺"
+(defcustom speedo-text-place-holder "-"
   "Placeholder text used when no data is available for a field."
   :type 'string
   :group 'speedo)
