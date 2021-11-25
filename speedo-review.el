@@ -511,7 +511,7 @@ HEADER is displayed in review buffer."
        (setq ,var (not ,var))
        (speedo-review--ui-init speedo-review--attempts))))
 
-(dolist (el '("mistakes" "relative-times" "accumulative-times"))
+(dolist (el '("mistakes" "relative-times" "accumulative-times" "totals-row"))
   (eval `(speedo-review-def-col-format-toggle ,el)))
 
 (defun speedo-review--sort-col (name)
