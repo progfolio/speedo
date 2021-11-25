@@ -33,7 +33,6 @@
 
 (defvar speedo-review--header nil
   "Used to set custom `header-line-format' during comparisons.")
-(defvar speedo-review--totals-data nil "Workaround for post sorting data insertion.")
 (defvar speedo-review-buffer   (concat speedo-buffer "<review>"))
 (defvar speedo-review-include-mistakes t
   "When non-nil, include mistake counts for each segment.")
@@ -123,207 +122,208 @@ Returns a plist of form:
           (setf (nth id rows) (plist-put (nth id rows) :consistency (cl-decf count))))))
     rows))
 
+(defun speedo-review--row-averages (data row id)
+  "Return a list of average times for each ROW in DATA by ID."
+  (when speedo-review-include-average-column
+    (list
+     (if-let ((average-duration (plist-get row :average-duration)))
+         (speedo--format-ms
+          (if speedo-review-include-accumulative-times
+              (cl-reduce
+               #'+
+               (cl-subseq data 0 (1+ id))
+               :key (lambda (r) (or (plist-get r :average-duration) 0))
+               :initial-value 0)
+            average-duration))
+       speedo-text-place-holder)
+     (when speedo-review-include-relative-times
+       (when-let ((average-relative (plist-get row :average-relative)))
+         (speedo--relative-time
+          (if speedo-review-include-accumulative-times
+              (cl-reduce
+               #'+
+               (cl-subseq data 0 (1+ id))
+               :key (lambda (r) (or (plist-get r :average-relative) 0)))
+            average-relative)
+          0)))
+     (when speedo-review-include-mistakes
+       (when-let ((average-mistakes (plist-get row :average-mistakes)))
+         (let ((basis (or (car (plist-get row :mistakes)) 0)))
+           (propertize
+            (number-to-string average-mistakes)
+            'face
+            (cond
+             ((< average-mistakes basis) 'speedo-ahead)
+             ((> average-mistakes basis) 'speedo-behind)
+             (t 'speedo-neutral)))))))))
+
+(defun speedo-review--row-times (data row id)
+  "Return ROW times from DATA by ID."
+  (let ((times)
+        (durations (plist-get row :durations))
+        (relatives (plist-get row :relatives)))
+    (dotimes (i (length durations))
+      (push (list
+             (if-let ((duration (nth i durations)))
+                 (speedo--format-ms
+                  (if speedo-review-include-accumulative-times
+                      (speedo--splits-duration
+                       (cl-subseq
+                        (plist-get (nth i speedo-review--attempts)
+                                   :splits)
+                        0 (1+ id)))
+                    duration))
+               speedo-text-place-holder)
+             (when (and speedo-review-include-relative-times
+                        (not (zerop i)))
+               (when-let ((relative (nth i relatives)))
+                 (speedo--relative-time
+                  (if speedo-review-include-accumulative-times
+                      (cl-reduce #'+
+                                 (cl-subseq data 0 (1+ id))
+                                 :key (lambda (r) (nth i (plist-get r :relatives)))
+                                 :initial-value 0)
+                    relative)
+                  0)))
+             (when speedo-review-include-mistakes
+               (when-let ((mistakes (plist-get row :mistakes))
+                          (count (nth i mistakes))
+                          (basis (car mistakes)))
+                 (propertize
+                  (number-to-string count)
+                  'face
+                  (cond
+                   ((< count basis) 'speedo-ahead)
+                   ((> count basis) 'speedo-behind)
+                   (t 'speedo-neutral))))))
+            times))
+    (nreverse times)))
+
+(defun speedo-review--row-totals (data)
+  "DATA."
+  (let* ((keys (delq nil
+                     (list :durations
+                           (and speedo-review-include-mistakes :mistakes)
+                           (and speedo-review-include-relative-times  :relatives))))
+         (verticals
+          (let (v)
+            (dolist (key keys (nreverse v))
+              (let (acc)
+                (dotimes (i (length (plist-get (car data) key)))
+                  (push (ignore-errors
+                          (cl-reduce
+                           #'+ data
+                           :key (lambda (row)
+                                  (nth i (plist-get row key)))))
+                        acc))
+                (push key v)
+                (push (nreverse acc) v))))))
+    (when  speedo-review-include-average-column
+      (dolist (key keys)
+        (when-let ((vals (plist-get verticals key)))
+          (setq verticals
+                (plist-put verticals key (append vals (list (/ (cl-reduce #'+ vals)
+                                                               (length vals)))))))))
+    (dolist (key keys)
+      (let* ((vals (plist-get verticals key))
+             (basis (car vals))
+             (relative-p (eq key :relatives)))
+        (setq verticals
+              (plist-put
+               verticals key
+               (mapcar (lambda (it)
+                         (propertize
+                          (funcall (cond
+                                    ((eq key :durations) #'speedo--format-ms)
+                                    ((eq key :mistakes)  #'number-to-string)
+                                    (relative-p
+                                     (lambda (it) (speedo--relative-time it 0))))
+                                   it)
+                          'face (cond
+                                 ((< it basis)
+                                  (if relative-p 'speedo-behind 'speedo-ahead))
+                                 ((> it basis)
+                                  (if relative-p 'speedo-ahead 'speedo-behind))
+                                 (t              'speedo-neutral))))
+                       vals)))))
+    ;; Negative ID used in column sorting functions to distinguish this row form segments.
+    (list -1
+          (vconcat
+           (when speedo-review-include-id-column (list " "))
+           (list (propertize "Totals" 'face '(:weight bold)))
+           (list (apply #'cl-mapcar
+                        `(list
+                          ,(plist-get verticals :durations)
+                          ,@(when speedo-review-include-relative-times
+                              (list (plist-get verticals :relatives)))
+                          ,@(when speedo-review-include-mistakes
+                              (list (plist-get verticals :mistakes))))))
+           (when speedo-review-include-consistency-column
+             (list " "))))))
+
+(defun speedo-review--widest-timestring-component (rows index)
+  "Return length of widest timestring componet at INDEX in ROWS."
+  (car (cl-sort
+        (mapcan (lambda (r)
+                  (mapcar (lambda (it) (length (nth index it)))
+                          (aref (cadr r) (if speedo-review-include-id-column 2 1))))
+                rows)
+        #'>)))
+
+(defun speedo-review--format-rows (rows)
+  "Format ROWS."
+  (let* ((widest-duration (speedo-review--widest-timestring-component rows 0))
+         (widest-relative (speedo-review--widest-timestring-component rows 1))
+         (widest-mistake  (speedo-review--widest-timestring-component rows 2))
+         (format-spec (concat "%" (number-to-string widest-duration) "s"
+                              " "
+                              "%" (number-to-string widest-relative) "s"
+                              " "
+                              "%" (number-to-string widest-mistake)  "s"))
+         (time-index (if speedo-review-include-id-column 2 1)))
+    ;;(ID [D1...])
+    (mapcar (lambda (row)
+              (let* ((col-descriptors (cadr row))
+                     (times (aref col-descriptors time-index)))
+                (list
+                 (car row)
+                 (vconcat
+                  (cl-subseq col-descriptors 0 time-index)
+                  (mapcar (lambda (component)
+                            (format format-spec
+                                    (or (nth 0 component) speedo-text-place-holder)
+                                    (or (nth 1 component) speedo-text-place-holder)
+                                    (or (nth 2 component) speedo-text-place-holder)))
+                          times)
+                  (cl-subseq col-descriptors (1+ time-index))))))
+            rows)))
+
 (defun speedo-review--rows (data)
   "Return table rows from DATA."
-  (mapcar
-   (lambda (r)
-     (let ((id (plist-get r :id)))
-       (list id
-             (vconcat
-              (when speedo-review-include-id-column
-                (list (number-to-string (1+ id))))
-              (list (plist-get r :name))
-              (let ((times)
-                    (durations (plist-get r :durations))
-                    (relatives (plist-get r :relatives)))
-                (dotimes (i (length durations))
-                  (push (concat
-                         (format "%8s"
-                                 (if-let ((duration (nth i durations)))
-                                     (speedo--format-ms
-                                      (if speedo-review-include-accumulative-times
-                                          (speedo--splits-duration
-                                           (cl-subseq
-                                            (plist-get (nth i speedo-review--attempts)
-                                                       :splits)
-                                            0 (1+ id)))
-                                        duration))
-                                   speedo-text-place-holder))
-                         (when (and speedo-review-include-relative-times
-                                    (not (zerop i)))
-                           (when-let ((relative (nth i relatives)))
-                             (format
-                              " %9s"
-                              (speedo--relative-time
-                               (if speedo-review-include-accumulative-times
-                                   (cl-reduce #'+
-                                              (cl-subseq data 0 (1+ id))
-                                              :key (lambda (r) (nth i (plist-get r :relatives)))
-                                              :initial-value 0)
-                                 relative)
-                               0))))
-                         (when speedo-review-include-mistakes
-                           (when-let ((mistakes (plist-get r :mistakes))
-                                      (count (nth i mistakes))
-                                      (basis (car mistakes)))
-                             (format " %3s" (propertize
-                                             (number-to-string count)
-                                             'face
-                                             (cond
-                                              ((< count basis) 'speedo-ahead)
-                                              ((> count basis) 'speedo-behind)
-                                              (t 'speedo-neutral)))))))
-                        times))
-                (nreverse times))
-              (when speedo-review-include-average-column
-                (list
-                 (concat
-                  (format "%8s"
-                          (if-let ((average-duration (plist-get r :average-duration)))
-                              (speedo--format-ms
-                               (if speedo-review-include-accumulative-times
-                                   (cl-reduce
-                                    #'+
-                                    (cl-subseq data 0 (1+ id))
-                                    :key (lambda (r) (or (plist-get r :average-duration) 0))
-                                    :initial-value 0)
-                                 average-duration))
-                            speedo-text-place-holder))
-                  (when speedo-review-include-relative-times
-                    (when-let ((average-relative (plist-get r :average-relative)))
-                      (format " %9s"
-                              (speedo--relative-time
-                               (if speedo-review-include-accumulative-times
-                                   (cl-reduce
-                                    #'+
-                                    (cl-subseq data 0 (1+ id))
-                                    :key (lambda (r) (or (plist-get r :average-relative) 0)))
-                                 average-relative)
-                               0))))
-                  (when speedo-review-include-mistakes
-                    (when-let ((average-mistakes (plist-get r :average-mistakes)))
-                      (let ((basis (or (car (plist-get r :mistakes)) 0)))
-                        (format " %3s"
-                                (propertize
-                                 (number-to-string average-mistakes)
-                                 'face
-                                 (cond
-                                  ((< average-mistakes basis) 'speedo-ahead)
-                                  ((> average-mistakes basis) 'speedo-behind)
-                                  (t 'speedo-neutral))))))))))
-              (when speedo-review-include-consistency-column
-                (list
-                 (if-let ((consistency (plist-get r :consistency)))
-                     (number-to-string consistency)
-                   speedo-text-place-holder)))))))
-   data))
-
-(defun speedo-review--sort-consistencies (a b)
-  "Sort table rows A and B by consistency."
-  (let* ((a (cadr a))
-         (b (cadr b))
-         (consistency-a (aref a (1- (length a))))
-         (consistency-b (aref b (1- (length b)))))
-    (cond
-     ;; Ensure place holders are put at end of list by default
-     ((string= consistency-a speedo-text-place-holder) nil)
-     ((string= consistency-b speedo-text-place-holder) t)
-     (t (< (string-to-number consistency-a)
-           (string-to-number consistency-b))))))
-
-(defun speedo-review--insert-totals (rows)
-  "Insert totals run for ROWS in review buffer."
-  (with-current-buffer speedo-review-buffer
-    (save-excursion
-      (with-silent-modifications
-        (goto-char (point-max))
-        (end-of-line)
-        (let* ((totals
-                (apply
-                 #'cl-mapcar
-                 `((lambda (&rest durations) (apply #'+ (or (delq nil durations)
-                                                            (list -1))))
-                   ,@(mapcar (lambda (row) (plist-get row :durations)) rows))))
-               (want-average-p (and speedo-review-include-average-column
-                                    (> (length totals) 1)))
-               (mistakes
-                (let ((m (apply
-                          #'cl-mapcar
-                          `((lambda (&rest mistakes) (apply #'+ mistakes))
-                            ,@(mapcar (lambda (row) (plist-get row :mistakes))
-                                      rows)))))
-                  (setq m (append m
-                                  (when want-average-p (list (/ (cl-reduce #'+ m)
-                                                                (length m))))))
-                  (let ((basis (car m)))
-                    (mapcar (lambda (n)
-                              (propertize (number-to-string n)
-                                          'face (cond
-                                                 ((< n basis) 'speedo-ahead)
-                                                 ((> n basis) 'speedo-behind)
-                                                 (t 'speedo-neutral))))
-                            m))))
-               (basis (car totals))
-               (props (save-excursion
-                        (forward-line -1)
-                        (end-of-line)
-                        (let ((current-line (line-number-at-pos))
-                              (on-same-line-p t)
-                              p prop)
-                          (while (and on-same-line-p
-                                      (setq prop (text-property-search-backward 'display)))
-                            (if (eq (line-number-at-pos) current-line)
-                                (push (prop-match-value prop) p)
-                              (setq on-same-line-p nil)))
-                          p)))
-               (average-total
-                (when want-average-p
-                  (ignore-errors
-                    (cl-reduce
-                     #'+ rows
-                     :key (lambda (r) (plist-get r :average-duration)))))))
-          (when want-average-p (setq totals (append totals (list average-total))))
-          (when speedo-review-include-id-column
-            (insert (propertize " " 'display (pop props))))
-          (insert (propertize "Totals" 'face '(:weight bold)))
-          (dotimes (i (length totals))
-            (let ((total (nth i totals))
-                  ;; Skip ID column
-                  (col (car (aref tabulated-list-format (1+ i)))))
-              (insert (propertize " " 'display (pop props)
-                                  'tabulated-list-column-name col))
-              (insert (propertize
-                       (if (or (null total) (< total 0)) ;;no durations
-                           speedo-text-place-holder
-                         (concat
-                          (format "%8s"
-                                  (propertize (speedo--format-ms total)
-                                              'face (cond
-                                                     ((> total basis) 'speedo-behind)
-                                                     ((< total basis) 'speedo-ahead)
-                                                     (t 'speedo-neutral))))
-                          (when (and speedo-review-include-relative-times
-                                     basis
-                                     (> i 0))
-                            (format " %9s"
-                                    (speedo--relative-time basis (nth i totals))))
-                          (when speedo-review-include-mistakes
-                            (format " %3s" (nth i mistakes)))))
-                       'tabulated-list-column-name col)))))))))
-
-(defun speedo-review--sort-attempt-column (a b)
-  "Sort attempt column rows A and B by split durations."
-  (let* ((name (car tabulated-list-sort-key))
-         (col-index
-          (cl-position name (cl-coerce tabulated-list-format 'list)
-                       :test #'string= :key #'car))
-         (a (speedo--time-string-to-ms (aref (cadr a) col-index)))
-         (b (speedo--time-string-to-ms (aref (cadr b) col-index))))
-    (cond
-     ;; Duration of 0 (incomplete attempt) is moved to end of list
-     ((zerop a) nil)
-     ((zerop b) t)
-     (t (< a b)))))
+  (let ((rows
+         (append
+          (mapcar
+           (lambda (r)
+             (let* ((id (plist-get r :id))
+                    (averages (speedo-review--row-averages data r id))
+                    (times (append (speedo-review--row-times data r id)
+                                   (when averages (list averages))))
+                    (consistency
+                     (when speedo-review-include-consistency-column
+                       (if-let ((consistency (plist-get r :consistency)))
+                           (number-to-string consistency)
+                         speedo-text-place-holder))))
+               (list id
+                     (vconcat
+                      (when speedo-review-include-id-column
+                        (list (number-to-string (1+ id))))
+                      (list (plist-get r :name))
+                      (list times)
+                      (list consistency)))))
+           data)
+          (when speedo-review-include-totals-row
+            (list (speedo-review--row-totals data))))))
+    (speedo-review--format-rows rows)))
 
 (defun speedo-review--attempt-columns (attempts)
   "Return list of columns for ATTEMPTS."
@@ -348,13 +348,64 @@ Returns a plist of form:
                            #'>))))
     (max (floor (* 1.2 longest)) (+ (length "Segment") 2))))
 
+(defmacro speedo-review--col-sorter (&rest body)
+  "Excute BODY with anaphoric bindings.
+Handle case of ignoring Totals column in sorting."
+  (declare (indent defun) (debug body))
+  `(let* ((a-vec (cadr a))
+          (b-vec (cadr b))
+          (name-index (if speedo-review-include-id-column 1 0))
+          (a-name (aref a-vec name-index))
+          (b-name (aref b-vec name-index))
+          (reversed (cdr-safe tabulated-list-sort-key)))
+     (cond
+      ((string= a-name "Totals") (if reversed t nil))
+      ((string= b-name "Totals") (if reversed nil t))
+      (t (progn ,@body)))))
+
+(defun speedo-review--sort-id-column (a b)
+  "Sort rows A B by ID."
+  (speedo-review--col-sorter (< (car a) (car b))))
+
+(defun speedo-review--sort-segment-column (a b)
+  "Sort rows A B by SEGMENT."
+  (speedo-review--col-sorter (string< a-name b-name)))
+
+(defun speedo-review--sort-attempt-column (a b)
+  "Sort attempt column rows A and B by split durations."
+  (speedo-review--col-sorter
+    (let* ((name (car tabulated-list-sort-key))
+           (col-index
+            (cl-position name (cl-coerce tabulated-list-format 'list)
+                         :test #'string= :key #'car))
+           (a (speedo--time-string-to-ms (car (split-string (aref a-vec col-index)))))
+           (b (speedo--time-string-to-ms (car (split-string (aref b-vec col-index))))))
+      (cond
+       ;; Duration of 0 (incomplete attempt) is moved to end of list
+       ((zerop a) nil)
+       ((zerop b) t)
+       (t (< a b))))))
+
+(defun speedo-review--sort-consistencies (a b)
+  "Sort table rows A and B by consistency."
+  (speedo-review--col-sorter
+    (let* ((consistency-a (aref a-vec (1- (length a-vec))))
+           (consistency-b (aref b-vec (1- (length b-vec)))))
+      (cond
+       ;; Ensure place holders are put at end of list by default
+       ((string= consistency-a speedo-text-place-holder) nil)
+       ((string= consistency-b speedo-text-place-holder) t)
+       (t (< (string-to-number consistency-a)
+             (string-to-number consistency-b)))))))
+
 (defun speedo-review--columns (attempts)
   "Return Column format for ATTEMPTS.
 Used as `tabulated-list-format'."
   (vconcat
    (when speedo-review-include-id-column
-     (list (list "ID" 4 (lambda (a b) (< (car a) (car b))))))
-   (list (list "Segment" (speedo-review--segment-col-length) t))
+     (list (list "ID" 4 #'speedo-review--sort-id-column)))
+   (list (list "Segment" (speedo-review--segment-col-length)
+               #'speedo-review--sort-segment-column))
    (speedo-review--attempt-columns attempts)
    (when speedo-review-include-average-column
      (list (list "Average" 27 #'speedo-review--sort-attempt-column)))
@@ -371,9 +422,7 @@ If CACHE is non-nil, the attempts are saved in `speedo-review--attempts'."
             (and more-than-one-attempt-p speedo-review-include-average-column))
            (speedo-review-include-consistency-column
             (and more-than-one-attempt-p speedo-review-include-consistency-column))
-           (row-data (setq speedo-review--totals-data
-                           (speedo-review--row-data attempts)))
-           (rows (speedo-review--rows row-data)))
+           (rows (speedo-review--rows (speedo-review--row-data attempts))))
       ;;commands are responsible for setting `speedo-review--header'
       (unless (derived-mode-p 'speedo-review-mode) (speedo-review-mode))
       (setq tabulated-list-entries rows
@@ -385,15 +434,8 @@ If CACHE is non-nil, the attempts are saved in `speedo-review--attempts'."
                          :test #'string= :key #'car)
         (setq tabulated-list-sort-key nil))
       (tabulated-list-init-header)
-      (advice-add 'tabulated-list-print :after 'speedo-review--print-totals-maybe)
       (tabulated-list-print 'remember-pos)
       (setq header-line-format speedo-review--header))))
-
-(defun speedo-review--print-totals-maybe (&rest _)
-  "Hack to insert info into buffer post sorting.
-If `tabulated-list-mode' offered a post-print hook, we could avoid this."
-  (when (and (derived-mode-p 'speedo-review-mode) speedo-review-include-totals-row)
-    (speedo-review--insert-totals speedo-review--totals-data)))
 
 (defun speedo-review--repeat-command (command &optional static)
   "Repeat COMMAND. If STATIC is non-nil, re-use attempts if possible.
