@@ -58,7 +58,7 @@ Otherwise they are relative to the start of each segment.")
 (defun speedo-review--row-data (attempts)
   "Compute row data for ATTEMPTS.
 Returns a plist of form:
-\(:id :name :mistakes :durations :average-durations :average-relative :consistency)."
+\(:id :name :mistakes :durations :average-duration :average-relative :consistency)."
   (let* ((segments          (plist-get speedo--data :segments))
          (segment-count     (length segments))
          (target            (car attempts))
