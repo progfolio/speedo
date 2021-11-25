@@ -581,10 +581,6 @@ If no attempt is assoicated with that column, read an attempt."
   "Major mode for reviewing speedo attempts.
 
 \\{speedo-review-mode-map}"
-  ;; (when speedo-hide-cursor
-  ;;   (when (bound-and-true-p blink-cursor-mode) (blink-cursor-mode -1))
-  ;;   (speedo--hide-cursor)
-  ;;   (add-hook 'quit-window-hook #'speedo--show-cursor nil 'local))
   (when speedo-highlight-line
     (face-remap-set-base 'hl-line nil)
     (face-remap-add-relative 'hl-line 'speedo-hl-line)
