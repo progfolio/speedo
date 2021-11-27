@@ -860,9 +860,7 @@ ARGS are passed to `write-region'"
              ("\\(?:(:\\)" . (lambda () (replace-match "( :")))))
           (empty-lines "\\(?:^[[:space:]]*$\\)"))
       (insert (pp-to-string data))
-      (add-file-local-variable-prop-line 'mode 'emacs-lisp)
       (emacs-lisp-mode)
-      (elisp-enable-lexical-binding)
       (goto-char (point-min))
       (dolist (transformation transformations)
         (save-excursion
@@ -870,6 +868,8 @@ ARGS are passed to `write-region'"
             (funcall (cdr transformation)))))
       (flush-lines empty-lines)
       (delete-trailing-whitespace (point-min) (point-max))
+      (elisp-enable-lexical-binding)
+      (add-file-local-variable-prop-line 'mode 'emacs-lisp)
       (indent-region (point-min) (point-max))
       (apply #'write-region `(,(point-min) ,(point-max) ,file ,@args)))))
 
