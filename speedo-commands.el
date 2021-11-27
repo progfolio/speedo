@@ -45,8 +45,11 @@ When called interactivley, prompt for optional values."
                            (setq name (string-remove-suffix id name)
                                  name (concat name
                                               (setq id (format "<%d>" (cl-incf i))))))
-                         name))
-         (file (read-file-name "Write DB to: " dir nil nil default-file))
+                         (concat name speedo--file-extension)))
+         (file (let ((input (read-file-name "Write DB to: " dir nil nil default-file)))
+                 (if (string-suffix-p speedo--file-extension input)
+                     input
+                   (concat input speedo--file-extension))))
          (index 0)
          segment)
     (unless (or segments (not (called-interactively-p 'interactive)))
@@ -184,7 +187,7 @@ If HIDE is non-nil, do not display `speedo-buffer' after loading."
                                        #'speedo--db-file-p))))
     (when (and (speedo--data-modified-p)
                (yes-or-no-p (format "%S modified. Save before loading %s? "
-                                 speedo--data-file file)))
+                                    speedo--data-file file)))
       ;; Force because we just checked for modifications above
       (speedo-save-file 'force))
     (speedo--load-file file)
