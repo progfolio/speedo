@@ -373,7 +373,9 @@ Handle case of ignoring Totals column in sorting."
      (cond
       ((string= a-name "Totals") (if reversed t nil))
       ((string= b-name "Totals") (if reversed nil t))
-      (t (progn ,@body)))))
+      (t (condition-case-unless-debug _
+             (progn ,@body)
+           ((error) nil))))))
 
 (defun speedo-review--sort-id-column (a b)
   "Sort rows A B by ID."
