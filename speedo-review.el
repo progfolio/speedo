@@ -205,7 +205,7 @@ Returns a plist of form:
                      (list :durations
                            (and speedo-review-include-mistakes :mistakes)
                            (and speedo-review-include-relative-times  :relatives))))
-         (verticals
+         (columns
           (let (v)
             (dolist (key keys (nreverse v))
               (let (acc)
@@ -220,44 +220,58 @@ Returns a plist of form:
                 (push (nreverse acc) v))))))
     (when  speedo-review-include-average-column
       (dolist (key keys)
-        (when-let ((vals (plist-get verticals key)))
-          (setq verticals
-                (plist-put verticals key (append vals (list (/ (cl-reduce #'+ vals)
-                                                               (length vals)))))))))
+        (when-let ((vals (plist-get columns key)))
+          (setq columns
+                (plist-put columns key
+                           (append vals
+                                   (list
+                                    (condition-case-unless-debug _
+                                        (/ (cl-reduce #'+ vals)
+                                           (length vals))
+                                      (error nil)))))))))
     (dolist (key keys)
-      (let* ((vals (plist-get verticals key))
+      (let* ((vals (plist-get columns key))
              (basis (car vals))
              (relative-p (eq key :relatives)))
-        (setq verticals
+        (setq columns
               (plist-put
-               verticals key
+               columns key
                (mapcar (lambda (it)
-                         (propertize
-                          (funcall (cond
-                                    ((eq key :durations) #'speedo--format-ms)
-                                    ((eq key :mistakes)  #'number-to-string)
-                                    (relative-p
-                                     (lambda (it) (speedo--relative-time it 0))))
-                                   it)
-                          'face (cond
-                                 ((< it basis)
-                                  (if relative-p 'speedo-behind 'speedo-ahead))
-                                 ((> it basis)
-                                  (if relative-p 'speedo-ahead 'speedo-behind))
-                                 (t              'speedo-neutral))))
+                         (unless (and relative-p (eq it basis))
+                           (condition-case-unless-debug _
+                               (propertize
+                                (funcall (cond
+                                          ((eq key :durations) #'speedo--format-ms)
+                                          ((eq key :mistakes)  #'number-to-string)
+                                          (relative-p
+                                           (lambda (it)
+                                             (speedo--relative-time it 0))))
+                                         it)
+                                'face (condition-case-unless-debug _
+                                          (cond
+                                           ((< it basis)
+                                            (if relative-p 'speedo-behind 'speedo-ahead))
+                                           ((> it basis)
+                                            (if relative-p 'speedo-ahead 'speedo-behind))
+                                           (t              'speedo-neutral))
+                                        ((error) 'speedo-neutral)))
+                             ((error) nil))))
                        vals)))))
     ;; Negative ID used in column sorting functions to distinguish this row form segments.
     (list -1
           (vconcat
            (when speedo-review-include-id-column (list " "))
            (list (propertize "Totals" 'face '(:weight bold)))
-           (list (apply #'cl-mapcar
-                        `(list
-                          ,(plist-get verticals :durations)
-                          ,@(when speedo-review-include-relative-times
-                              (list (plist-get verticals :relatives)))
-                          ,@(when speedo-review-include-mistakes
-                              (list (plist-get verticals :mistakes))))))
+           (let* ((len (length (plist-get columns :durations)))
+                  (placeholders (make-list len nil)))
+             (list (cl-mapcar #'list
+                              (or (plist-get columns :durations) placeholders)
+                              (if speedo-review-include-relative-times
+                                  (or (plist-get columns :relatives) placeholders)
+                                placeholders)
+                              (if speedo-review-include-mistakes
+                                  (or (plist-get columns :mistakes) placeholders)
+                                placeholders))))
            (when speedo-review-include-consistency-column
              (list " "))))))
 
@@ -272,29 +286,42 @@ Returns a plist of form:
 
 (defun speedo-review--format-rows (rows)
   "Format ROWS."
-  (let* ((widest-duration (speedo-review--widest-timestring-component rows 0))
-         (widest-relative (speedo-review--widest-timestring-component rows 1))
-         (widest-mistake  (speedo-review--widest-timestring-component rows 2))
-         (format-spec (concat "%" (number-to-string widest-duration) "s"
-                              " "
-                              "%" (number-to-string widest-relative) "s"
-                              " "
-                              "%" (number-to-string widest-mistake)  "s"))
-         (time-index (if speedo-review-include-id-column 2 1)))
-    ;;(ID [D1...])
+  (let* ((time-index (if speedo-review-include-id-column 2 1))
+         (widest-duration (speedo-review--widest-timestring-component rows 0))
+         (widest-relative
+          (when speedo-review-include-relative-times
+            (speedo-review--widest-timestring-component rows 1)))
+         (widest-mistake
+          (when speedo-review-include-mistakes
+            (speedo-review--widest-timestring-component rows 2)))
+         (format-spec (apply #'concat
+                             `("%" ,(number-to-string widest-duration) "s"
+                               ,@(when widest-relative
+                                   (list " " "%" (number-to-string widest-relative) "s"))
+                               ,@(when widest-mistake
+                                   (list " " "%" (number-to-string widest-mistake)  "s"))))))
     (mapcar (lambda (row)
               (let* ((col-descriptors (cadr row))
-                     (times (aref col-descriptors time-index)))
+                     (times (aref col-descriptors time-index))
+                     (col-index -1))
                 (list
                  (car row)
                  (vconcat
                   (cl-subseq col-descriptors 0 time-index)
-                  (mapcar (lambda (component)
-                            (format format-spec
-                                    (or (nth 0 component) speedo-text-place-holder)
-                                    (or (nth 1 component) speedo-text-place-holder)
-                                    (or (nth 2 component) speedo-text-place-holder)))
-                          times)
+                  (mapcar
+                   (lambda (component)
+                     (apply #'format
+                            (delq nil (list format-spec
+                                            (or (nth 0 component) speedo-text-place-holder)
+                                            (when speedo-review-include-relative-times
+                                              (or (nth 1 component)
+                                                  (if (zerop (cl-incf col-index))
+                                                      " "
+                                                    speedo-text-place-holder)))
+                                            (when speedo-review-include-mistakes
+                                              (or (nth 2 component)
+                                                  speedo-text-place-holder))))))
+                   times)
                   (cl-subseq col-descriptors (1+ time-index))))))
             rows)))
 
