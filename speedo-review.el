@@ -587,11 +587,12 @@ HEADER is displayed in review buffer."
 
 (defun speedo-review--sort-col (name)
   "Toggle sorting of column with NAME."
-  (save-excursion
-    (goto-char (point-min))
-    (if (text-property-search-forward 'tabulated-list-column-name name t)
-        (progn (backward-char) (tabulated-list-sort))
-      (user-error "Could not find %S column" name))))
+  (if-let ((nth (cl-position name
+                             (cl-coerce tabulated-list-format 'list)
+                             :test #'string=
+                             :key #'car)))
+      (tabulated-list-sort nth)
+    (user-error "Could not find %S column" name)))
 
 (defun speedo-review-forward-col (&optional n)
   "Move forward N columns."
