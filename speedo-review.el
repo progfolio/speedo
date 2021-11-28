@@ -363,7 +363,7 @@ Returns a plist of form:
 (defmacro speedo-review--col-sorter (&rest body)
   "Excute BODY with anaphoric bindings.
 Handle case of ignoring Totals column in sorting."
-  (declare (indent defun) (debug body))
+  (declare (indent defun))
   `(let* ((a-vec (cadr a))
           (b-vec (cadr b))
           (name-index (if speedo-review-include-id-column 1 0))
