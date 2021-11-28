@@ -352,28 +352,13 @@ Returns a plist of form:
             (list (speedo-review--row-totals data))))))
     (speedo-review--format-rows rows)))
 
-(defun speedo-review--attempt-columns (attempts)
-  "Return list of columns for ATTEMPTS."
-  (let ((target-attempt (car attempts)))
-    (mapcar
-     (lambda (a)
-       (let ((alias (or (speedo--plist-get* a :alias)
-                        (format-time-string
-                         "%Y-%m-%d %I:%M%p"
-                         (/ (plist-get a :start) 1000)))))
-         (when (equal a target-attempt)
-           (setq alias (propertize alias 'face '(:weight bold))))
-         (list (propertize alias 'speedo-attempt a)
-               27 #'speedo-review--sort-attempt-column)))
-     attempts)))
-
 (defun speedo-review--segment-col-length ()
   "Return length of longest segment name with padding."
   (let ((longest (car
                   (cl-sort (mapcar (lambda (segment) (length (plist-get segment :name)))
                                    (plist-get speedo--data :segments))
                            #'>))))
-    (max (floor (* 1.2 longest)) (+ (length "Segment") 2))))
+    (+ (max longest (length "Segment")) 2)))
 
 (defmacro speedo-review--col-sorter (&rest body)
   "Excute BODY with anaphoric bindings.
@@ -425,6 +410,21 @@ Handle case of ignoring Totals column in sorting."
        (t (< (string-to-number consistency-a)
              (string-to-number consistency-b)))))))
 
+(defun speedo-review--attempt-columns (attempts)
+  "Return list of columns for ATTEMPTS."
+  (let ((target-attempt (car attempts)))
+    (mapcar
+     (lambda (a)
+       (let ((alias (or (speedo--plist-get* a :alias)
+                        (format-time-string
+                         "%Y-%m-%d %I:%M%p"
+                         (/ (plist-get a :start) 1000)))))
+         (when (equal a target-attempt)
+           (setq alias (propertize alias 'face '(:inherit speedo-neutral :weight bold))))
+         (list (propertize alias 'speedo-attempt a)
+               (+ (length alias) 2) #'speedo-review--sort-attempt-column)))
+     attempts)))
+
 (defun speedo-review--columns (attempts)
   "Return Column format for ATTEMPTS.
 Used as `tabulated-list-format'."
@@ -435,9 +435,9 @@ Used as `tabulated-list-format'."
                #'speedo-review--sort-segment-column))
    (speedo-review--attempt-columns attempts)
    (when speedo-review-include-average-column
-     (list (list "Average" 27 #'speedo-review--sort-attempt-column)))
+     (list (list "Average" 13 #'speedo-review--sort-attempt-column)))
    (when speedo-review-include-consistency-column
-     (list (list "Consistency" 20 #'speedo-review--sort-consistencies)))))
+     (list (list "Consistency" 13 #'speedo-review--sort-consistencies)))))
 
 (defun speedo-review--ui-init (attempts &optional cache)
   "Initialize comparison UI format for ATTEMPTS.
