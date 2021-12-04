@@ -412,34 +412,42 @@ Handle case of ignoring Totals column in sorting."
        (t (< (string-to-number consistency-a)
              (string-to-number consistency-b)))))))
 
-(defun speedo-review--attempt-columns (attempts)
-  "Return list of columns for ATTEMPTS."
-  (let ((target-attempt (car attempts)))
+(defun speedo-review--attempt-columns (attempts rows)
+  "Return list of columns for ATTEMPTS.
+ROWS are pre-formatted rows used to determine width of the column."
+  (let ((target-attempt (car attempts))
+        (row-len (length (aref (cadr (car rows))
+                               (if speedo-review-include-id-column 2 1)))))
     (mapcar
      (lambda (a)
-       (let ((alias (or (speedo--plist-get* a :alias)
+       (let ((alias (or (plist-get a :alias)
                         (format-time-string
                          "%Y-%m-%d %I:%M%p"
                          (/ (plist-get a :start) 1000)))))
          (when (equal a target-attempt)
            (setq alias (propertize alias 'face '(:inherit speedo-neutral :weight bold))))
          (list (propertize alias 'speedo-attempt a)
-               (+ (length alias) 2) #'speedo-review--sort-attempt-column)))
+               (+ 2 (max (length alias) row-len)) #'speedo-review--sort-attempt-column)))
      attempts)))
 
-(defun speedo-review--columns (attempts)
+(defun speedo-review--columns (attempts rows)
   "Return Column format for ATTEMPTS.
-Used as `tabulated-list-format'."
-  (vconcat
-   (when speedo-review-include-id-column
-     (list (list "ID" 4 #'speedo-review--sort-id-column)))
-   (list (list "Segment" (speedo-review--segment-col-length)
-               #'speedo-review--sort-segment-column))
-   (speedo-review--attempt-columns attempts)
-   (when speedo-review-include-average-column
-     (list (list "Average" 13 #'speedo-review--sort-attempt-column)))
-   (when speedo-review-include-consistency-column
-     (list (list "Consistency" 13 #'speedo-review--sort-consistencies)))))
+Used as `tabulated-list-format'.
+ROWS are used to determine column widths."
+  (let ((row-len (length (aref (cadr (car rows))
+                               (if speedo-review-include-id-column 2 1)))))
+    (vconcat
+     (when speedo-review-include-id-column
+       (list (list "ID" 4 #'speedo-review--sort-id-column)))
+     (list (list "Segment" (speedo-review--segment-col-length)
+                 #'speedo-review--sort-segment-column))
+     (speedo-review--attempt-columns attempts rows)
+     (when speedo-review-include-average-column
+       (list (list "Average" (+ 2 (max (length "Average") row-len))
+                   #'speedo-review--sort-attempt-column)))
+     (when speedo-review-include-consistency-column
+       (list (list "Consistency" (+ 2 (max (length "Consistency") row-len))
+                   #'speedo-review--sort-consistencies))))))
 
 (defun speedo-review--ui-init (attempts &optional cache)
   "Initialize comparison UI format for ATTEMPTS.
@@ -455,7 +463,7 @@ If CACHE is non-nil, the attempts are saved in `speedo-review--attempts'."
       ;;commands are responsible for setting `speedo-review--header'
       (unless (derived-mode-p 'speedo-review-mode) (speedo-review-mode))
       (setq tabulated-list-entries rows
-            tabulated-list-format (speedo-review--columns attempts)
+            tabulated-list-format (speedo-review--columns attempts rows)
             tabulated-list-use-header-line nil)
       ;; Clear the sort-key if the column it refrences has been removed.
       (unless (cl-member (car tabulated-list-sort-key)
