@@ -157,8 +157,8 @@ Returns a plist of form:
              ((> average-mistakes basis) 'speedo-behind)
              (t 'speedo-neutral)))))))))
 
-(defun speedo-review--row-times (data row id)
-  "Return ROW times from DATA by ID."
+(defun speedo-review--row-times (data row column)
+  "Return ROW times from DATA by COLUMN."
   (let ((times)
         (durations (plist-get row :durations))
         (relatives (plist-get row :relatives)))
@@ -171,7 +171,7 @@ Returns a plist of form:
                        (cl-subseq
                         (plist-get (nth i speedo-review--attempts)
                                    :splits)
-                        0 (1+ id)))
+                        0 (1+ column)))
                     duration))
                speedo-text-place-holder)
              (when (and speedo-review-include-relative-times
@@ -180,7 +180,7 @@ Returns a plist of form:
                  (speedo--relative-time
                   (if speedo-review-include-accumulative-times
                       (cl-reduce #'+
-                                 (cl-subseq data 0 (1+ id))
+                                 (cl-subseq data 0 (1+ column))
                                  :key (lambda (r) (nth i (plist-get r :relatives)))
                                  :initial-value 0)
                     relative)
