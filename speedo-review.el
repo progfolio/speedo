@@ -293,34 +293,37 @@ Returns a plist of form:
             (speedo-review--widest-timestring-component rows 1)))
          (widest-mistake
           (when speedo-review-include-mistakes
-            (speedo-review--widest-timestring-component rows 2)))
-         (format-spec (apply #'concat
-                             `("%" ,(number-to-string widest-duration) "s"
-                               ,@(when widest-relative
-                                   (list " " "%" (number-to-string widest-relative) "s"))
-                               ,@(when widest-mistake
-                                   (list " " "%" (number-to-string widest-mistake)  "s"))))))
+            (speedo-review--widest-timestring-component rows 2))))
     (mapcar (lambda (row)
               (let* ((col-descriptors (cadr row))
                      (times (aref col-descriptors time-index))
-                     (col-index -1))
+                     (col-index 0))
                 (list
                  (car row)
                  (vconcat
                   (cl-subseq col-descriptors 0 time-index)
                   (mapcar
                    (lambda (component)
-                     (apply #'format
-                            (delq nil (list format-spec
-                                            (or (nth 0 component) speedo-text-place-holder)
-                                            (when speedo-review-include-relative-times
-                                              (or (nth 1 component)
-                                                  (if (zerop (cl-incf col-index))
-                                                      " "
-                                                    speedo-text-place-holder)))
-                                            (when speedo-review-include-mistakes
-                                              (or (nth 2 component)
-                                                  speedo-text-place-holder))))))
+                     (let ((format-spec
+                            (apply #'concat
+                                   `("%" ,(number-to-string widest-duration) "s"
+                                     ,@(when (and widest-relative (not (zerop col-index)))
+                                         (list " " "%" (number-to-string widest-relative) "s"))
+                                     ,@(when widest-mistake
+                                         (list " " "%" (number-to-string widest-mistake)  "s"))))))
+                       (prog1
+                           (apply #'format
+                                  (delq nil (list format-spec
+                                                  (or (nth 0 component) speedo-text-place-holder)
+                                                  (when speedo-review-include-relative-times
+                                                    (or (nth 1 component)
+                                                        (if (zerop col-index)
+                                                            " "
+                                                          speedo-text-place-holder)))
+                                                  (when speedo-review-include-mistakes
+                                                    (or (nth 2 component)
+                                                        speedo-text-place-holder)))))
+                         (cl-incf col-index))))
                    times)
                   (cl-subseq col-descriptors (1+ time-index))))))
             rows)))
