@@ -25,6 +25,7 @@
 
 ;;@TODO: this should be a low-level function with a command based off of it.
 (declare-function speedo-save-file "speedo-commands" (&optional force))
+(declare-function speedo-load-file "speedo-commands" (&optional file hide))
 
 ;;; Functions
 
@@ -901,9 +902,7 @@ Negative N cycles backward, positive forward."
 
 (defun speedo--ensure-data ()
   "Ensure `speedo--data' is set and return it."
-  (unless speedo--data
-    (speedo--load-file
-     (read-file-name "Splits file: " speedo-directory )))
+  (unless speedo--data (speedo-load-file nil 'hide))
   speedo--data)
 
 (defun speedo--timer-columns-init ()
