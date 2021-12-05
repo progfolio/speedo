@@ -419,7 +419,7 @@ Handle case of ignoring Totals column in sorting."
   "Return list of columns for ATTEMPTS.
 ROWS are pre-formatted rows used to determine width of the column."
   (let ((target-attempt (car attempts))
-        (row-len (length (aref (cadr (car rows))
+        (col-width (length (aref (cadr (car rows))
                                (if speedo-review-include-id-column 2 1)))))
     (mapcar
      (lambda (a)
@@ -430,26 +430,26 @@ ROWS are pre-formatted rows used to determine width of the column."
          (when (equal a target-attempt)
            (setq alias (propertize alias 'face '(:inherit speedo-neutral :weight bold))))
          (list (propertize alias 'speedo-attempt a)
-               (+ 2 (max (length alias) row-len)) #'speedo-review--sort-attempt-column)))
+               (+ 4 (max (length alias) col-width)) #'speedo-review--sort-attempt-column)))
      attempts)))
 
 (defun speedo-review--columns (attempts rows)
   "Return Column format for ATTEMPTS.
 Used as `tabulated-list-format'.
 ROWS are used to determine column widths."
-  (let ((row-len (length (aref (cadr (car rows))
-                               (if speedo-review-include-id-column 2 1)))))
+  (let* ((attempt-cols (speedo-review--attempt-columns attempts rows))
+         (attempt-width (or (cadr (nth 1 attempt-cols)) 0)))
     (vconcat
      (when speedo-review-include-id-column
        (list (list "ID" 4 #'speedo-review--sort-id-column)))
      (list (list "Segment" (speedo-review--segment-col-length)
                  #'speedo-review--sort-segment-column))
-     (speedo-review--attempt-columns attempts rows)
+     attempt-cols
      (when speedo-review-include-average-column
-       (list (list "Average" (+ 2 (max (length "Average") row-len))
+       (list (list "Average" (+ 2 (max (length "Average") attempt-width))
                    #'speedo-review--sort-attempt-column)))
      (when speedo-review-include-consistency-column
-       (list (list "Consistency" (+ 2 (max (length "Consistency") row-len))
+       (list (list "Consistency" (+ 2 (max (length "Consistency") 0))
                    #'speedo-review--sort-consistencies))))))
 
 (defun speedo-review--ui-init (attempts &optional cache)
