@@ -159,20 +159,34 @@ Returns a plist of form:
 
 (defun speedo-review--row-times (data row column)
   "Return ROW times from DATA by COLUMN."
-  (let ((times)
-        (durations (plist-get row :durations))
-        (relatives (plist-get row :relatives)))
+  (let* ((times)
+         (durations (plist-get row :durations))
+         (relatives (plist-get row :relatives)))
     (dotimes (i (length durations))
       (push (list
-             (if-let ((duration (nth i durations)))
-                 (speedo--format-ms
-                  (if speedo-review-include-accumulative-times
-                      (speedo--splits-duration
-                       (cl-subseq
-                        (plist-get (nth i speedo-review--attempts)
-                                   :splits)
-                        0 (1+ column)))
-                    duration))
+             (if-let ((duration (nth i durations))
+                      (time-string (speedo--format-ms
+                                    (if speedo-review-include-accumulative-times
+                                        (speedo--splits-duration
+                                         (cl-subseq
+                                          (plist-get (nth i speedo-review--attempts)
+                                                     :splits)
+                                          0 (1+ column)))
+                                      duration))))
+                 (let ((basis-duration
+                        (if speedo-review-include-accumulative-times
+                            (speedo--splits-duration
+                             (cl-subseq
+                              (plist-get (nth 0 speedo-review--attempts)
+                                         :splits)
+                              0 (1+ column)))
+                          (nth 0 durations))))
+                   (if (and basis-duration (not (zerop i)))
+                       (propertize time-string 'face (cond
+                                                      ((< duration basis-duration) 'speedo-ahead)
+                                                      ((> duration basis-duration) 'speedo-behind)
+                                                      (t  'speedo-neutral)))
+                     time-string))
                speedo-text-place-holder)
              (when (and speedo-review-include-relative-times
                         (not (zerop i)))
