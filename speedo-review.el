@@ -168,18 +168,14 @@ Returns a plist of form:
                       (time-string (speedo--format-ms
                                     (if speedo-review-include-accumulative-times
                                         (speedo--splits-duration
-                                         (cl-subseq
-                                          (plist-get (nth i speedo-review--attempts)
-                                                     :splits)
-                                          0 (1+ column)))
+                                         (plist-get (nth i speedo-review--attempts) :splits)
+                                         0 (1+ column))
                                       duration))))
                  (let ((basis-duration
                         (if speedo-review-include-accumulative-times
                             (speedo--splits-duration
-                             (cl-subseq
-                              (plist-get (nth 0 speedo-review--attempts)
-                                         :splits)
-                              0 (1+ column)))
+                             (plist-get (nth 0 speedo-review--attempts) :splits)
+                             0 (1+ column))
                           (nth 0 durations))))
                    (if (and basis-duration (not (zerop i)))
                        (propertize time-string 'face (cond

@@ -272,11 +272,15 @@ Formatter is called with hours, minutes, seconds, milliseconds."
                                (plist-get attempt :splits)))
                      (or attempts (speedo--attempts))))))))
 
-(defun speedo--splits-duration (splits)
-  "Return duration of SPLITS in ms.
-If a split is missing a :duration, return nil."
+(defun speedo--splits-duration (splits &optional start end)
+  "Return duration of SPLITS list in ms.
+If a split is missing a :duration, return nil.
+If START and END are non-nil, a subsequence of SPLITS is considered.
+See `cl-subseq' for acceptable values."
+  (when (or start end) (setq splits (cl-subseq splits (or start 0) end)))
   (condition-case _
-      (cl-reduce #'+ splits :key (lambda (s) (plist-get s :duration)) :initial-value 0)
+      (cl-reduce #'+ splits
+                 :key (lambda (s) (plist-get s :duration)) :initial-value 0)
     (error nil)))
 
 (defun speedo--attempts (&optional filter)
@@ -424,16 +428,14 @@ If CACHE is non-nil, use the cache."
                       (target-split-duration
                        (plist-get (nth target-index target-splits) :duration))
                       (target-previous-duration
-                       (speedo--splits-duration
-                        (cl-subseq target-splits 0 (max target-index 1))))
+                       (speedo--splits-duration target-splits 0 (max target-index 1)))
                       (current-split (speedo--current-split))
                       (split-duration (- (speedo--timestamp)
                                          (plist-get current-split :start)))
                       (previous-duration
                        (or (speedo--splits-duration
-                            (cl-subseq
-                             (plist-get speedo--current-attempt :splits)
-                             0 (max speedo--segment-index 1)))
+                            (plist-get speedo--current-attempt :splits)
+                            0 (max speedo--segment-index 1))
                            ;;in case of first split, there is no previous duration
                            0))
                       (current-total (+ split-duration previous-duration))
@@ -735,11 +737,9 @@ Reset timers."
                          (when (and target-splits speedo--current-attempt)
                            (speedo--relative-time
                             (speedo--splits-duration
-                             (cl-subseq target-splits 0
-                                        (min (+ index 1) (length target-splits))))
+                             target-splits 0 (min (+ index 1) (length target-splits)))
                             (speedo--splits-duration
-                             (when-let ((splits (plist-get attempt :splits)))
-                               (cl-subseq splits 0 (min (+ index 1) (length splits)))))))
+                               attempt-splits 0 (min (+ index 1) (length attempt-splits)))))
                          speedo-text-place-holder)))
                 (when current-line (setq s (propertize s 'comparison-timer t)))
                 (if best-split (propertize s 'face 'speedo-pb) s)))
