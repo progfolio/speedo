@@ -742,7 +742,7 @@ Reset timers."
                             (speedo--splits-duration
                              target-splits 0 (min (+ index 1) (length target-splits)))
                             (speedo--splits-duration
-                               attempt-splits 0 (min (+ index 1) (length attempt-splits)))))
+                             attempt-splits 0 (min (+ index 1) (length attempt-splits)))))
                          speedo-text-place-holder)))
                 (when current-line (setq s (propertize s 'comparison-timer t)))
                 (if best-split (propertize s 'face 'speedo-pb) s)))

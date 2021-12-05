@@ -319,7 +319,7 @@ Returns a plist of form:
                                                   (when (and speedo-review-include-relative-times
                                                              (not (zerop col-index)))
                                                     (or (nth 1 component)
-                                                          speedo-text-place-holder))
+                                                        speedo-text-place-holder))
                                                   (when speedo-review-include-mistakes
                                                     (or (nth 2 component)
                                                         speedo-text-place-holder)))))
