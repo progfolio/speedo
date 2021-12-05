@@ -434,7 +434,7 @@ Handle case of ignoring Totals column in sorting."
 ROWS are pre-formatted rows used to determine width of the column."
   (let ((target-attempt (car attempts))
         (col-width (length (aref (cadr (car rows))
-                               (if speedo-review-include-id-column 2 1)))))
+                                 (if speedo-review-include-id-column 2 1)))))
     (mapcar
      (lambda (a)
        (let ((alias (or (plist-get a :alias)
