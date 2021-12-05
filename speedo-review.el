@@ -178,10 +178,7 @@ Returns a plist of form:
                              0 (1+ column))
                           (nth 0 durations))))
                    (if (and basis-duration (not (zerop i)))
-                       (propertize time-string 'face (cond
-                                                      ((< duration basis-duration) 'speedo-ahead)
-                                                      ((> duration basis-duration) 'speedo-behind)
-                                                      (t  'speedo-neutral)))
+                       (speedo--colorize basis-duration duration time-string)
                      time-string))
                speedo-text-place-holder)
              (when (and speedo-review-include-relative-times
@@ -199,13 +196,7 @@ Returns a plist of form:
                (when-let ((mistakes (plist-get row :mistakes))
                           (count (nth i mistakes))
                           (basis (car mistakes)))
-                 (propertize
-                  (number-to-string count)
-                  'face
-                  (cond
-                   ((< count basis) 'speedo-ahead)
-                   ((> count basis) 'speedo-behind)
-                   (t 'speedo-neutral))))))
+                 (speedo--colorize basis count (number-to-string count)))))
             times))
     (nreverse times)))
 

@@ -71,6 +71,13 @@ This is different from setting KEYS to nil."
         (push (plist-get plist keyword) result)
         (push keyword result)))))
 
+(defun speedo--colorize (basis comparison string)
+  "Propertize STRING by comparing BASIS to COMPARISON."
+  (propertize string
+              'face (cond ((< basis comparison) 'speedo-behind)
+                          ((> basis comparison) 'speedo-ahead)
+                          (t                    'speedo-neutral))))
+
 (defun speedo--relative-time (a b)
   "Return formatted timestring of B to A.
 Times should be provided in ms.
@@ -84,11 +91,7 @@ Return nil if A or B is absent."
            (time (speedo--format-ms (abs previous))))
       (setq time (substring time (string-match-p "[^0:]" time)))
       (when (string-prefix-p "." time) (setq time (concat "0" time)))
-      (propertize (concat sign time)
-                  'face (cond
-                         ((< previous 0) 'speedo-behind)
-                         ((> previous 0) 'speedo-ahead)
-                         (t 'speedo-neutral))))))
+      (speedo--colorize previous 0 (concat sign time)))))
 
 ;;;; Predicates
 (defun speedo--attempt-complete-p (attempt)
