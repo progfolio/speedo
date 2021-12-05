@@ -325,11 +325,10 @@ Returns a plist of form:
                            (apply #'format
                                   (delq nil (list format-spec
                                                   (or (nth 0 component) speedo-text-place-holder)
-                                                  (when speedo-review-include-relative-times
+                                                  (when (and speedo-review-include-relative-times
+                                                             (not (zerop col-index)))
                                                     (or (nth 1 component)
-                                                        (if (zerop col-index)
-                                                            " "
-                                                          speedo-text-place-holder)))
+                                                          speedo-text-place-holder))
                                                   (when speedo-review-include-mistakes
                                                     (or (nth 2 component)
                                                         speedo-text-place-holder)))))
