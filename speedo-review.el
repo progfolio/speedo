@@ -53,6 +53,8 @@ Otherwise they are relative to the start of each segment.")
 (defvar speedo-review--attempts nil
   "Used to store attempts when manipulating views.")
 (defvar speedo-review--last-command nil "Last review command and its args.")
+(defvar speedo-review-include-other-runners nil
+  "When non-nil, include runs from other runners.")
 
 (defun speedo-review--row-data (attempts)
   "Compute row data for ATTEMPTS.
@@ -554,7 +556,11 @@ HEADER is displayed in review buffer."
   (interactive "p")
   (speedo--ensure-data)
   (let* ((runs (cl-sort (copy-tree
-                         (or attempts (speedo--attempts #'speedo--attempt-incomplete-p)))
+                         (or attempts (speedo--attempts (lambda (a)
+                                                          (or (speedo--attempt-incomplete-p a)
+                                                              (and
+                                                               (not speedo-review-include-other-runners)
+                                                               (plist-get a :runner)))))))
                         #'<
                         :key (lambda (a) (speedo--splits-duration (plist-get a :splits)))))
          (top (cl-subseq runs 0 (min (abs n) (length runs))))
@@ -562,7 +568,9 @@ HEADER is displayed in review buffer."
                      (list (speedo--header-game-info)
                            (propertize (let ((len (length top)))
                                          (if (eq len 1)
-                                             " Personal Best"
+                                             (concat
+                                              (unless speedo-review-include-other-runners " Personal ")
+                                              "Best")
                                            (format " Top %d Runs" len)))
                                        'face 'speedo-ahead)))))
     (when (< n 0) (setq top (reverse top)))
