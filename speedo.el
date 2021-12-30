@@ -98,6 +98,10 @@ Return nil if A or B is absent."
   "Return t if ATTEMPT is complete, else nil."
   (not (plist-member attempt :reset)))
 
+(defun speedo--attempt-mine-p (attempt)
+  "Return t if ATTEMPT does not belong to another runner, else nil."
+  (not (plist-member attempt :runner)))
+
 (defun speedo--attempt-ignored-p (attempt)
   "Return t if ATTEMPT is tagged \"ignore\"."
   (member "ignore" (plist-get attempt :tags)))
@@ -360,11 +364,14 @@ If NOCACHE is non-nil, recalculate from ATTEMPTS.
 IF NOSAVE is non-nil, do not cache the result."
   (speedo--run-by
    :pb
-   (lambda (a) (car (cl-sort
-                     (cl-remove-if-not #'speedo--attempt-complete-p a)
-                     #'<
-                     :key (lambda (run)
-                            (speedo--splits-duration (plist-get run :splits))))))
+   (lambda (attempts)
+     (car (cl-sort
+           (cl-remove-if-not (lambda (a) (and (speedo--attempt-complete-p a)
+                                              (speedo--attempt-mine-p a)))
+                             attempts)
+           #'<
+           :key (lambda (run)
+                  (speedo--splits-duration (plist-get run :splits))))))
    attempts nocache nosave))
 
 (defun speedo-target-world-record ()
