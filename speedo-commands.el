@@ -156,12 +156,12 @@ If no attempt is in progress, clear the UI times."
   (let ((len (length attempts)))
     (message "Deleted %d attempt%s" len (if (eq len 1) "" "s"))))
 
-(defun speedo-bury ()
-  "Bury the `speedo-buffer'."
+(defun speedo-quit-window ()
+  "Quit the `speedo-buffer'."
   (interactive)
   (with-current-buffer speedo-buffer
     (internal-show-cursor (selected-window) t) ;;show hidden cursor
-    (bury-buffer)))
+    (quit-window)))
 
 (defun speedo-comparison-next (&optional n)
   "Compare against Nth next standard in `speedo-comparison-targets'."
@@ -192,7 +192,7 @@ If HIDE is non-nil, do not display `speedo-buffer' after loading."
       (speedo-save-file 'force))
     (speedo--load-file file)
     (unless hide
-      (switch-to-buffer (get-buffer-create speedo-buffer))
+      (pop-to-buffer (get-buffer-create speedo-buffer))
       (speedo-mode)
       (goto-char (point-min)))))
 
@@ -202,7 +202,7 @@ If HIDE is non-nil, do not display `speedo-buffer' after loading."
   (interactive)
   (if speedo--data
       (unless (string= (buffer-name (current-buffer)) speedo-buffer)
-        (switch-to-buffer (get-buffer-create speedo-buffer) nil)
+        (pop-to-buffer (get-buffer-create speedo-buffer) nil)
         (when speedo-hide-cursor (speedo--hide-cursor))
         (unless (derived-mode-p 'speedo-mode) (speedo-mode)))
     (speedo-load-file

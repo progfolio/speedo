@@ -135,7 +135,7 @@
   (when speedo--attempt-in-progress
     (user-error "Cannot edit while attempt in progress"))
   (setq speedo-edit--in-progress t)
-  (switch-to-buffer speedo-edit-buffer)
+  (pop-to-buffer speedo-edit-buffer)
   (kill-all-local-variables)
   (let ((inhibit-read-only t))
     (erase-buffer))

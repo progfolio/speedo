@@ -977,7 +977,7 @@ Negative N cycles backward, positive forward."
 (define-key speedo-mode-map (kbd "<up>")    'speedo-previous)
 (define-key speedo-mode-map (kbd "<kp-5>")  'speedo-mistake)
 (define-key speedo-mode-map (kbd "m")       'speedo-mistake)
-(define-key speedo-mode-map (kbd "q")       'speedo-bury)
+(define-key speedo-mode-map (kbd "q")       'speedo-quit-window)
 (define-key speedo-mode-map (kbd "c")       'speedo-compact-mode)
 
 (provide 'speedo)
