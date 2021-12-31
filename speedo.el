@@ -745,11 +745,32 @@ Reset timers."
              (comparison
               (let* ((s (or
                          (when (and target-splits speedo--current-attempt)
-                           (speedo--relative-time
-                            (speedo--splits-duration
-                             target-splits 0 (min (+ index 1) (length target-splits)))
-                            (speedo--splits-duration
-                             attempt-splits 0 (min (+ index 1) (length attempt-splits)))))
+                           (when-let* ((target-duration
+                                   (speedo--splits-duration
+                                    target-splits 0 (min (+ index 1)
+                                                         (length target-splits))))
+                                  (attempt-duration
+                                   (speedo--splits-duration
+                                    attempt-splits 0 (min (+ index 1)
+                                                          (length attempt-splits))))
+                                  (relative
+                                   (speedo--relative-time target-duration
+                                                          attempt-duration))
+                                  (target-split
+                                   (plist-get (nth index target-splits) :duration))
+                                  (attempt-split
+                                   (plist-get (nth index attempt-splits) :duration)))
+                             (cond
+                              ((< attempt-split target-split
+                                  target-duration attempt-duration)
+                               (propertize relative 'face 'speedo-gaining))
+                              ((< target-split attempt-split
+                                  attempt-duration target-duration)
+                               (propertize relative 'face 'speedo-losing))
+                              ((= attempt-split target-split
+                                  target-duration attempt-duration)
+                               (propertize relative 'face 'speedo-neutral))
+                              (t relative))))
                          speedo-text-place-holder)))
                 (when current-line (setq s (propertize s 'comparison-timer t)))
                 (if best-split (propertize s 'face 'speedo-pb) s)))
