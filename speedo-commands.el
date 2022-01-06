@@ -101,8 +101,7 @@ https://github.com/glacials/splits-io/tree/master/public/schema"
     (speedo--update-header)
     (if speedo--attempt-in-progress
         (speedo--goto-index)
-      (forward-line)
-      (speedo--display-timers))))
+      (forward-line))))
 
 (defun speedo-previous ()
   "Select the previous segment."
@@ -129,7 +128,6 @@ https://github.com/glacials/splits-io/tree/master/public/schema"
                          (append  (plist-get current :mistakes)
                                   (list (- (speedo--timestamp)
                                            (plist-get speedo--current-attempt :start))))))
-        (speedo--footer-mistakes)
         (message "mistake recorded"))
     (user-error "No run in progress")))
 

@@ -66,8 +66,7 @@
         (advice-add 'speedo--timer-rows :filter-return #'speedo--compact-filter))
     (remove-hook 'speedo-post-ui-display-hook #'speedo--compact-last-split-separator)
     (advice-remove 'speedo--timer-rows #'speedo--compact-filter))
-  (speedo--display-ui)
-  (speedo--display-timers))
+  (speedo--display-ui))
 
 (provide 'speedo-compact)
 

@@ -80,19 +80,21 @@ If it is not an absolute path, it is expanded relative to `speedo-directory'."
   :type 'directory
   :group 'speedo)
 
-(defcustom speedo-footer-format (string-join
-                                 '("%timer"
-                                   "%previous"
-                                   "Comparing Against: %target"
-                                   "%mistakes")
-                                 "\n")
-  "The format for the speedo footer. It may contain %-escaped refrences to:
-- %timer: the global split timer.
-- %previous: the comparative value for the last split
-- %target: the target for comparison
-- %mistakes: count of recorded mistakes for current attempt
-- %play-time: total play time of all attempts"
-  :type 'string
+(defcustom speedo-footer-format
+  '((speedo-global-timer   .   "%it")
+    (speedo-target         .   "\nComparing Against: %it\n")
+    (speedo-projected-best .   "   Projected Best: %it\n")
+    (speedo-previous-split .   "         Previous: %it\n")
+    (speedo-mistakes       .   "         Mistkaes: %it\n"))
+  "An alist representing the structure of the UI footer.
+Each member is of the form (FUNCTION . FORMAT).
+Function is a unary function which accepts a timer env object.
+It should return a string.
+If FORMAT is a string the return value can be interpolated in the string
+via the shorthand `%it`.
+Alternatively, FORMAT may be a function which accepts the output of
+FUNCTION and returns a string."
+  :type 'alist
   :group 'speedo)
 
 (declare-function speedo-footer-colorized-mistakes "speedo")
@@ -101,14 +103,6 @@ If it is not an absolute path, it is expanded relative to `speedo-directory'."
 It may contain one %-escaped reference to the mistake count.
 It may aslo be a function which takes the count as it's sole argument and
 returns a string."
-  :type (or 'string 'function)
-  :group 'speedo)
-
-(defcustom speedo-footer-previous-format "Previous Segment: %s"
-  "Format string for the previous split time UI.
-It may contain one %-escaped reference to the previous split time.
-It may aslo be a function which takes the previous split time as it's sole
-argument and returns a string."
   :type (or 'string 'function)
   :group 'speedo)
 
