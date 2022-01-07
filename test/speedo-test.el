@@ -209,7 +209,7 @@ It must be a non-empty plist with at least the following keys:
   "Convert ISO 8601 DATE string to milliseconds."
   :tags '(internal)
   (speedo-test-with-transput
-      (should (equal (speedo--date-to-ms (format "1970-01-01 %s+00:00" ,in)) ,out))
+      (should (equal (speedo--date-to-ms (format "1970-01-01T%s+00:00" ,in)) ,out))
     "00:00:00" 0
     "00:00:01" 1000
     "00:01:00" 60000
@@ -218,7 +218,7 @@ It must be a non-empty plist with at least the following keys:
 (ert-deftest speedo--timestamp ()
   "Return TIME since unix epoch in milliseconds."
   :tags '(internal)
-  (should (eq (speedo--timestamp (date-to-time "1970-01-01 00:01:00+00:00")) 60000)))
+  (should (eq (speedo--timestamp (date-to-time "1970-01-01T00:01:00+00:00")) 60000)))
 
 (ert-deftest speedo--formatter-compact ()
   "Return shortest time string from H M S MS."
