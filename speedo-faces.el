@@ -91,7 +91,7 @@
   :group 'speedo-faces)
 
 (defface speedo-timer
-  '((t (:inherit speedo-neutral :weight ultra-bold :height 1.5)))
+  '((t (:weight ultra-bold :height 1.5)))
   "Face for the global run timer."
   :group 'speedo-faces)
 
