@@ -54,8 +54,8 @@
   :group 'speedo-faces)
 
 (defface speedo-default
-  '((t (:family "Hermit" :height 1.0)))
-  "Face for emphasized information.")
+  '((t (:family "Hermit")))
+  "Default face in `speedo-buffer'.")
 
 (defface speedo-emphasis
   '((t (:weight bold :slant italic :height 1.0)))
