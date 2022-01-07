@@ -58,7 +58,7 @@
   "Default face in `speedo-buffer'.")
 
 (defface speedo-emphasis
-  '((t (:weight bold :slant italic :height 1.0)))
+  '((t (:weight bold :slant italic)))
   "Face for emphasized information.")
 
 (defface speedo-gaining
