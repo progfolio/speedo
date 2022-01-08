@@ -473,6 +473,7 @@ It is set via `speedo-footer-format' when `speedo--footer' is called.")
        (speedo--format-ms (or speedo--timer 0))
        'face (list :inherit '(speedo-neutral speedo-timer))))))
 
+;;@TODO: color code against PB? (Might not be accurate early on when learning a game)
 (defun speedo-projected-best (&optional env)
   "Display sum of completed segments plus best times for remaining segments.
 ENV is used to determine when we are being called."
