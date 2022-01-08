@@ -1,29 +1,8 @@
-;;; -*- mode: emacs-lisp; lexical-binding: t; -*-
+;; -*- mode: emacs-lisp; lexical-binding: t; -*-
 ( :title "Test Game" :category "test"
   :segments
   (( :name "One")
    ( :name "Two")
    ( :name "Three"))
-  :attempts
-  (( :start "2021-07-09 22:09:33" :splits nil :reset "9.120")
-   ( :start "2021-07-09 22:11:02"
-     :splits
-     (( :segment "One" :duration "0.657")
-      ( :segment "Two" :duration "0.173")
-      ( :segment "Three" :duration "0.149")))
-   ( :start "2021-07-09 22:11:05"
-     :splits
-     (( :segment "One" :duration "0.383")
-      ( :segment "Two" :duration "0.180")
-      ( :segment "Three" :duration "0.157")))
-   ( :start "2021-07-09 22:11:06"
-     :splits
-     (( :segment "One" :duration "0.183")
-      ( :segment "Two" :duration "0.165")
-      ( :segment "Three" :duration "0.163")))
-   ( :start "2021-07-09 22:51:21"
-     :splits
-     (( :segment "One" :duration "3.744")
-      ( :segment "Two" :duration "3.773")
-      ( :segment "Three" :duration "3.243"))))
+  :attempts nil
   :runs ( :pb 3))

@@ -86,13 +86,6 @@
         :duration "00:01:31.108")
       ( :segment "Delfino Shores 2" :duration "00:00:59.419"))
      :reset "00:11:11.867")
-   ( :start "2021-05-18 17:16:22"
-     :splits
-     (( :segment "Bullet Promenade" :duration "00:01:41.041")
-      ( :segment "Super Koopa Hills" :duration "00:00:06.425")
-      ( :segment "Cloon Cavern" :duration "00:01:24.382")
-      ( :segment "The Toxic Passage 1" :duration "00:00:34.349"))
-     :reset "00:04:17.993")
    ( :start "2021-05-18 17:20:50"
      :splits
      (( :segment "Bullet Promenade" :duration "00:01:00.827"))
@@ -163,12 +156,6 @@
      :splits
      (( :segment "Bullet Promenade" :duration "00:01:04.952"))
      :reset "00:01:11.691")
-   ( :start "2021-05-18 22:45:04"
-     :splits
-     (( :segment "Bullet Promenade" :duration "00:00:00.636")
-      ( :segment "Super Koopa Hills" :duration "00:00:00.403")
-      ( :segment "Cloon Cavern" :duration "00:00:00.212"))
-     :reset "00:00:02.061")
    ( :start "2021-05-18 22:53:10"
      :splits
      (( :segment "Bullet Promenade" :duration "00:01:01.043")
@@ -1350,7 +1337,7 @@
       ( :segment "Forgotten Acropolis"
         :mistakes ("00:35:59.081" "00:36:42.698" "00:36:47.498")
         :duration "00:02:49.963")
-      ( :segment "The Gateway" :duration "00:00:01.798")
+      ( :segment "The Gateway" :duration "00:01:24.798")
       ( :segment "Twilight Bridge" :duration "00:00:33.281")
       ( :segment "Celestial Rex"
         :mistakes ("00:38:14.139" "00:38:27.812" "00:38:44.672")
@@ -1509,11 +1496,6 @@
       ( :segment "Tubba's Palace" :duration "00:00:53.498"))
      :reset "00:05:44.560")
    ( :start "2021-12-29 21:16:56" :splits nil :reset "00:00:26.628")
-   ( :start "2021-12-29 21:25:25"
-     :splits
-     (( :segment "Bullet Promenade" :duration "00:00:03.174")
-      ( :segment "Super Koopa Hills" :duration "00:00:00.714"))
-     :reset "00:00:06.191")
    ( :start "2021-12-29 21:26:28" :splits nil :reset "00:00:25.924")
    ( :start "2021-12-29 21:27:04"
      :splits
