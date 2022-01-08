@@ -698,8 +698,7 @@ Non-nil ENV signals that we are in the redisplay timer."
   (speedo--target-attempt (cdr speedo--comparison-target))
   (speedo--timer-start)
   (speedo--split-start)
-  (speedo--update-header)
-  (speedo--display-ui))
+  (speedo--update-header))
 
 (defun speedo--current-split ()
   "Return the current split from `speedo--current-attempt'."
