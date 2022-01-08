@@ -106,7 +106,12 @@ returns a string."
   :type (or 'string 'function)
   :group 'speedo)
 
-(defcustom speedo-footer-live-segment-format "Live Segment: %s"
+(defcustom speedo-footer-want-live-segment t
+  "When non-nil, display time current segment time loss in the footer."
+  :type 'boolean
+  :group 'speedo)
+
+(defcustom speedo-footer-live-segment-format "     Live Segment: %s\n"
   "Format string for live segment split time UI.
 It may contain one %-escaped reference to the relative time comparing the
 current segment's time to the target's time for that segement."

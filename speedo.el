@@ -425,7 +425,7 @@ If CACHE is non-nil, use the cache."
         (setq speedo--comparison-target target
               speedo--target-attempt result)))))
 
-(defvar speedo-display-functions nil
+(defvar speedo-display-functions '(speedo-live-segment)
   "Hook run on every tick of the redisplay timer.
 Each element is passed a timer env object produced by `speedo--timer-env'.
 `speedo-buffer' is current.")
@@ -492,6 +492,19 @@ ENV is used to determine when we are being called."
 ENV is non-nil when we are in the redisplay timer hook."
   (unless env (propertize (car speedo--comparison-target) 'face  '(:weight bold))))
 
+(defun speedo-live-segment (env)
+  "If current segment is behind, display relative loss.
+The loss is displayed live in the comparison column of the table.
+If `speedo-previous-split' is part of the footer, it is replaced there as well.
+Timer ENV is used to determine if segment is behind."
+  (when-let (((plist-get env :current-behind))
+             (target   (plist-get env :target-duration))
+             (current  (plist-get env :duration))
+             (relative (speedo--relative-time target current)))
+    (speedo-replace-ui-anchor live-comparison relative)
+    (when speedo-footer-want-live-segment
+      (speedo-replace-ui-anchor speedo-previous-split
+        (format (or speedo-footer-live-segment-format "%s") relative)))))
 
 (defun speedo--timer-env ()
   "Calculate environment passed to each FN in `speedo-display-functions'."
@@ -810,7 +823,7 @@ Reset timers."
                                (propertize relative 'face 'speedo-neutral))
                               (t relative))))
                          speedo-text-place-holder)))
-                (when current-line (setq s (propertize s 'comparison-timer t)))
+                (when current-line (setq s (propertize s 'live-comparison t)))
                 (if best-split (propertize s 'face 'speedo-pb) s)))
              (speedo--time-formatter #'speedo--formatter-compact)
              (split-time
@@ -1042,12 +1055,3 @@ Negative N cycles backward, positive forward."
 
 (provide 'speedo)
 ;;; speedo.el ends here
-
-;;   (when current-segment-behind
-;;     (save-excursion
-;;       (when-let ((live-segment (text-property-search-forward 'speedo-previous)))
-;;         (put-text-property (prop-match-beginning live-segment)
-;;                            (prop-match-end live-segment)
-;;                            'display (format speedo-footer-live-segment-format
-;;                                             (speedo--relative-time target-split-duration
-;;                                                                    split-duration)))))))))
