@@ -318,29 +318,34 @@ If nil, FILTER defaults to ignoring attempts tagged with \"ignore\"."
                       (speedo--attempts)))
         #'<)))
 
-(defun speedo--pb-chance ()
+(defun speedo-pb-chance (&optional env)
   "Return chance of getting PB from current split as a float.
-Calculated as an average of current attempt duration added to
-the duration of remaining segments in each previous run."
-  (if speedo--current-attempt
-      (let* ((current-splits (cl-subseq (plist-get speedo--current-attempt :splits)
-                                        0 speedo--segment-index))
-             (current-duration (or (speedo--splits-duration current-splits) 0))
-             (runs (speedo--attempts (lambda (a) (not (speedo--attempt-complete-p a)))))
-             (pb (speedo--splits-duration
-                  (plist-get (speedo--run-pb runs 'nocache 'nosave) :splits)))
-             (possible-pbs
-              (mapcar (lambda (run)
-                        (if (<
-                             (cl-reduce #'+
-                                        (cl-subseq (plist-get run :splits) speedo--segment-index)
-                                        :key (lambda (split) (plist-get split :duration))
-                                        :initial-value current-duration)
-                             pb)
-                            1.0 0.0))
-                      runs)))
-        (/ (apply #'+ possible-pbs) (length possible-pbs)))
-    0.0))
+Chance is an average of the sum of the current attempt duration and
+the duration of remaining segments in each previous run.
+If ENV is non-nil, it is a speedo timer enviornment object used for calculation."
+  (format "%.2f%%"
+          (* 100
+             (if-let (speedo--current-attempt
+                      (splits  (cl-subseq (plist-get speedo--current-attempt :splits)
+                                          0 speedo--segment-index))
+                      (current (or (plist-get env :duration)
+                                   (speedo--splits-duration splits)
+                                   0))
+                      (pb (speedo--splits-duration
+                           (plist-get (speedo--run-pb nil nil 'nosave) :splits)))
+                      ((< current pb)))
+                 (let ((possible-pbs
+                        (mapcar (lambda (run)
+                                  (if (< (cl-reduce
+                                          #'+
+                                          (cl-subseq (plist-get run :splits) speedo--segment-index)
+                                          :key (lambda (split) (plist-get split :duration))
+                                          :initial-value current)
+                                         pb)
+                                      1.0 0.0))
+                                (speedo--attempts #'speedo--attempt-incomplete-p))))
+                   (/ (apply #'+ possible-pbs) (length possible-pbs)))
+               0.0))))
 
 (defun speedo--best-segments ()
   "Return list of best durations for each segment in `speedo--data'."

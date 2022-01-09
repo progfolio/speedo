@@ -81,10 +81,11 @@ If it is not an absolute path, it is expanded relative to `speedo-directory'."
   :group 'speedo)
 
 (defcustom speedo-footer-format
-  '((speedo-global-timer   .   "%it")
-    (speedo-target         .   "\nComparing Against: %it\n")
+  '((speedo-global-timer   .   "%it \n")
+    (speedo-target         .   "Comparing Against: %it\n")
     (speedo-projected-best .   "   Projected Best: %it\n")
     (speedo-previous-split .   "         Previous: %it\n")
+    (speedo-pb-chance      .   "               PB: %it\n")
     (speedo-mistakes       .   "         Mistkaes: %it\n"))
   "An alist representing the structure of the UI footer.
 Each member is of the form (FUNCTION . FORMAT).
