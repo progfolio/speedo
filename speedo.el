@@ -483,30 +483,26 @@ It is set via `speedo-footer-format' when `speedo--footer' is called.")
         (let ((ahead (plist-get env :ahead)))
           (propertize
            (speedo--format-ms (or speedo--timer 0))
-           'face
-           (list :inherit
-                 (list
-                  (if speedo--attempt-in-progress
-                      (cond
-                       ((plist-get env :gaining) 'speedo-gaining)
-                       ((plist-get env :losing)  'speedo-losing)
-                       (ahead                    'speedo-ahead)
-                       ((plist-get env :behind)  'speedo-behind)
-                       (t                        'speedo-neutral))
-                    (cond
-                     (ahead                   'speedo-pb)
-                     ((plist-get env :behind) 'speedo-behind)
-                     (t                       'speedo-neutral))))))))
-    (let ((result (propertize
-                   (speedo--format-ms (or speedo--timer 0))
-                   'face (list :inherit '(speedo-neutral speedo-timer))
-                   'speedo-global-timer-result t)))
+           'face (if speedo--attempt-in-progress
+                     (cond
+                      ((plist-get env :gaining) 'speedo-gaining)
+                      ((plist-get env :losing)  'speedo-losing)
+                      (ahead                    'speedo-ahead)
+                      ((plist-get env :behind)  'speedo-behind)
+                      (t                        'speedo-neutral))
+                   (cond
+                    (ahead                   'speedo-pb)
+                    ((plist-get env :behind) 'speedo-behind)
+                    (t                       'speedo-neutral))))))
+    (let ((result (speedo--format-ms (or speedo--timer 0))))
       ;; Covers the case where env is nil due to no available comparison target.
       ;; e.g. a fresh database.
       (when speedo--attempt-in-progress
         (speedo-replace-ui-anchor speedo-global-timer-result result))
-      result)))
-
+      (propertize
+       result
+       'face 'speedo-global-timer
+       'speedo-global-timer-result t))))
 ;;@TODO: color code against PB? (Might not be accurate early on when learning a game)
 (defun speedo-projected-best (&optional env)
   "Display sum of completed segments plus best times for remaining segments.
