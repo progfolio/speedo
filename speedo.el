@@ -770,6 +770,8 @@ Reset timers."
   (speedo--run-pb nil 'nocache) ;; Last attempt may be new PB
   (speedo--display-ui)
   (speedo--update-header)
+  (goto-char (point-max))
+  (text-property-search-backward 'speedo-global-timer)
   (message "attempt ended"))
 
 (defun speedo--clear ()
