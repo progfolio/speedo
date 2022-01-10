@@ -668,7 +668,7 @@ Non-nil ENV signals that we are in the redisplay timer."
                          ((< count target) 'speedo-ahead)
                          ((> count target) 'speedo-behind)
                          ((= count target) 'speedo-gaining)
-                         (t 'speedo-neutral))))))
+                         (t                'speedo-neutral))))))
 
 (defun speedo-mistakes (&rest _)
   "Insert mistake count in the UI."
