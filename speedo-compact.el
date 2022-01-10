@@ -44,15 +44,19 @@
         (with-silent-modifications
           (goto-char (point-max))
           (if-let ((last (text-property-search-backward 'tabulated-list-id)))
-              (progn
+              (let ((len (car
+                          (cl-sort (mapcar (lambda (s) (length (plist-get s :name)))
+                                           (plist-get speedo--data :segments))
+                                   #'>))))
+                (dotimes (i (length tabulated-list-format))
+                  ;; Column widht specs
+                  (setq len (+ len (cadr (aref tabulated-list-format i)))))
                 (goto-char (1- (point)))
                 (insert "\n"
                         (cond
-                         ((characterp it)
-                          (make-string (- (line-end-position) (line-beginning-position))
-                                       it))
-                         ((stringp it)  it)
-                         ((functionp it) (funcall it))
+                         ((characterp it) (make-string len it))
+                         ((stringp it)    it)
+                         ((functionp it)  (funcall it))
                          (t (signal 'wrong-type-error `((stringp functionp) ,it))))))
             (error "Unable to find last split")))))))
 
