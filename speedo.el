@@ -497,12 +497,10 @@ It is set via `speedo-footer-format' when `speedo--footer' is called.")
     (let ((result (speedo--format-ms (or speedo--timer 0))))
       ;; Covers the case where env is nil due to no available comparison target.
       ;; e.g. a fresh database.
-      (when speedo--attempt-in-progress
-        (speedo-replace-ui-anchor speedo-global-timer-result result))
-      (propertize
-       result
-       'face 'speedo-global-timer
-       'speedo-global-timer-result t))))
+      (if speedo--attempt-in-progress
+          (speedo-replace-ui-anchor speedo-global-timer-result result))
+      (propertize result 'face 'speedo-global-timer))))
+
 ;;@TODO: color code against PB? (Might not be accurate early on when learning a game)
 (defun speedo-projected-best (&optional env)
   "Display sum of completed segments plus best times for remaining segments.
@@ -630,7 +628,10 @@ Set `speedo-footer-display-functions'."
                  (propertize
                   (if (functionp formatter)
                       (funcall formatter output)
-                    (replace-regexp-in-string "%it" (or output " ") formatter))
+                    (replace-regexp-in-string
+                     "%it"
+                     (propertize (or output " ") (intern (format "%s-result" fn)) t)
+                     formatter))
                   fn t)))
              speedo-footer-format))
 
