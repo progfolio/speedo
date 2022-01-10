@@ -128,6 +128,7 @@ https://github.com/glacials/splits-io/tree/master/public/schema"
                          (append  (plist-get current :mistakes)
                                   (list (- (speedo--timestamp)
                                            (plist-get speedo--current-attempt :start))))))
+        (speedo-mistakes (speedo--timer-env))
         (message "mistake recorded"))
     (user-error "No run in progress")))
 

@@ -670,17 +670,31 @@ Non-nil ENV signals that we are in the redisplay timer."
                          ((= count target) 'speedo-gaining)
                          (t                'speedo-neutral))))))
 
-(defun speedo-mistakes (&rest _)
+(defun speedo-mistakes (&optional env)
   "Insert mistake count in the UI."
-  (let ((count (cl-reduce #'+ (plist-get (if speedo--attempt-in-progress
-                                             speedo--current-attempt
-                                           (speedo-target-last-attempt))
-                                         :splits)
-                          :key (lambda (s) (length (plist-get s :mistakes)))
-                          :initial-value 0)))
-    (propertize (if (functionp speedo-footer-mistakes-format)
-                    (funcall speedo-footer-mistakes-format count)
-                  (format speedo-footer-mistakes-format count)))))
+  (if speedo--attempt-in-progress
+      (with-current-buffer speedo-buffer
+        (with-silent-modifications
+          (speedo-replace-ui-anchor speedo-mistakes-result
+            (let* ((s (buffer-substring (prop-match-beginning anchor)
+                                        (prop-match-end anchor)))
+                   (count (string-to-number s)))
+              (propertize (if (functionp speedo-footer-mistakes-format)
+                              (funcall speedo-footer-mistakes-format count)
+                            (format speedo-footer-mistakes-format count))
+                          'speedo-mistakes-result t)))))
+    (let ((count
+           (cl-reduce #'+
+                      (plist-get (cond
+                                  (speedo--attempt-in-progress speedo--current-attempt)
+                                  (speedo--after-run (speedo-target-last-attempt))
+                                  (t nil))
+                                 :splits)
+                      :key (lambda (s) (length (plist-get s :mistakes)))
+                      :initial-value 0)))
+      (propertize (if (functionp speedo-footer-mistakes-format)
+                      (funcall speedo-footer-mistakes-format count)
+                    (format speedo-footer-mistakes-format count))))))
 
 (defun speedo--insert-footer ()
   "Insert footer below splits."
