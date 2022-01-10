@@ -192,7 +192,7 @@ MULTIPLE results are returned in a list, single results are not."
   (let ((time (concat
                (cond ((> h 0) (format "%d:%02d:" h m))
                      ((> m 0) (format "%d:" m)))
-               (format "%04.1f" (+ s (/ ms 1000.0))))))
+               (format "%02d.%d" s (/ ms 100)))))
     (replace-regexp-in-string
      "\\(?:^0\\([^z-a]+?$\\)\\)" "\\1" time)))
 
