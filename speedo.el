@@ -94,6 +94,20 @@ Return nil if A or B is absent."
       (speedo--colorize previous 0 (concat sign time)))))
 
 ;;;; Predicates
+(defsubst speedo--attempt-in-progress-p ()
+  "Return t if an attempt is in progress, nil otherwise."
+  (eq speedo--state 'running))
+
+(defsubst speedo--pre-run-p ()
+  "Return t before the start of an attempt, nil otherwise.
+This is to distinguish from just after a run has ended."
+  (eq speedo--state 'pre))
+
+(defsubst speedo--post-run-p ()
+  "Return t after a run, nil otherwise.
+This is to distinguish from the timer's cleared pre-run state."
+  (eq speedo--state 'post))
+
 (defun speedo--attempt-complete-p (attempt)
   "Return t if ATTEMPT is complete, else nil."
   (not (plist-member attempt :reset)))
@@ -471,7 +485,7 @@ If CACHE is non-nil, use the cache."
         (let ((ahead (plist-get env :ahead)))
           (propertize
            (speedo--format-ms (or speedo--timer 0))
-           'face (if speedo--attempt-in-progress
+           'face (if (speedo--attempt-in-progress-p)
                      (cond
                       ((plist-get env :gaining) 'speedo-gaining)
                       ((plist-get env :losing)  'speedo-losing)
@@ -485,7 +499,7 @@ If CACHE is non-nil, use the cache."
     (let ((result (speedo--format-ms (or speedo--timer 0))))
       ;; Covers the case where env is nil due to no available comparison target.
       ;; e.g. a fresh database.
-      (if speedo--attempt-in-progress
+      (if (speedo--attempt-in-progress-p)
           (speedo-replace-ui-anchor speedo-global-timer-result result))
       (propertize result 'face 'speedo-global-timer))))
 
@@ -654,15 +668,21 @@ Non-nil ENV signals that we are in the redisplay timer."
 
 (defun speedo-mistakes (&rest _)
   "Insert mistake count in the UI."
-  (let ((count (cl-reduce #'+ (plist-get (if speedo--attempt-in-progress
-                                             speedo--current-attempt
-                                           (speedo-target-last-attempt))
-                                         :splits)
-                          :key (lambda (s) (length (plist-get s :mistakes)))
-                          :initial-value 0)))
-    (propertize (if (functionp speedo-footer-mistakes-format)
-                    (funcall speedo-footer-mistakes-format count)
-                  (format speedo-footer-mistakes-format count)))))
+  (let* ((target (pcase speedo--state
+                   ('pre     speedo--target-attempt)
+                   ('running speedo--current-attempt)
+                   ('post    (speedo-target-last-attempt))))
+         (count (if target
+                    (cl-reduce #'+ (plist-get target :splits)
+                               :key (lambda (s) (length (plist-get s :mistakes))))
+                  0))
+         (s (unless (speedo--pre-run-p)
+              (if (functionp speedo-footer-mistakes-format)
+                  (funcall speedo-footer-mistakes-format count)
+                (format speedo-footer-mistakes-format count)))))
+    (if (speedo--pre-run-p)
+        (number-to-string count)
+      (speedo-replace-ui-anchor speedo-mistakes-result s))))
 
 (defun speedo--insert-footer ()
   "Insert footer below splits."
@@ -702,7 +722,7 @@ Non-nil ENV signals that we are in the redisplay timer."
   (let (speedo--comparison-target)
     (dolist (target speedo-comparison-targets)
       (speedo--target-attempt (cdr target))))
-  (setq speedo--attempt-in-progress t
+  (setq speedo--state 'running
         speedo--segment-index -1
         speedo--best-segments (speedo--best-segments)
         speedo--current-attempt
@@ -745,7 +765,7 @@ Non-nil ENV signals that we are in the redisplay timer."
 (defun speedo--attempt-end ()
   "Save the current attempt to `speedo--data'.
 Reset timers."
-  (setq speedo--attempt-in-progress nil
+  (setq speedo--state 'post
         speedo--timer-object    (cancel-timer speedo--timer-object)
         speedo--ui-timer-object (cancel-timer speedo--ui-timer-object))
   (speedo--data-add-attempt speedo--current-attempt)
@@ -993,7 +1013,7 @@ Negative N cycles backward, positive forward."
           (setq speedo--segment-index -1
                 speedo--timer nil
                 speedo--current-attempt nil
-                speedo--attempt-in-progress nil
+                speedo--state 'pre
                 speedo--data (speedo--convert-data data)
                 speedo--comparison-target (car speedo-comparison-targets)
                 speedo--data-file file)
@@ -1024,7 +1044,7 @@ Negative N cycles backward, positive forward."
 (defun speedo--confirm-kill-buffer ()
   "Clean up before killing `speedo-buffer'."
   (when (and (string= (buffer-name (current-buffer)) speedo-buffer)
-             speedo--attempt-in-progress
+             (speedo--attempt-in-progress-p)
              (yes-or-no-p "Save current attempt before killing buffer?"))
     (speedo--attempt-end)))
 

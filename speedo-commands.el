@@ -90,16 +90,16 @@ https://github.com/glacials/splits-io/tree/master/public/schema"
   "Start the next segment or a new attempt."
   (interactive)
   (with-current-buffer speedo-buffer
-    (if speedo--attempt-in-progress
+    (if (speedo--attempt-in-progress-p)
         (let ((last (1- (length (plist-get speedo--current-attempt :splits)))))
           (speedo--split-end)
           (when (= speedo--segment-index last) (speedo--attempt-end)))
       (speedo--attempt-init))
-    (when speedo--attempt-in-progress (cl-incf speedo--segment-index))
+    (when (speedo--attempt-in-progress-p) (cl-incf speedo--segment-index))
     (speedo--split-start)
     (speedo--display-ui)
     (speedo--update-header)
-    (if speedo--attempt-in-progress
+    (if (speedo--attempt-in-progress-p)
         (speedo--goto-index)
       (forward-line))))
 
@@ -107,7 +107,7 @@ https://github.com/glacials/splits-io/tree/master/public/schema"
   "Select the previous segment."
   (interactive)
   (with-current-buffer speedo-buffer
-    (unless speedo--attempt-in-progress (user-error "No attempt in progress"))
+    (unless (speedo--attempt-in-progress-p) (user-error "No attempt in progress"))
     (when (= speedo--segment-index 0) (user-error "No previous segment"))
     ;; clear out attempt data for this split and the previous
     (let ((current (speedo--current-split)))
@@ -121,7 +121,7 @@ https://github.com/glacials/splits-io/tree/master/public/schema"
 (defun speedo-mistake ()
   "Record a mistake in the current split."
   (interactive)
-  (if speedo--attempt-in-progress
+  (if (speedo--attempt-in-progress-p)
       (let ((current (speedo--current-split)))
         (setf current
               (plist-put current :mistakes
@@ -135,14 +135,14 @@ https://github.com/glacials/splits-io/tree/master/public/schema"
   "Reset the current attempt if it is in progress.
 If no attempt is in progress, clear the UI times."
   (interactive)
-  (when speedo--attempt-in-progress
+  (when (speedo--attempt-in-progress-p)
     (setq speedo--current-attempt
           (plist-put speedo--current-attempt :reset
                      (- (speedo--timestamp)
                         (plist-get speedo--current-attempt :start))))
     (speedo--attempt-end))
   (setq speedo--segment-index -1
-        speedo--after-run nil
+        speedo--state 'pre
         speedo--current-attempt nil)
   (speedo--clear)
   (goto-char (point-min)))
@@ -177,7 +177,7 @@ If no attempt is in progress, clear the UI times."
   "Load a splits FILE.
 If HIDE is non-nil, do not display `speedo-buffer' after loading."
   (interactive)
-  (when speedo--attempt-in-progress
+  (when (speedo--attempt-in-progress-p)
     (user-error "Cannot Load file while attempt is in progress"))
   (when (bound-and-true-p speedo-edit--in-progress)
     (user-error "Cannot Load file while attempt edit in progress"))

@@ -151,8 +151,11 @@ Note this includes the last segment."
   :type 'interger)
 
 ;;; Variables
-(defvar speedo--after-run nil "Flag for when a run has been completed.")
-(defvar speedo--attempt-in-progress nil "Whether or not an attempt is in progress.")
+(defvar speedo--state ' "Keeps track of timer/ui state.
+Should be any of the following symbols:
+  - pre
+  - running
+  - post")
 (defvar speedo--best-segments nil "List of lowest durations for each segment.")
 (defvar speedo--comparison-target (car speedo-comparison-targets)
   "The current `speedo-comparison-targets' cell.")
