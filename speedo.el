@@ -1043,7 +1043,7 @@ Negative N cycles backward, positive forward."
   "Clean up before killing `speedo-buffer'."
   (when (and (string= (buffer-name (current-buffer)) speedo-buffer)
              speedo--attempt-in-progress
-             (yes-or-no-p "Killing buffer will reset current attempt. Proceed?"))
+             (yes-or-no-p "Save current attempt before killing buffer?"))
     (speedo--attempt-end)))
 
 (define-derived-mode speedo-mode tabulated-list-mode "speedo"
