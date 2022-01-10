@@ -159,6 +159,19 @@ Note this includes the last segment."
 (defvar speedo--current-attempt nil "The current attempt.")
 (defvar speedo--data nil "Split database.")
 (defvar speedo--data-file nil "The filepath of the loaded splits database.")
+(defvar speedo-display-functions '(speedo-live-segment)
+  "Hook run on every tick of the redisplay timer.
+Each element is passed a timer env object produced by `speedo--timer-env'.
+`speedo-buffer' is current.")
+(defvar speedo-footer-display-functions nil
+  "Hook run on every tick of the redisplay timer.
+Each element is passed a timer env object produced by `speedo--timer-env'.
+`speedo-buffer' is current.
+It is run prior to `speedo-display-functions'.
+It is set via `speedo-footer-format' when `speedo--footer' is called.")
+(defvar speedo-footer-interpolation-regexp
+  "\\(?:\\(%[^%]+?\\)\\([[:space:]]\\|\n\\|$\\)\\)"
+  "Regexp used to interpolate `speedo-footer-format' string.")
 (defvar speedo--review nil "Non-nil after run complete, before clear/init.")
 (defvar speedo--segment-index -1 "Index of the current segment.")
 (defvar speedo--segment-start nil "Timestamp marking new segment start.")
@@ -169,6 +182,7 @@ Note this includes the last segment."
   "Function to format time from timer.
 It must accept four arguments: hours, minutes, seconds, milliseconds.")
 (defvar speedo--timer nil "The global timer.")
+(defvar speedo--timer-start nil "When the timer was started.")
 (defvar speedo--timer-object nil "Internal timer object. Used for cancelling timer.")
 (defvar speedo--ui-timer-object nil "Display timer object.")
 (defvar speedo-mode-map (make-sparse-keymap) "Keymap for speedo mode.")

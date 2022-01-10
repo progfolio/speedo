@@ -454,18 +454,6 @@ If CACHE is non-nil, use the cache."
         (setq speedo--comparison-target target
               speedo--target-attempt result)))))
 
-(defvar speedo-display-functions '(speedo-live-segment)
-  "Hook run on every tick of the redisplay timer.
-Each element is passed a timer env object produced by `speedo--timer-env'.
-`speedo-buffer' is current.")
-
-(defvar speedo-footer-display-functions nil
-  "Hook run on every tick of the redisplay timer.
-Each element is passed a timer env object produced by `speedo--timer-env'.
-`speedo-buffer' is current.
-It is run prior to `speedo-display-functions'.
-It is set via `speedo-footer-format' when `speedo--footer' is called.")
-
 (defmacro speedo-replace-ui-anchor (anchor &rest body)
   "Replace ANCHOR with result of BODY."
   (declare (indent 1) (debug (symbolp  &rest form)))
@@ -594,8 +582,6 @@ Timer ENV is used to determine if segment is behind."
       (cancel-timer speedo--ui-timer-object)
     (setq speedo--ui-timer-object (run-with-timer 0 speedo--tick-speed #'speedo--redisplay))))
 
-(defvar speedo--timer-start nil "When the timer was started.")
-
 (defun speedo--timer-update ()
   "Update `speedo--timer'."
   (setq speedo--timer (- (speedo--timestamp) speedo--timer-start)))
@@ -611,10 +597,6 @@ Time should be accesed by views via the `speedo--timer' variable."
     (setq speedo--timer-start (speedo--timestamp))
     (setq speedo--timer-object (run-with-timer 0 speedo--tick-speed #'speedo--timer-update))
     (speedo--timer-display-start)))
-
-(defvar speedo-footer-interpolation-regexp
-  "\\(?:\\(%[^%]+?\\)\\([[:space:]]\\|\n\\|$\\)\\)"
-  "Regexp used to interpolate `speedo-footer-format' string.")
 
 (defun speedo--footer ()
   "Return footer string according to `speedo-footer-format'.
