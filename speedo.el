@@ -588,11 +588,13 @@ Timer ENV is used to determine if segment is behind."
           (run-hook-with-args 'speedo-footer-display-functions env)
           (run-hook-with-args 'speedo-display-functions env))))))
 
+(defconst speedo--tick-speed 0.1 "UI and timer object are updated every tick.")
+
 (defun speedo--timer-display-start ()
   "Start timer to display UI timers."
   (if speedo--ui-timer-object
       (cancel-timer speedo--ui-timer-object)
-    (setq speedo--ui-timer-object (run-with-timer 0 0.1 #'speedo--redisplay))))
+    (setq speedo--ui-timer-object (run-with-timer 0 speedo--tick-speed #'speedo--redisplay))))
 
 (defvar speedo--timer-start nil "When the timer was started.")
 
@@ -609,7 +611,7 @@ Time should be accesed by views via the `speedo--timer' variable."
         (cancel-timer speedo--timer-object)
         (setq speedo--timer-start nil))
     (setq speedo--timer-start (speedo--timestamp))
-    (setq speedo--timer-object (run-with-timer 0 0.1 #'speedo--timer-update))
+    (setq speedo--timer-object (run-with-timer 0 speedo--tick-speed #'speedo--timer-update))
     (speedo--timer-display-start)))
 
 (defvar speedo-footer-interpolation-regexp
