@@ -142,6 +142,7 @@ If no attempt is in progress, clear the UI times."
                         (plist-get speedo--current-attempt :start))))
     (speedo--attempt-end))
   (setq speedo--segment-index -1
+        speedo--after-run nil
         speedo--current-attempt nil)
   (speedo--clear)
   (goto-char (point-min)))
