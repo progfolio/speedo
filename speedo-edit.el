@@ -249,8 +249,7 @@ Return DATA."
   (interactive)
   (unless (derived-mode-p 'speedo-edit-mode) (user-error "Not in speedo edit buffer"))
   (let ((attempt nil)
-        (segments nil)
-        (segments (plist-get speedo--data :segments))
+        (segments (copy-tree (plist-get speedo--data :segments)))
         (total 0)
         (not-end t))
     (save-excursion
@@ -266,17 +265,12 @@ Return DATA."
             ('segment
              (if (string-empty-p val)
                  (setq attempt (plist-put attempt :reset total))
-               ;; Convert absoulte time into duration
+               ;; Convert split time into segment duration
                (let ((duration (- (speedo--time-string-to-ms val) total)))
                  (setq total (+ total duration))
-                 ;;@OPTIMIZE: we can just copy tree here
-                 (push (list :name
-                             (plist-get (nth (widget-get w :index) segments)
-                                        :name)
-                             :duration duration)
-                       segments))))
-            ('start (setq attempt (plist-put attempt :start
-                                             (speedo--date-to-ms val))))
+                 (setf (nth (widget-get w :index) segments)
+                       (plist-put (nth (widget-get w :index) segments) :duration duration)))))
+            ('start (setq attempt (plist-put attempt :start (speedo--date-to-ms val))))
             ('alias (setq attempt (plist-put attempt :alias (unless (string-empty-p val) val))))
             ('tags  (setq attempt (plist-put attempt :tags
                                              (mapcar #'string-trim
