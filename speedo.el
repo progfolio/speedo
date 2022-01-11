@@ -306,10 +306,10 @@ See `cl-subseq' for acceptable values."
 (defun speedo--attempts (&optional filter)
   "Return possibly FILTERed attempts.
 FILTER should be a function which takes an attempt and returns non-nil if the
-attempt should be disregarded.
+attempt should be included in the results.
 If nil, FILTER defaults to ignoring attempts tagged with \"ignore\"."
-  (cl-remove-if (or filter #'speedo--attempt-ignored-p)
-                (plist-get speedo--data :attempts)))
+  (cl-remove-if-not (or filter (lambda (a) (not (speedo--attempt-ignored-p a))))
+                    (plist-get speedo--data :attempts)))
 
 (defun speedo--delete-attempts (attempts data)
   "Return copy of DATA with ATTEMPTS removed."
@@ -356,7 +356,7 @@ If ENV is non-nil, it is a speedo timer enviornment object used for calculation.
                                           :initial-value current)
                                          pb)
                                       1.0 0.0))
-                                (speedo--attempts #'speedo--attempt-incomplete-p))))
+                                (speedo--attempts #'speedo--attempt-complete-p))))
                    (/ (apply #'+ possible-pbs) (length possible-pbs)))
                0.0))))
 
@@ -419,7 +419,7 @@ IF NOSAVE is non-nil, do not cache the result."
 (defun speedo-target-world-record ()
   "Return world record run."
   (car (speedo--attempts (lambda (attempt)
-                           (not (member "world record" (plist-get attempt :tags)))))))
+                           (member "world record" (plist-get attempt :tags))))))
 
 (defun speedo-target-personal-best ()
   "Return personal best run from `speedo--data'."
