@@ -235,7 +235,9 @@ If FORCE is non-nil, save without checking if data has been modified."
   (add-hook 'speedo-edit-finalize-functions #'speedo-post-edit-last)
   (if (speedo--attempt-in-progress-p)
       (user-error "Cannot edit while attempt in progress")
-    (speedo-edit-attempt (speedo-target-last-attempt))))
+    (if-let ((last (speedo-target-last-attempt)))
+        (speedo-edit-attempt last)
+      (user-error "No last attempt found"))))
 
 (provide 'speedo-commands)
 ;;; speedo-commands.el ends here
