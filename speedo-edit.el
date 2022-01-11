@@ -283,7 +283,7 @@ Return DATA."
             ('mistakes (let ((mistakes (mapcar #'speedo--time-string-to-ms
                                                (split-string val "," 'omit-nulls "[[:space:]]")))
                              (total 0))
-                         (dolist (segment (reverse segments))
+                         (dolist (segment segments)
                            (when-let ((duration (plist-get segment :duration))
                                       (mistakes
                                        (progn
@@ -295,7 +295,7 @@ Return DATA."
                              (setf segment (plist-put segment :mistakes mistakes))))))
             (_ (error "Uknown widget type!"))))
         (setq not-end (zerop (forward-line 1)))))
-    (setq attempt (plist-put attempt :segments (reverse segments)))
+    (setq attempt (plist-put attempt :segments segments))
     (setq speedo--data (speedo--edit-replace-or-append-attempt speedo--data speedo-edit--attempt attempt))
     (setq speedo-edit--in-progress nil)
     (message "Attempt saved in memory.")
