@@ -80,12 +80,12 @@ If it is not an absolute path, it is expanded relative to `speedo-directory'."
   :group 'speedo)
 
 (defcustom speedo-footer-format
-  '((speedo-global-timer   .   "%it \n")
-    (speedo-target         .   "Comparing Against: %it\n")
-    (speedo-projected-best .   "   Projected Best: %it\n")
-    (speedo-pb-chance      .   "        PB Chance: %it\n")
-    (speedo-previous-segment .   "       Previous: %it\n")
-    (speedo-mistakes       .   "         Mistakes: %it\n"))
+  '((speedo-global-timer     .   "%it \n")
+    (speedo-target           .   "Comparing Against: %it\n")
+    (speedo-projected-best   .   "   Projected Best: %it\n")
+    (speedo-pb-chance        .   "        PB Chance: %it\n")
+    (speedo-previous-segment .   "         Previous: %it\n")
+    (speedo-mistakes         .   "         Mistakes: %it\n"))
   "An alist representing the structure of the UI footer.
 Each member is of the form (FUNCTION . FORMAT).
 Function is a unary function which accepts a timer env object.
