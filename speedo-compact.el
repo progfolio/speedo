@@ -25,20 +25,20 @@
 ;;; Code:
 (require 'speedo)
 
-(defun speedo--compact-filter (splits)
+(defun speedo--compact-filter (segments)
   "Filter SPLITS for compact mode."
-  (let* ((split-count (length (plist-get speedo--data :segments)))
-         (limit (min (or speedo-compact-segment-limit 10) split-count))
+  (let* ((segment-count (length (plist-get speedo--data :segments)))
+         (limit (min (or speedo-compact-segment-limit 10) segment-count))
          (start (min
                  (max (- speedo--segment-index (- limit 2)) 0)
-                 (- split-count limit)))
-         (end (min (+ start (1- limit)) split-count)))
-    (append (cl-subseq splits start end)
-            (when (< end split-count) (last splits)))))
+                 (- segment-count limit)))
+         (end (min (+ start (1- limit)) segment-count)))
+    (append (cl-subseq segments start end)
+            (when (< end segment-count) (last segments)))))
 
-(defun speedo--compact-last-split-separator ()
-  "Insert `speedo-compact-last-split-separator'."
-  (when-let ((it speedo-compact-last-split-separator))
+(defun speedo--compact-last-segment-separator ()
+  "Insert `speedo-compact-separator'."
+  (when-let ((it speedo-compact-separator))
     (with-current-buffer speedo-buffer
       (save-excursion
         (with-silent-modifications
@@ -58,17 +58,17 @@
                          ((stringp it)    it)
                          ((functionp it)  (funcall it))
                          (t (signal 'wrong-type-error `((stringp functionp) ,it))))))
-            (error "Unable to find last split")))))))
+            (error "Unable to find last segment")))))))
 
 ;;;###autoload
 (define-minor-mode speedo-compact-mode
-  "Minor mode to display a compacted list of splits."
+  "Minor mode to display a compacted list of segments."
   :lighter " spc"
   (if speedo-compact-mode
       (progn
-        (add-hook 'speedo-post-ui-display-hook #'speedo--compact-last-split-separator)
+        (add-hook 'speedo-post-ui-display-hook #'speedo--compact-last-segment-separator)
         (advice-add 'speedo--timer-rows :filter-return #'speedo--compact-filter))
-    (remove-hook 'speedo-post-ui-display-hook #'speedo--compact-last-split-separator)
+    (remove-hook 'speedo-post-ui-display-hook #'speedo--compact-last-segment-separator)
     (advice-remove 'speedo--timer-rows #'speedo--compact-filter))
   (speedo--display-ui))
 

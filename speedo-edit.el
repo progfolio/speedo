@@ -145,7 +145,7 @@
                         (cl-sort
                          (mapcar (lambda (s) (length (plist-get s :name))) segments)
                          #'>)))
-         (splits (plist-get attempt :segments))
+         (segments (plist-get attempt :segments))
          (total 0))
     (widget-create 'speedo-field
                    :type 'start
@@ -154,7 +154,7 @@
                    (speedo--ms-to-date (plist-get attempt :start)))
     (widget-insert "\n ")
     (dotimes (i (length segments))
-      (let ((split (nth i splits)))
+      (let ((segment (nth i segments)))
         (widget-create 'speedo-field
                        :type 'segment
                        :index i
@@ -166,7 +166,7 @@
                                              'read-only t
                                              'segment-name t))
                                 " %v ")
-                       (if-let ((duration (plist-get split :duration)))
+                       (if-let ((duration (plist-get segment :duration)))
                            (speedo--format-ms (setq total (+ total duration)))
                          speedo-edit-field-placeholder))))
     (widget-insert "\n")
@@ -189,10 +189,10 @@
                    :format "Mistakes: %v "
                    (string-join
                     (apply #'append
-                           (mapcar (lambda (split)
+                           (mapcar (lambda (segment)
                                      (mapcar #'speedo--format-ms
-                                             (plist-get split :mistakes)))
-                                   splits))
+                                             (plist-get segment :mistakes)))
+                                   segments))
                     ", "))
     (widget-insert "\n")
     (use-local-map widget-keymap)
@@ -249,7 +249,7 @@ Return DATA."
   (interactive)
   (unless (derived-mode-p 'speedo-edit-mode) (user-error "Not in speedo edit buffer"))
   (let ((attempt nil)
-        (splits nil)
+        (segments nil)
         (segments (plist-get speedo--data :segments))
         (total 0)
         (not-end t))
@@ -274,7 +274,7 @@ Return DATA."
                              (plist-get (nth (widget-get w :index) segments)
                                         :name)
                              :duration duration)
-                       splits))))
+                       segments))))
             ('start (setq attempt (plist-put attempt :start
                                              (speedo--date-to-ms val))))
             ('alias (setq attempt (plist-put attempt :alias (unless (string-empty-p val) val))))
@@ -284,8 +284,8 @@ Return DATA."
             ('mistakes (let ((mistakes (mapcar #'speedo--time-string-to-ms
                                                (split-string val "," 'omit-nulls "[[:space:]]")))
                              (total 0))
-                         (dolist (split (reverse splits))
-                           (when-let ((duration (plist-get split :duration))
+                         (dolist (segment (reverse segments))
+                           (when-let ((duration (plist-get segment :duration))
                                       (mistakes
                                        (progn
                                          (setq total (+ total duration))
@@ -293,10 +293,10 @@ Return DATA."
                                                          (or (> mistake total)
                                                              (<= mistake (- total duration))))
                                                        mistakes))))
-                             (setf split (plist-put split :mistakes mistakes))))))
+                             (setf segment (plist-put segment :mistakes mistakes))))))
             (_ (error "Uknown widget type!"))))
         (setq not-end (zerop (forward-line 1)))))
-    (setq attempt (plist-put attempt :segments (reverse splits)))
+    (setq attempt (plist-put attempt :segments (reverse segments)))
     (setq speedo--data (speedo--edit-replace-or-append-attempt speedo--data speedo-edit--attempt attempt))
     (setq speedo-edit--in-progress nil)
     (message "Attempt saved in memory.")

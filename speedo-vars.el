@@ -34,13 +34,13 @@
   :type 'string
   :group 'speedo)
 
-(defcustom speedo-compact-last-split-separator ?-
-  "Separates splits and last split when symbol `speedo-compact-mode' is non-nil.
+(defcustom speedo-compact-separator ?-
+  "Separates last segment when symbol `speedo-compact-mode' is non-nil.
 It may be any of the following values:
   - a character
     The character is repeated across the length of the split table line.
   - a string
-    The literal string is inserted on a line before the last split.
+    The literal string is inserted on a line before the last segment.
   - a function
     The function is called with no arguments and must return a string."
   :type (or 'character 'string 'function)
@@ -84,7 +84,7 @@ If it is not an absolute path, it is expanded relative to `speedo-directory'."
     (speedo-target         .   "Comparing Against: %it\n")
     (speedo-projected-best .   "   Projected Best: %it\n")
     (speedo-pb-chance      .   "        PB Chance: %it\n")
-    (speedo-previous-split .   "         Previous: %it\n")
+    (speedo-previous-segment .   "       Previous: %it\n")
     (speedo-mistakes       .   "         Mistakes: %it\n"))
   "An alist representing the structure of the UI footer.
 Each member is of the form (FUNCTION . FORMAT).
@@ -112,7 +112,7 @@ returns a string."
   :group 'speedo)
 
 (defcustom speedo-footer-live-segment-format "     Live Segment: %s\n"
-  "Format string for live segment split time UI.
+  "Format string for current segment time UI.
 It may contain one %-escaped reference to the relative time comparing the
 current segment's time to the target's time for that segement."
   :type 'string

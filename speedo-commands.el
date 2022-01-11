@@ -92,11 +92,11 @@ https://github.com/glacials/splits-io/tree/master/public/schema"
   (with-current-buffer speedo-buffer
     (if (speedo--attempt-in-progress-p)
         (let ((last (1- (length (plist-get speedo--current-attempt :segments)))))
-          (speedo--split-end)
+          (speedo--segment-end)
           (when (= speedo--segment-index last) (speedo--attempt-end)))
       (speedo--attempt-init))
     (when (speedo--attempt-in-progress-p) (cl-incf speedo--segment-index))
-    (speedo--split-start)
+    (speedo--segment-start)
     (speedo--display-ui)
     (speedo--update-header)
     (if (speedo--attempt-in-progress-p)
@@ -109,7 +109,7 @@ https://github.com/glacials/splits-io/tree/master/public/schema"
   (with-current-buffer speedo-buffer
     (unless (speedo--attempt-in-progress-p) (user-error "No attempt in progress"))
     (when (= speedo--segment-index 0) (user-error "No previous segment"))
-    ;; clear out attempt data for this split and the previous
+    ;; clear out attempt data for this segment and the previous
     (let ((current (speedo--current-segment)))
       (setf current (plist-put current :duration nil)))
     (cl-decf speedo--segment-index)
@@ -119,7 +119,7 @@ https://github.com/glacials/splits-io/tree/master/public/schema"
     (speedo--display-ui)))
 
 (defun speedo-mistake ()
-  "Record a mistake in the current split."
+  "Record a mistake in the current segment."
   (interactive)
   (if (speedo--attempt-in-progress-p)
       (let ((current (speedo--current-segment)))

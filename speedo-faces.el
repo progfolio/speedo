@@ -63,7 +63,7 @@
 
 (defface speedo-gaining
   '((t (:inherit speedo-emphasis :foreground "#CD5C5C")))
-  "Face for time globally behind, current split ahead of comparison."
+  "Face for time globally behind, current segment ahead of comparison."
   :group 'speedo-faces)
 
 (defface speedo-header-game-info
@@ -82,7 +82,7 @@
 
 (defface speedo-losing
   '((t (:inherit speedo-emphasis :foreground "#3EB489")))
-  "Face for time globally ahead, current split behind of comparison."
+  "Face for time globally ahead, current segment behind of comparison."
   :group 'speedo-faces)
 
 (defface speedo-pb

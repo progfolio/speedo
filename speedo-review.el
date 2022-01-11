@@ -48,7 +48,7 @@
   "When non-nil, include Consistency column in review.")
 (defvar speedo-review-mode-map (make-sparse-keymap) "Keymap for `speedo-review-mode'.")
 (defvar speedo-review-include-accumulative-times nil
-  "When non-nil, split durations are displayed relative to start of the run.
+  "When non-nil, segment durations are displayed relative to start of the run.
 Otherwise they are relative to the start of each segment.")
 (defvar speedo-review--attempts nil
   "Used to store attempts when manipulating views.")
@@ -63,15 +63,15 @@ Returns a plist of form:
   (let* ((segments          (plist-get speedo--data :segments))
          (segment-count     (length segments))
          (target            (car attempts))
-         (target-splits     (plist-get target :segments))
+         (target-segments   (plist-get target :segments))
          (rows              nil))
     (dotimes (i segment-count)
-      (let* ((segment (nth i segments))
-             (target-split (nth i target-splits))
-             (target-split-duration (plist-get target-split :duration)))
+      (let* ((segment                 (nth i segments))
+             (target-segment          (nth i target-segments))
+             (target-segment-duration (plist-get target-segment :duration)))
         (push
-         (list :id i
-               :name (plist-get segment :name)
+         (list :id       i
+               :name     (plist-get segment :name)
                :mistakes (mapcar (lambda (attempt)
                                    (length
                                     (plist-get (nth i (plist-get attempt :segments))
@@ -81,14 +81,14 @@ Returns a plist of form:
                                     (plist-get (nth i (plist-get attempt :segments))
                                                :duration))
                                   attempts)
-               :relatives
-               (when target-split-duration
-                 (mapcar (lambda (attempt)
-                           (ignore-errors
-                             (- target-split-duration
-                                (plist-get (nth i (plist-get attempt :segments))
-                                           :duration))))
-                         attempts)))
+               :relatives (when target-segment-duration
+                            (mapcar
+                             (lambda (attempt)
+                               (ignore-errors
+                                 (- target-segment-duration
+                                    (plist-get (nth i (plist-get attempt :segments))
+                                               :duration))))
+                             attempts)))
          rows)))
     (dolist (row rows)
       (let ((mistakes (plist-get row :mistakes)))
@@ -391,7 +391,7 @@ Handle case of ignoring Totals column in sorting."
   (speedo-review--col-sorter (string< a-name b-name)))
 
 (defun speedo-review--sort-attempt-column (a b)
-  "Sort attempt column rows A and B by split durations."
+  "Sort attempt column rows A and B by segment durations."
   (speedo-review--col-sorter
     (let* ((name (car tabulated-list-sort-key))
            (col-index
