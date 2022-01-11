@@ -144,6 +144,7 @@ Used to filter candidates during `speedo-load-file'."
   (when (and speedo--data speedo--data-file)
     (not (equal speedo--data (speedo--convert-data (speedo--read-file speedo--data-file))))))
 
+;;;; Database
 (defun speedo--read-file (file)
   "Read FILE into an elisp object."
   (condition-case err
@@ -258,9 +259,7 @@ MULTIPLE results are returned in a list, single results are not."
 
 (defun speedo--date-to-ms (date)
   "Convert ISO 8601 DATE string to milliseconds."
-  (* 1000
-     (string-to-number
-      (format-time-string "%s" (date-to-time date)))))
+  (* 1000 (string-to-number (format-time-string "%s" (date-to-time date)))))
 
 (defun speedo--timestamp (&optional time)
   "Return TIME since unix epoch in milliseconds."
