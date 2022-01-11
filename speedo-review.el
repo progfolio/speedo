@@ -169,13 +169,13 @@ Returns a plist of form:
              (if-let ((duration (nth i durations))
                       (time-string (speedo--format-ms
                                     (if speedo-review-include-accumulative-times
-                                        (speedo--splits-duration
+                                        (speedo--segments-duration
                                          (plist-get (nth i speedo-review--attempts) :splits)
                                          0 (1+ column))
                                       duration))))
                  (let ((basis-duration
                         (if speedo-review-include-accumulative-times
-                            (speedo--splits-duration
+                            (speedo--segments-duration
                              (plist-get (nth 0 speedo-review--attempts) :splits)
                              0 (1+ column))
                           (nth 0 durations))))
@@ -562,7 +562,7 @@ HEADER is displayed in review buffer."
                                                                (not speedo-review-include-other-runners)
                                                                (plist-get a :runner)))))))
                         #'<
-                        :key (lambda (a) (speedo--splits-duration (plist-get a :splits)))))
+                        :key (lambda (a) (speedo--segments-duration (plist-get a :splits)))))
          (top (cl-subseq runs 0 (min (abs n) (length runs))))
          (header (or header
                      (list (speedo--header-game-info)

@@ -173,7 +173,7 @@ MULTIPLE results are returned in a list, single results are not."
                           (format-time-string "%Y-%m-%d %I:%M%p"
                                               (/ (plist-get attempt :start) 1000)))
                       (if-let ((duration (speedo--format-ms
-                                          (speedo--splits-duration
+                                          (speedo--segments-duration
                                            (plist-get attempt :splits)))))
                           duration
                         "       ")
@@ -292,14 +292,14 @@ Formatter is called with hours, minutes, seconds, milliseconds."
                                (plist-get attempt :splits)))
                      (or attempts (speedo--attempts))))))))
 
-(defun speedo--splits-duration (splits &optional start end)
-  "Return duration of SPLITS list in ms.
-If a split is missing a :duration, return nil.
-If START and END are non-nil, a subsequence of SPLITS is considered.
+(defun speedo--segments-duration (segments &optional start end)
+  "Return duration of SEGMENTS list in ms.
+If a segment is missing a :duration, return nil.
+If START and END are non-nil, a subsequence of SEGMENTS is considered.
 See `cl-subseq' for acceptable values."
-  (when (or start end) (setq splits (cl-subseq splits (or start 0) end)))
+  (when (or start end) (setq segments (cl-subseq segments (or start 0) end)))
   (condition-case _
-      (cl-reduce #'+ splits
+      (cl-reduce #'+ segments
                  :key (lambda (s) (plist-get s :duration)) :initial-value 0)
     (error nil)))
 
@@ -342,9 +342,9 @@ If ENV is non-nil, it is a speedo timer enviornment object used for calculation.
                       (splits  (cl-subseq (plist-get speedo--current-attempt :splits)
                                           0 speedo--segment-index))
                       (current (or (plist-get env :duration)
-                                   (speedo--splits-duration splits)
+                                   (speedo--segments-duration splits)
                                    0))
-                      (pb (speedo--splits-duration
+                      (pb (speedo--segments-duration
                            (plist-get (speedo--run-pb nil nil 'nosave) :splits)))
                       ((< current pb)))
                  (let ((possible-pbs
@@ -397,7 +397,7 @@ IF NOSAVE is non-nil, do not cache the result."
                      (cl-remove-if-not #'speedo--attempt-complete-p a)
                      #'>
                      :key (lambda (run)
-                            (speedo--splits-duration (plist-get run :splits))))))
+                            (speedo--segments-duration (plist-get run :splits))))))
    attempts nocache nosave))
 
 (defun speedo--run-pb (&optional attempts nocache nosave)
@@ -413,7 +413,7 @@ IF NOSAVE is non-nil, do not cache the result."
                              attempts)
            #'<
            :key (lambda (run)
-                  (speedo--splits-duration (plist-get run :splits))))))
+                  (speedo--segments-duration (plist-get run :splits))))))
    attempts nocache nosave))
 
 (defun speedo-target-world-record ()
@@ -544,14 +544,14 @@ Timer ENV is used to determine if segment is behind."
              (target-split-duration
               (plist-get (nth target-index target-splits) :duration))
              (target-previous-duration
-              (speedo--splits-duration target-splits 0 (max target-index 1)))
+              (speedo--segments-duration target-splits 0 (max target-index 1)))
              (split (speedo--current-segment))
              (split-duration
               ;;last split has been cleaned after attempt ended
               (or (plist-get split :duration)
                   (- (speedo--timestamp) (plist-get split :start))))
              (previous-duration
-              (or (speedo--splits-duration
+              (or (speedo--segments-duration
                    (plist-get speedo--current-attempt :splits)
                    0 (max speedo--segment-index 1))
                   ;;in case of first split, there is no previous duration
@@ -833,11 +833,11 @@ Reset timers."
               (let* ((s (or
                          (when (and target-splits speedo--current-attempt)
                            (when-let* ((target-duration
-                                        (speedo--splits-duration
+                                        (speedo--segments-duration
                                          target-splits 0 (min (+ index 1)
                                                               (length target-splits))))
                                        (attempt-duration
-                                        (speedo--splits-duration
+                                        (speedo--segments-duration
                                          attempt-splits 0 (min (+ index 1)
                                                                (length attempt-splits))))
                                        (relative
