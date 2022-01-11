@@ -184,7 +184,7 @@ It is set via `speedo-footer-format' when `speedo--footer' is called.")
 (defvar speedo--time-formatter #'speedo--formatter-compact
   "Function to format time from timer.
 It must accept four arguments: hours, minutes, seconds, milliseconds.")
-(defvar speedo--timer nil "The global timer.")
+(defvar speedo--time nil "The global timer.")
 (defvar speedo--timer-start nil "When the timer was started.")
 (defvar speedo--timer-object nil "Internal timer object. Used for cancelling timer.")
 (defvar speedo--ui-timer-object nil "Display timer object.")

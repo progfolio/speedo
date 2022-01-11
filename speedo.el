@@ -484,7 +484,7 @@ If CACHE is non-nil, use the cache."
       (speedo-replace-ui-anchor speedo-global-timer-result
         (let ((ahead (plist-get env :ahead)))
           (propertize
-           (speedo--format-ms (or speedo--timer 0))
+           (speedo--format-ms (or speedo--time 0))
            'face (if (speedo--attempt-in-progress-p)
                      (cond
                       ((plist-get env :gaining) 'speedo-gaining)
@@ -496,7 +496,7 @@ If CACHE is non-nil, use the cache."
                     (ahead                   'speedo-pb)
                     ((plist-get env :behind) 'speedo-behind)
                     (t                       'speedo-neutral))))))
-    (let ((result (speedo--format-ms (or speedo--timer 0))))
+    (let ((result (speedo--format-ms (or speedo--time 0))))
       ;; Covers the case where env is nil due to no available comparison target.
       ;; e.g. a fresh database.
       (if (speedo--attempt-in-progress-p)
@@ -508,13 +508,13 @@ If CACHE is non-nil, use the cache."
   "Display sum of completed segments plus best times for remaining segments.
 ENV is used to determine when we are being called."
   (unless env
-    (if-let (speedo--timer
+    (if-let (speedo--time
              (completed (delq nil (mapcar (lambda (it) (plist-get it :duration))
                                           (plist-get speedo--current-attempt :splits))))
              (segments (delq  nil (speedo--best-segments)))
              (best (cl-subseq segments (length completed)))
              (projection (apply #'+ (append (or completed (list 0)) best)))
-             ((< speedo--timer projection)))
+             ((< speedo--time projection)))
         (speedo--format-ms projection)
       (propertize "⌛" 'face '(:weight bold)))))
 
@@ -598,7 +598,7 @@ Timer ENV is used to determine if segment is behind."
 
 (defun speedo--timer-update ()
   "Update `speedo--timer'."
-  (setq speedo--timer (- (speedo--timestamp) speedo--timer-start)))
+  (setq speedo--time (- (speedo--timestamp) speedo--timer-start)))
 
 (defun speedo--timer-start ()
   "Start the game timer. Time is updated in milliseconds every tenth of a seocond.
@@ -778,7 +778,7 @@ Reset timers."
 
 (defun speedo--clear ()
   "Clear the last attempts times from UI."
-  (setq speedo--timer nil
+  (setq speedo--time nil
         speedo--target-attempts nil
         speedo--current-attempt nil)
   (speedo--target-attempt (cdr speedo--comparison-target))
@@ -1011,7 +1011,7 @@ Negative N cycles backward, positive forward."
   (if-let ((data (speedo--read-file file)))
       (prog1
           (setq speedo--segment-index -1
-                speedo--timer nil
+                speedo--time nil
                 speedo--current-attempt nil
                 speedo--state 'pre
                 speedo--data (speedo--convert-data data)
