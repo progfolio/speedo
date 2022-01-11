@@ -23,7 +23,6 @@
 ;;
 
 ;;; Code:
-;;; Commands
 (require 'speedo)
 
 ;;;###autoload
