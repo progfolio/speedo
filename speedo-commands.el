@@ -219,5 +219,13 @@ If FORCE is non-nil, save without checking if data has been modified."
        speedo--data-file)
     (message "(No changes need to be saved)")))
 
+(declare-function speedo-edit-attempt "speedo-edit" (attempt))
+;;;###autoload
+(defun speedo-edit-last-attempt ()
+  "Edit most recent attempt."
+  (if (speedo--attempt-in-progress-p)
+      (user-error "Cannot edit while attempt in progress")
+    (speedo-edit-attempt (speedo-target-last-attempt))))
+
 (provide 'speedo-commands)
 ;;; speedo-commands.el ends here
