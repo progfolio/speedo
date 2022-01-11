@@ -22,14 +22,14 @@ An example database:
   :attempts
   ;; a run (complete attempt)
   (( :start "2020-01-01 00:00"
-     :splits (( :segment "One"   :duration "1:00.33")
-              ( :segment "Two"   :duration "1:33.45")
-              ( :segment "Three" :duration "2:41")))
+     :segments (( :name "One"   :duration "1:00.33")
+                ( :name "Two"   :duration "1:33.45")
+                ( :name "Three" :duration "2:41")))
    ;; an incomplete attempt
    ( :start "2020-01-01 00:00"
-     :splits (( :segment "One"   :duration "1:00.24")
-              ( :segment "Two"   :duration "2:33.08"
-                :mistakes ("2:03.35")))
+     :segments (( :name "One"   :duration "1:00.24")
+                ( :name "Two"   :duration "2:33.08"
+                  :mistakes ("2:03.35")))
      :reset "3:25.75"))
   :config
   ;; game specific customizations

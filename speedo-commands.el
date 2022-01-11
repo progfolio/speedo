@@ -91,7 +91,7 @@ https://github.com/glacials/splits-io/tree/master/public/schema"
   (interactive)
   (with-current-buffer speedo-buffer
     (if (speedo--attempt-in-progress-p)
-        (let ((last (1- (length (plist-get speedo--current-attempt :splits)))))
+        (let ((last (1- (length (plist-get speedo--current-attempt :segments)))))
           (speedo--split-end)
           (when (= speedo--segment-index last) (speedo--attempt-end)))
       (speedo--attempt-init))

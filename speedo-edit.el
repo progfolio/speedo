@@ -145,7 +145,7 @@
                         (cl-sort
                          (mapcar (lambda (s) (length (plist-get s :name))) segments)
                          #'>)))
-         (splits (plist-get attempt :splits))
+         (splits (plist-get attempt :segments))
          (total 0))
     (widget-create 'speedo-field
                    :type 'start
@@ -269,7 +269,8 @@ Return DATA."
                ;; Convert absoulte time into duration
                (let ((duration (- (speedo--time-string-to-ms val) total)))
                  (setq total (+ total duration))
-                 (push (list :segment
+                 ;;@OPTIMIZE: we can just copy tree here
+                 (push (list :name
                              (plist-get (nth (widget-get w :index) segments)
                                         :name)
                              :duration duration)
@@ -295,7 +296,7 @@ Return DATA."
                              (setf split (plist-put split :mistakes mistakes))))))
             (_ (error "Uknown widget type!"))))
         (setq not-end (zerop (forward-line 1)))))
-    (setq attempt (plist-put attempt :splits (reverse splits)))
+    (setq attempt (plist-put attempt :segments (reverse splits)))
     (setq speedo--data (speedo--edit-replace-or-append-attempt speedo--data speedo-edit--attempt attempt))
     (setq speedo-edit--in-progress nil)
     (message "Attempt saved in memory.")

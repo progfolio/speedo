@@ -34,19 +34,19 @@
       ( :name "B")
       ( :name "C"))
      :attempts
-     (( :start "2021-07-09 22:09:33" :splits nil :reset "9.120")
+     (( :start "2021-07-09 22:09:33" :segments nil :reset "9.120")
       ( :start "2021-07-09 22:11:02"
-        :splits
+        :segments
         (( :segment "One" :duration "10")
          ( :segment "Two" :duration "9")
          ( :segment "Three" :duration "8")))
       ( :start "2021-07-09 22:11:05"
-        :splits
+        :segments
         (( :segment "One" :duration "7")
          ( :segment "Two" :duration "6")
          ( :segment "Three" :duration "5")))
       ( :start "2021-07-09 22:11:06"
-        :splits
+        :segments
         (( :segment "One" :duration "4")
          ( :segment "Two" :duration "3")
          ( :segment "Three" :duration "2"))))

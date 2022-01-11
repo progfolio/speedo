@@ -63,7 +63,7 @@ Returns a plist of form:
   (let* ((segments          (plist-get speedo--data :segments))
          (segment-count     (length segments))
          (target            (car attempts))
-         (target-splits     (plist-get target :splits))
+         (target-splits     (plist-get target :segments))
          (rows              nil))
     (dotimes (i segment-count)
       (let* ((segment (nth i segments))
@@ -74,11 +74,11 @@ Returns a plist of form:
                :name (plist-get segment :name)
                :mistakes (mapcar (lambda (attempt)
                                    (length
-                                    (plist-get (nth i (plist-get attempt :splits))
+                                    (plist-get (nth i (plist-get attempt :segments))
                                                :mistakes)))
                                  attempts)
                :durations (mapcar (lambda (attempt)
-                                    (plist-get (nth i (plist-get attempt :splits))
+                                    (plist-get (nth i (plist-get attempt :segments))
                                                :duration))
                                   attempts)
                :relatives
@@ -86,7 +86,7 @@ Returns a plist of form:
                  (mapcar (lambda (attempt)
                            (ignore-errors
                              (- target-split-duration
-                                (plist-get (nth i (plist-get attempt :splits))
+                                (plist-get (nth i (plist-get attempt :segments))
                                            :duration))))
                          attempts)))
          rows)))
@@ -170,13 +170,13 @@ Returns a plist of form:
                       (time-string (speedo--format-ms
                                     (if speedo-review-include-accumulative-times
                                         (speedo--segments-duration
-                                         (plist-get (nth i speedo-review--attempts) :splits)
+                                         (plist-get (nth i speedo-review--attempts) :segments)
                                          0 (1+ column))
                                       duration))))
                  (let ((basis-duration
                         (if speedo-review-include-accumulative-times
                             (speedo--segments-duration
-                             (plist-get (nth 0 speedo-review--attempts) :splits)
+                             (plist-get (nth 0 speedo-review--attempts) :segments)
                              0 (1+ column))
                           (nth 0 durations))))
                    (if (and basis-duration (not (zerop i)))
@@ -562,7 +562,7 @@ HEADER is displayed in review buffer."
                                                                (not speedo-review-include-other-runners)
                                                                (plist-get a :runner)))))))
                         #'<
-                        :key (lambda (a) (speedo--segments-duration (plist-get a :splits)))))
+                        :key (lambda (a) (speedo--segments-duration (plist-get a :segments)))))
          (top (cl-subseq runs 0 (min (abs n) (length runs))))
          (header (or header
                      (list (speedo--header-game-info)
