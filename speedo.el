@@ -546,7 +546,7 @@ Timer ENV is used to determine if segment is behind."
               (plist-get (nth target-index target-splits) :duration))
              (target-previous-duration
               (speedo--splits-duration target-splits 0 (max target-index 1)))
-             (split (speedo--current-split))
+             (split (speedo--current-segment))
              (split-duration
               ;;last split has been cleaned after attempt ended
               (or (plist-get split :duration)
@@ -735,20 +735,20 @@ Non-nil ENV signals that we are in the redisplay timer."
   (speedo--split-start)
   (speedo--update-header))
 
-(defun speedo--current-split ()
+(defun speedo--current-segment ()
   "Return the current split from `speedo--current-attempt'."
   (nth speedo--segment-index (plist-get speedo--current-attempt :splits)))
 
 (defun speedo--split-end ()
   "Record a split for the current segment."
-  (let ((current (speedo--current-split)))
+  (let ((current (speedo--current-segment)))
     (setf current
           (plist-put current :duration (- (speedo--timestamp)
                                           (plist-get current :start))))))
 
 (defun speedo--split-start ()
   "Recrod start time of current split."
-  (let ((current (speedo--current-split)))
+  (let ((current (speedo--current-segment)))
     (setf current (plist-put current :start (speedo--timestamp)))))
 
 (defun speedo--data-add-attempt (attempt)
