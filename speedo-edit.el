@@ -132,7 +132,7 @@
 (defun speedo-edit-attempt (attempt)
   "Edit ATTEMPT."
   (interactive (list (speedo-read-attempt)))
-  (when speedo--attempt-in-progress
+  (when (speedo--attempt-in-progress-p)
     (user-error "Cannot edit while attempt in progress"))
   (setq speedo-edit--in-progress t)
   (pop-to-buffer speedo-edit-buffer)
@@ -243,7 +243,7 @@ Return DATA."
                             (append attempts (list new))))))
   data)
 
-(declare-function speedo-review "speedo-review" (&optional attempts header))
+(declare-function speedo-review "speedo-review" (&optional save attempts header))
 (defun speedo-edit-finalize ()
   "Finalize the edit."
   (interactive)
@@ -295,9 +295,9 @@ Return DATA."
     (setq speedo-edit--in-progress nil)
     (message "Attempt saved in memory.")
     (kill-buffer)
-    (if speedo-review--last-command
+    (if (bound-and-true-p speedo-review--last-command)
         (speedo-review--repeat-command speedo-review--last-command)
-      (speedo-review (list attempt) "Last Edit"))))
+      (speedo-review nil (list attempt) "Last Edit"))))
 
 (defun speedo-edit-abort ()
   "Abort the current edit."
