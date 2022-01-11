@@ -37,6 +37,12 @@
 (defvar speedo-edit--in-progress nil "Non-nil when edit is in progress.")
 (defvar-local speedo-edit--attempt nil "Buffer-local record of the attempt being edited.")
 
+(defcustom speedo-edit-finalize-functions nil
+  "Abnormal hook run after an edit is finalized.
+Each function is passed the edited attempt."
+  :type  'hook
+  :group 'speedo)
+
 (define-widget 'speedo-field 'editable-field "A speedo edit field."
   :keymap speedo-edit-mode-map
   :help-echo nil
@@ -243,7 +249,6 @@ Return DATA."
                             (append attempts (list new))))))
   data)
 
-(declare-function speedo-review "speedo-review" (&optional save attempts header))
 (defun speedo-edit-finalize ()
   "Finalize the edit."
   (interactive)
@@ -295,9 +300,7 @@ Return DATA."
     (setq speedo-edit--in-progress nil)
     (message "Attempt saved in memory.")
     (kill-buffer)
-    (if (bound-and-true-p speedo-review--last-command)
-        (speedo-review--repeat-command speedo-review--last-command)
-      (speedo-review nil (list attempt) "Last Edit"))))
+    (run-hook-with-args 'speedo-edit-finalize-functions attempt)))
 
 (defun speedo-edit-abort ()
   "Abort the current edit."

@@ -647,6 +647,14 @@ HEADER is displayed in review buffer."
                 (speedo-review-def-col-sorter ,colname))))
 
 (declare-function speedo-edit-attempt "speedo-edit" (attempt))
+
+(defun speedo-review-post-edit (attempt)
+  "Review edited ATTEMPT post edit finalize."
+  (remove-hook 'speedo-edit-finalize-functions  #'speedo-review-post-edit)
+  (if speedo-review--last-command
+      (speedo-review--repeat-command speedo-review--last-command)
+    (speedo-review nil (list attempt) "Last Edit")))
+
 (defun speedo-review-edit-attempt (&optional n)
   "Edit Nth attempt column.
 Note other columns (e.g. ID, Segment) are not counted toward N.
@@ -666,6 +674,7 @@ If no attempt is assoicated with that column, read an attempt."
                   (move-to-column col)
                   (or (get-text-property (point) 'speedo-attempt)
                       (speedo-read-attempt speedo-review--attempts))))))))
+    (add-hook 'speedo-edit-finalize-functions #'speedo-review-post-edit)
     (speedo-edit-attempt attempt)))
 
 (define-derived-mode speedo-review-mode tabulated-list-mode "speedo-review"

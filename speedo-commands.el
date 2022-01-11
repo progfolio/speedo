@@ -220,9 +220,20 @@ If FORCE is non-nil, save without checking if data has been modified."
     (message "(No changes need to be saved)")))
 
 (declare-function speedo-edit-attempt "speedo-edit" (attempt))
+(defun speedo-post-edit-last (attempt)
+  "Update UI to display edited ATTEMPT."
+  (setq speedo--current-attempt attempt
+        speedo--time (speedo--segments-duration (plist-get attempt :segments)))
+  (speedo)
+  (speedo--display-ui)
+  (speedo--update-header)
+  (remove-hook 'speedo-edit-finalize-functions #'speedo-post-edit-last))
+
 ;;;###autoload
 (defun speedo-edit-last-attempt ()
   "Edit most recent attempt."
+  (interactive)
+  (add-hook 'speedo-edit-finalize-functions #'speedo-post-edit-last)
   (if (speedo--attempt-in-progress-p)
       (user-error "Cannot edit while attempt in progress")
     (speedo-edit-attempt (speedo-target-last-attempt))))
