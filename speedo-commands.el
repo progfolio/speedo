@@ -86,7 +86,8 @@ https://github.com/glacials/splits-io/tree/master/public/schema"
     (user-error "Unable to parse %S" file)))
 
 (defun speedo-next ()
-  "Start the next segment or a new attempt."
+  "Start the next segment or a new attempt.
+If SKIP is non-nil, don't record a duration for the current segment."
   (interactive)
   (with-current-buffer speedo-buffer
     (if (speedo--attempt-in-progress-p)
@@ -110,12 +111,23 @@ https://github.com/glacials/splits-io/tree/master/public/schema"
     (when (= speedo--segment-index 0) (user-error "No previous segment"))
     ;; clear out attempt data for this segment and the previous
     (let ((current (speedo--current-segment)))
-      (setf current (plist-put current :duration nil)))
+      (setf current (plist-put current :duration nil)
+            current (plist-put current :skip     nil)))
     (cl-decf speedo--segment-index)
     (let ((current (speedo--current-segment)))
-      (setf current (plist-put current :duration nil)))
+      (setf current (plist-put current :duration nil)
+            current (plist-put current :skip     nil)))
     (speedo--goto-index)
     (speedo--display-ui)))
+
+(defun speedo-skip ()
+  "Skip the current segment."
+  (interactive)
+  (with-current-buffer speedo-buffer
+    (unless (speedo--attempt-in-progress-p) (user-error "No attempt in progress"))
+    (let ((skipped (speedo--current-segment)))
+      (setf skipped (plist-put skipped :skip t)))
+    (speedo-next)))
 
 (defun speedo-mistake ()
   "Record a mistake in the current segment."

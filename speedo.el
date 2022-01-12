@@ -108,19 +108,19 @@ This is to distinguish from just after a run has ended."
 This is to distinguish from the timer's cleared pre-run state."
   (eq speedo--state 'post))
 
-(defun speedo--attempt-complete-p (attempt)
+(defsubst speedo--attempt-complete-p (attempt)
   "Return t if ATTEMPT is complete, else nil."
-  (not (plist-member attempt :reset)))
+  (not (plist-get attempt :reset)))
 
-(defun speedo--attempt-mine-p (attempt)
+(defsubst speedo--attempt-mine-p (attempt)
   "Return t if ATTEMPT does not belong to another runner, else nil."
   (not (plist-member attempt :runner)))
 
-(defun speedo--attempt-ignored-p (attempt)
+(defsubst speedo--attempt-ignored-p (attempt)
   "Return t if ATTEMPT is tagged \"ignore\"."
   (member "ignore" (plist-get attempt :tags)))
 
-(defun speedo--attempt-incomplete-p (attempt)
+(defsubst speedo--attempt-incomplete-p (attempt)
   "Return t if ATTEMPT is incomplete, else nil."
   (not (speedo--attempt-complete-p attempt)))
 
@@ -294,14 +294,11 @@ Formatter is called with hours, minutes, seconds, milliseconds."
 
 (defun speedo--segments-duration (segments &optional start end)
   "Return duration of SEGMENTS list in ms.
-If a segment is missing a :duration, return nil.
 If START and END are non-nil, a subsequence of SEGMENTS is considered.
 See `cl-subseq' for acceptable values."
   (when (or start end) (setq segments (cl-subseq segments (or start 0) end)))
-  (condition-case _
-      (cl-reduce #'+ segments
-                 :key (lambda (s) (plist-get s :duration)) :initial-value 0)
-    (error nil)))
+  (cl-reduce #'+ segments
+             :key (lambda (s) (or (plist-get s :duration) 0)) :initial-value 0))
 
 (defun speedo--attempts (&optional filter)
   "Return possibly FILTERed attempts.
@@ -340,7 +337,7 @@ If ENV is non-nil, it is a speedo timer enviornment object used for calculation.
           (* 100
              (if-let (speedo--current-attempt
                       (segments  (cl-subseq (plist-get speedo--current-attempt :segments)
-                                          0 speedo--segment-index))
+                                            0 speedo--segment-index))
                       (current (or (plist-get env :duration)
                                    (speedo--segments-duration segments)
                                    0))
@@ -432,13 +429,14 @@ IF NOSAVE is non-nil, do not cache the result."
 (defun speedo-target-best-segments ()
   "Return synthesized attempt with best times for each segment."
   (list :start 0
-        :segements
+        :segments
         (let ((index -1))
-          (mapcar (lambda (segment)
-                    (cl-incf index)
-                    (setq segment
-                          (plist-put segment :duration (speedo--segment-pb index))))
-                  (copy-tree (plist-get speedo--data :segments))))))
+          (delq nil
+                (mapcar (lambda (segment)
+                          (cl-incf index)
+                          (when-let ((pb (speedo--segment-pb index)))
+                            (plist-put segment :duration pb)))
+                        (copy-tree (plist-get speedo--data :segments)))))))
 
 (defun speedo-target-last-attempt ()
   "Return last attempt."
@@ -541,11 +539,12 @@ Timer ENV is used to determine if segment is behind."
 
 (defun speedo--timer-env ()
   "Calculate environment passed to each FN in `speedo-display-functions'."
-  (when-let ((target-segments (plist-get speedo--target-attempt :segments))
-             (target-index  (max 0 (min speedo--segment-index
-                                        (1- (length target-segments)))))
-             (target-segment-duration
-              (plist-get (nth target-index target-segments) :duration))
+  (when-let ((target-segments         (plist-get speedo--target-attempt :segments))
+             (target-index            (max 0 (min speedo--segment-index
+                                                  (1- (length target-segments)))))
+             (target-segment          (nth target-index target-segments))
+             ((not (plist-get target-segment :skip)))
+             (target-segment-duration (plist-get target-segment :duration))
              (target-previous-duration
               (speedo--segments-duration target-segments 0 (max target-index 1)))
              (segment (speedo--current-segment))
@@ -752,7 +751,9 @@ Non-nil ENV signals that we are in the redisplay timer."
   (let ((cleaned
          (plist-put attempt :segments
                     (mapcar (lambda (segment) (speedo--plist-remove segment :start))
-                            (cl-remove-if-not (lambda (segment) (plist-get segment :duration))
+                            (cl-remove-if-not (lambda (segment)
+                                                (or (plist-get segment :duration)
+                                                    (plist-get segment :skip)))
                                               (plist-get attempt :segments))))))
     (setq speedo--data (plist-put speedo--data :attempts
                                   (append (plist-get speedo--data :attempts)
@@ -798,15 +799,6 @@ Reset timers."
     ;; Force because we've already checked if the data has been modified
     (speedo-save-file 'force)))
 
-(defun speedo--split-time-relative (attempt n)
-  "Return ATTEMPT's Nth split time relative to start."
-  (when-let ((segments (plist-get attempt :segments))
-             (current (nth n segments))
-             (duration (plist-get current :duration)))
-    (cl-reduce #'+ (cl-subseq segments 0 (1+ n))
-               :key (lambda (segment) (plist-get segment :duration))
-               :initial-value 0)))
-
 (defun speedo--timer-rows ()
   "Return a list of table rows for timer."
   (let* ((segments (plist-get speedo--data :segments))
@@ -818,56 +810,74 @@ Reset timers."
              (segment (nth index segments))
              (name (let ((n (plist-get segment :name)))
                      (if current-line (propertize n 'face 'speedo-current-line) n)))
-             (target-segments (plist-get speedo--target-attempt :segments))
+             (target-segments  (plist-get speedo--target-attempt :segments))
+             (target-segment   (nth index target-segments))
+             (target-duration
+              (speedo--segments-duration
+               target-segments 0 (min (+ index 1)
+                                      (length target-segments))))
+             (target-segment-duration (plist-get target-segment :duration))
              (attempt-segments (plist-get attempt :segments))
+             (attempt-segment  (nth index (plist-get attempt :segments)))
+             (attempt-duration
+              (speedo--segments-duration
+               attempt-segments 0 (min (+ index 1)
+                                       (length attempt-segments))))
+             (attempt-segment-duration (plist-get attempt-segment :duration))
+             (attempt-segment-skipped  (plist-get attempt-segment :skip))
+             (target-segment-skipped   (plist-get target-segment :skip))
+             (skipped (or attempt-segment-skipped target-segment-skipped))
              (current-face '(:inherit (speedo-current-line speedo-comparison-line)))
              (best-segment
-              (when-let ((best (nth index speedo--best-segments))
-                         (segment-duration
-                          (plist-get (nth index attempt-segments) :duration)))
-                (< segment-duration best)))
+              (unless skipped
+                (when-let ((best (nth index speedo--best-segments))
+                           (segment-duration
+                            (plist-get (nth index attempt-segments) :duration)))
+                  (< segment-duration best))))
              (comparison
               (let* ((s (or
-                         (when (and target-segments speedo--current-attempt)
-                           (when-let* ((target-duration
-                                        (speedo--segments-duration
-                                         target-segments 0 (min (+ index 1)
-                                                              (length target-segments))))
-                                       (attempt-duration
-                                        (speedo--segments-duration
-                                         attempt-segments 0 (min (+ index 1)
-                                                               (length attempt-segments))))
-                                       (relative
-                                        (speedo--relative-time target-duration
-                                                               attempt-duration))
-                                       (target-segment
-                                        (plist-get (nth index target-segments) :duration))
-                                       (attempt-segment
-                                        (plist-get (nth index attempt-segments) :duration)))
-                             (cond
-                              ((< attempt-segment target-segment
-                                  target-duration attempt-duration)
-                               (propertize relative 'face 'speedo-gaining))
-                              ((< target-segment attempt-segment
-                                  attempt-duration target-duration)
-                               (propertize relative 'face 'speedo-losing))
-                              ((= attempt-segment target-segment
-                                  target-duration attempt-duration)
-                               (propertize relative 'face 'speedo-neutral))
-                              (t relative))))
+                         (when-let (((not skipped))
+                                    (target-segments)
+                                    (target-segment-duration)
+                                    (speedo--current-attempt)
+                                    (attempt-segment-duration)
+                                    (target-duration)
+                                    (attempt-duration)
+                                    (relative
+                                     (speedo--relative-time target-duration
+                                                            attempt-duration)))
+                           (cond
+                            ((< attempt-segment-duration target-segment-duration
+                                target-duration attempt-duration)
+                             (propertize relative 'face 'speedo-gaining))
+                            ((< target-segment-duration attempt-segment-duration
+                                attempt-duration target-duration)
+                             (propertize relative 'face 'speedo-losing))
+                            ((= attempt-segment-duration target-segment-duration
+                                target-duration attempt-duration)
+                             (propertize relative 'face 'speedo-neutral))
+                            (t relative)))
                          speedo-text-place-holder)))
                 (when current-line (setq s (propertize s 'live-comparison t)))
                 (if best-segment (propertize s 'face 'speedo-pb) s)))
              (speedo--time-formatter #'speedo--formatter-compact)
-             (split-time
-              (let ((s (or (when-let ((current (speedo--split-time-relative attempt index)))
-                             (speedo--format-ms current))
-                           (when-let ((target (speedo--split-time-relative
-                                               speedo--target-attempt index)))
-                             (propertize (speedo--format-ms target)
-                                         'face 'speedo-comparison-line))
-                           speedo-text-place-holder)))
-                (if current-line (propertize s 'current-segment-timer t 'face current-face) s))))
+             (split-time (or (pcase speedo--state
+                               ('pre (unless (or skipped (null target-duration))
+                                       target-duration))
+                               ('running (if (< index speedo--segment-index)
+                                             (unless attempt-segment-skipped
+                                               attempt-duration)
+                                           (unless (or (null target-segments)
+                                                       target-segment-skipped)
+                                             target-duration)))
+                               ('post (unless attempt-segment-skipped attempt-duration))
+                               (_ (error "Uknown timer state")))
+                             speedo-text-place-holder)))
+        (unless (stringp split-time)
+          (setq split-time (speedo--format-ms split-time)))
+        (when current-line
+          (setq split-time
+                (propertize split-time 'current-segment-timer t 'face current-face)))
         (push (list index (vector name comparison split-time)) splits)))
     (nreverse splits)))
 
@@ -1070,22 +1080,24 @@ Negative N cycles backward, positive forward."
   (speedo--display-ui))
 
 ;;;; Key bindings
-(define-key speedo-mode-map (kbd "<kp-1>")  'speedo-next)
-(define-key speedo-mode-map (kbd "SPC")     'speedo-next)
-(define-key speedo-mode-map (kbd "<down>")  'speedo-next)
-(define-key speedo-mode-map (kbd "<kp-3>")  'speedo-reset)
-(define-key speedo-mode-map (kbd "r")       'speedo-reset)
-(define-key speedo-mode-map (kbd "<kp-4>")  'speedo-comparison-previous)
-(define-key speedo-mode-map (kbd "<left>")  'speedo-comparison-previous)
-(define-key speedo-mode-map (kbd "<kp-6>")  'speedo-comparison-next)
-(define-key speedo-mode-map (kbd "<right>") 'speedo-comparison-next)
-(define-key speedo-mode-map (kbd "<kp-8>")  'speedo-previous)
-(define-key speedo-mode-map (kbd "<up>")    'speedo-previous)
-(define-key speedo-mode-map (kbd "<kp-5>")  'speedo-mistake)
-(define-key speedo-mode-map (kbd "m")       'speedo-mistake)
-(define-key speedo-mode-map (kbd "q")       'speedo-quit-window)
-(define-key speedo-mode-map (kbd "c")       'speedo-compact-mode)
-(define-key speedo-mode-map (kbd "e")       'speedo-edit-last-attempt)
+(define-key speedo-mode-map (kbd "<kp-1>")     'speedo-next)
+(define-key speedo-mode-map (kbd "SPC")        'speedo-next)
+(define-key speedo-mode-map (kbd "<down>")     'speedo-next)
+(define-key speedo-mode-map (kbd "<kp-3>")     'speedo-reset)
+(define-key speedo-mode-map (kbd "r")          'speedo-reset)
+(define-key speedo-mode-map (kbd "<kp-2>")     'speedo-skip)
+(define-key speedo-mode-map (kbd "s")          'speedo-skip)
+(define-key speedo-mode-map (kbd "<kp-4>")     'speedo-comparison-previous)
+(define-key speedo-mode-map (kbd "<left>")     'speedo-comparison-previous)
+(define-key speedo-mode-map (kbd "<kp-6>")     'speedo-comparison-next)
+(define-key speedo-mode-map (kbd "<right>")    'speedo-comparison-next)
+(define-key speedo-mode-map (kbd "<kp-8>")     'speedo-previous)
+(define-key speedo-mode-map (kbd "<up>")       'speedo-previous)
+(define-key speedo-mode-map (kbd "<kp-5>")     'speedo-mistake)
+(define-key speedo-mode-map (kbd "m")          'speedo-mistake)
+(define-key speedo-mode-map (kbd "q")          'speedo-quit-window)
+(define-key speedo-mode-map (kbd "c")          'speedo-compact-mode)
+(define-key speedo-mode-map (kbd "e")          'speedo-edit-last-attempt)
 
 (provide 'speedo)
 ;;; speedo.el ends here
