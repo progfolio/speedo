@@ -5,4 +5,4 @@
    ( :name "Two")
    ( :name "Three"))
   :attempts nil
-  :runs ( :pb 3))
+  :runs nil)
