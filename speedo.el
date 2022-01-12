@@ -448,6 +448,12 @@ IF NOSAVE is non-nil, do not cache the result."
   "Return last complete attempt."
   (car (last (cl-remove-if-not #'speedo--attempt-complete-p (speedo--attempts)))))
 
+(defun speedo--cache-targets ()
+  "Cache `speedo-comparison-targets'."
+  (let (speedo--comparison-target)
+    (dolist (target speedo-comparison-targets)
+      (speedo--target-attempt (cdr target)))))
+
 (defun speedo--target-attempt (fn &optional cache)
   "Set and return variable `speedo--target-attempt' to result of FN.
 If CACHE is non-nil, use the cache."
@@ -713,11 +719,7 @@ Non-nil ENV signals that we are in the redisplay timer."
 
 (defun speedo--attempt-init ()
   "Initialize a new attempt."
-  ;; cache target attempts
-  ;; We let-bind speedo--comparison-target here, so the user's value is not changed.
-  (let (speedo--comparison-target)
-    (dolist (target speedo-comparison-targets)
-      (speedo--target-attempt (cdr target))))
+  (speedo--cache-targets)
   (setq speedo--state 'running
         speedo--segment-index -1
         speedo--best-segments (speedo--best-segments)

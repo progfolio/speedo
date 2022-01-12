@@ -189,6 +189,7 @@ If HIDE is non-nil, do not display `speedo-buffer' after loading."
       ;; Force because we just checked for modifications above
       (speedo-save-file 'force))
     (speedo--load-file file)
+    (speedo--cache-targets)
     (unless hide
       (pop-to-buffer (get-buffer-create speedo-buffer))
       (speedo-mode)
