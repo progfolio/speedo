@@ -165,7 +165,11 @@ If no attempt is in progress, clear the UI times."
   (setf (plist-get speedo--data :attempts)
         (speedo--delete-attempts attempts speedo--data))
   (let ((len (length attempts)))
-    (message "Deleted %d attempt%s" len (if (eq len 1) "" "s"))))
+    (message "Deleted %d attempt%s" len (if (eq len 1) "" "s")))
+  (speedo--run-pb (speedo--attempts) 'nocache)
+  (when (get-buffer speedo-buffer)
+    (speedo--cache-targets)
+    (speedo--display-ui)))
 
 (defun speedo-quit-window ()
   "Quit the `speedo-buffer'."
