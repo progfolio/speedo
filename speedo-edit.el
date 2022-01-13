@@ -117,6 +117,7 @@ Each function is passed the edited attempt."
 (defun speedo-edit-delete ()
   "Delete current attempt."
   (interactive)
+  (speedo-edit--ensure-single-edit)
   (unless (string= (buffer-name) speedo-edit-buffer)
     (user-error "Not in speedo editing buffer"))
   (when (yes-or-no-p "Delete current attempt?")
@@ -126,10 +127,15 @@ Each function is passed the edited attempt."
     (when speedo-review--last-command
       (speedo-review--repeat-command speedo-review--last-command))))
 
+(defun speedo-edit--ensure-single-edit ()
+  "Ensure there aren't multiple edits in progress."
+(when speedo-edit--in-progress (user-error "Edit already in progress")))
+
 ;;;###autoload
 (defun speedo-edit-new ()
   "Add a new attempt to currently loaded Speedo DB."
   (interactive)
+  (speedo-edit--ensure-single-edit)
   (speedo--ensure-data)
   (speedo-edit-attempt (list :start (speedo--timestamp))))
 
@@ -140,6 +146,7 @@ Each function is passed the edited attempt."
   (interactive (list (speedo-read-attempt)))
   (when (speedo--attempt-in-progress-p)
     (user-error "Cannot edit while attempt in progress"))
+  (speedo-edit--ensure-single-edit)
   (setq speedo-edit--in-progress t)
   (pop-to-buffer speedo-edit-buffer)
   (kill-all-local-variables)
