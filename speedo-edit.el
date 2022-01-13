@@ -306,17 +306,18 @@ Return DATA."
     (setq speedo--data (speedo--edit-replace-or-append-attempt speedo--data speedo-edit--attempt attempt))
     (setq speedo-edit--in-progress nil)
     (message "Attempt saved in memory.")
-    (kill-buffer)
+    (quit-window 'kill)
     (run-hook-with-args 'speedo-edit-finalize-functions attempt)))
 
 (defun speedo-edit-abort ()
   "Abort the current edit."
   (interactive)
-  (when (buffer-live-p (get-buffer speedo-edit-buffer))
-    ;; Since `speedo-edit--attempt' is buffer-local, we shouldn't have to reset it.
-    (kill-buffer speedo-edit-buffer)
-    (setq speedo-edit--in-progress nil)
-    (message "Speedo edit aborted")))
+  (when-let ((buffer (get-buffer speedo-edit-buffer))
+             ((buffer-live-p buffer))
+             (window (get-buffer-window buffer t)))
+    (quit-window 'kill window))
+  (setq speedo-edit--in-progress nil)
+  (message "Speedo edit aborted"))
 
 (define-derived-mode speedo-edit-mode fundamental-mode "speedo-edit"
   "Major mode for editing speedo attempts.
