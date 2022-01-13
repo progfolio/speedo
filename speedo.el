@@ -313,13 +313,9 @@ If nil, FILTER defaults to ignoring attempts tagged with \"ignore\"."
 (defun speedo--delete-attempts (attempts data)
   "Return copy of DATA with ATTEMPTS removed."
   (interactive)
-  (let ((d (copy-tree data)))
-    (mapc
-     (lambda (attempt)
-       (setq d (plist-put d :attempts
-                          (cl-remove attempt (plist-get d :attempts) :test #'equal))))
-     attempts)
-    d))
+  (cl-loop for stored in (plist-get data :attempts)
+           when (not (member stored attempts))
+           collect stored))
 
 (defun speedo--segment-pb (n)
   "Return best recorded time for segment N."
