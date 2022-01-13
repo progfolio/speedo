@@ -164,27 +164,29 @@ If COLLECTION is nil, use `speedo--data' or throw an error.
 IF MULTIPLE is non-nil, use `completing-read-multiple', else `completing-read'.
 MULTIPLE results are returned in a list, single results are not."
   (let* ((candidates
-          (mapcar
-           (lambda (attempt)
-             (cons (string-trim
-                    (string-join
-                     (list
-                      (or (plist-get attempt :alias)
-                          (format-time-string "%Y-%m-%d %I:%M%p"
-                                              (/ (plist-get attempt :start) 1000)))
-                      (if-let ((duration (speedo--format-ms
-                                          (speedo--segments-duration
-                                           (plist-get attempt :segments)))))
-                          duration
-                        "       ")
-                      (if (speedo--attempt-complete-p attempt)
-                          (propertize "complete" 'face '(:weight bold))
-                        "reset")
-                      (mapconcat (lambda (tag) (format "%S" tag))
-                                 (plist-get attempt :tags) " "))
-                     " "))
-                   attempt))
-           (or collection (plist-get (speedo--ensure-data) :attempts))))
+          (or
+           (mapcar
+            (lambda (attempt)
+              (cons (string-trim
+                     (string-join
+                      (list
+                       (or (plist-get attempt :alias)
+                           (format-time-string "%Y-%m-%d %I:%M%p"
+                                               (/ (plist-get attempt :start) 1000)))
+                       (if-let ((duration (speedo--format-ms
+                                           (speedo--segments-duration
+                                            (plist-get attempt :segments)))))
+                           duration
+                         "       ")
+                       (if (speedo--attempt-complete-p attempt)
+                           (propertize "complete" 'face '(:weight bold))
+                         "reset")
+                       (mapconcat (lambda (tag) (format "%S" tag))
+                                  (plist-get attempt :tags) " "))
+                      " "))
+                    attempt))
+            (or collection (plist-get (speedo--ensure-data) :attempts)))
+           (user-error "Cannot read empty attempt list")))
          (selections (funcall (if multiple #'completing-read-multiple
                                 #'completing-read)
                               (if multiple "Attempts: " "Attempt: ")
