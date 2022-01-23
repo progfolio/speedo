@@ -65,7 +65,7 @@ list elements."
   (declare (indent 1))
   (let (body)
     (dolist (env bindings)
-      (unless (mod (length env) 2) (error "Uneven binding list: %S" env))
+      (unless (% (length env) 2) (error "Uneven binding list: %S" env))
       (let (e)
         (cl-loop for (var val) on env by #'cddr
                  do (push (cons var (eval `(quote ,val) e)) e))
@@ -76,7 +76,7 @@ list elements."
   "Return TEMPLATEs with elements of BINDINGS destructured to VARS."
   "For example: with VARS = (in out) BINIDNGS = (in odd-elements out even-elements)."
   (declare (indent 1))
-  (let ((unbound (mod (length bindings) (length vars))))
+  (let ((unbound (% (length bindings) (length vars))))
     (unless (zerop unbound) (error "Unven binding list: %S" (last bindings unbound)))
     `(speedo-test-template ,template
        ,@(eval `(cl-loop for ,vars on ',bindings

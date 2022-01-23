@@ -271,10 +271,10 @@ MULTIPLE results are returned in a list, single results are not."
 (defun speedo--format-ms (n)
   "Format N milliseconds with `speedo--time-formatter'.
 Formatter is called with hours, minutes, seconds, milliseconds."
-  (let* ((milliseconds (mod n 1000))
+  (let* ((milliseconds (% n 1000))
          (n (/ n 1000))
-         (seconds (mod n 60))
-         (minutes (mod (/ n 60) 60))
+         (seconds (% n 60))
+         (minutes (% (/ n 60) 60))
          ;; Don't use mod here because we don't care about
          ;; dividing any farther than "hours"
          ;; using mod to check would truncate the hours
@@ -1001,7 +1001,7 @@ ARGS are passed to `write-region'"
   "Compare against Nth relative target in `speedo-comparison-targets'.
 Negative N cycles backward, positive forward."
   (unless speedo--comparison-target (user-error "No current comparison target"))
-  (let ((next (nth (mod (+ n (or (cl-position speedo--comparison-target
+  (let ((next (nth (% (+ n (or (cl-position speedo--comparison-target
                                               speedo-comparison-targets)
                                  -1))
                         (length speedo-comparison-targets))
