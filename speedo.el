@@ -1052,6 +1052,27 @@ Negative N cycles backward, positive forward."
              (yes-or-no-p "Save current attempt before killing buffer?"))
     (speedo--attempt-end)))
 
+(defvar speedo-mode-map (let ((map (make-sparse-keymap)))
+                          (define-key map (kbd "<kp-1>")     'speedo-next)
+                          (define-key map (kbd "SPC")        'speedo-next)
+                          (define-key map (kbd "<down>")     'speedo-next)
+                          (define-key map (kbd "<kp-3>")     'speedo-reset)
+                          (define-key map (kbd "r")          'speedo-reset)
+                          (define-key map (kbd "<kp-2>")     'speedo-skip)
+                          (define-key map (kbd "s")          'speedo-skip)
+                          (define-key map (kbd "<kp-4>")     'speedo-comparison-previous)
+                          (define-key map (kbd "<left>")     'speedo-comparison-previous)
+                          (define-key map (kbd "<kp-6>")     'speedo-comparison-next)
+                          (define-key map (kbd "<right>")    'speedo-comparison-next)
+                          (define-key map (kbd "<kp-8>")     'speedo-previous)
+                          (define-key map (kbd "<up>")       'speedo-previous)
+                          (define-key map (kbd "<kp-5>")     'speedo-mistake)
+                          (define-key map (kbd "m")          'speedo-mistake)
+                          (define-key map (kbd "q")          'speedo-quit-window)
+                          (define-key map (kbd "c")          'speedo-compact-mode)
+                          (define-key map (kbd "e")          'speedo-edit-last-attempt)
+                          map))
+
 (define-derived-mode speedo-mode tabulated-list-mode "speedo"
   "Major mode for speedrun split timer.
 
@@ -1076,26 +1097,6 @@ Negative N cycles backward, positive forward."
   (speedo--update-header)
   (speedo--timer-columns-init)
   (speedo--display-ui))
-
-;;;; Key bindings
-(define-key speedo-mode-map (kbd "<kp-1>")     'speedo-next)
-(define-key speedo-mode-map (kbd "SPC")        'speedo-next)
-(define-key speedo-mode-map (kbd "<down>")     'speedo-next)
-(define-key speedo-mode-map (kbd "<kp-3>")     'speedo-reset)
-(define-key speedo-mode-map (kbd "r")          'speedo-reset)
-(define-key speedo-mode-map (kbd "<kp-2>")     'speedo-skip)
-(define-key speedo-mode-map (kbd "s")          'speedo-skip)
-(define-key speedo-mode-map (kbd "<kp-4>")     'speedo-comparison-previous)
-(define-key speedo-mode-map (kbd "<left>")     'speedo-comparison-previous)
-(define-key speedo-mode-map (kbd "<kp-6>")     'speedo-comparison-next)
-(define-key speedo-mode-map (kbd "<right>")    'speedo-comparison-next)
-(define-key speedo-mode-map (kbd "<kp-8>")     'speedo-previous)
-(define-key speedo-mode-map (kbd "<up>")       'speedo-previous)
-(define-key speedo-mode-map (kbd "<kp-5>")     'speedo-mistake)
-(define-key speedo-mode-map (kbd "m")          'speedo-mistake)
-(define-key speedo-mode-map (kbd "q")          'speedo-quit-window)
-(define-key speedo-mode-map (kbd "c")          'speedo-compact-mode)
-(define-key speedo-mode-map (kbd "e")          'speedo-edit-last-attempt)
 
 (provide 'speedo)
 ;;; speedo.el ends here

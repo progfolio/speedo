@@ -30,7 +30,14 @@
 (require 'speedo)
 
 (defvar speedo-edit-buffer "*speedo-edit*" "Buffer for editing attempts.")
-(defvar speedo-edit-mode-map (make-sparse-keymap) "Keymap for `speedo-edit-mode'.")
+(defvar speedo-edit-mode-map (let ((map (make-sparse-keymap)))
+                               (define-key map (kbd "<tab>")     'speedo-edit-forward)
+                               (define-key map (kbd "<backtab>") 'speedo-edit-backward)
+                               (define-key map (kbd "C-c C-c")   'speedo-edit-finalize)
+                               (define-key map (kbd "C-c C-k")   'speedo-edit-abort)
+                               (define-key map (kbd "C-c C-d")   'speedo-edit-delete)
+                               map)
+  "Keymap for `speedo-edit-mode'.")
 (defvar speedo-edit-field-placeholder (propertize " " 'display
                                                   (propertize speedo-text-place-holder
                                                               'face 'speedo-behind)))
@@ -332,12 +339,6 @@ Return DATA."
   (add-hook 'kill-emacs-hook  #'speedo--ask-to-save)
   (add-hook 'kill-buffer-hook #'speedo--confirm-kill-buffer nil t)
   (buffer-face-mode))
-
-(define-key speedo-edit-mode-map (kbd "<tab>")     'speedo-edit-forward)
-(define-key speedo-edit-mode-map (kbd "<backtab>") 'speedo-edit-backward)
-(define-key speedo-edit-mode-map (kbd "C-c C-c")   'speedo-edit-finalize)
-(define-key speedo-edit-mode-map (kbd "C-c C-k")   'speedo-edit-abort)
-(define-key speedo-edit-mode-map (kbd "C-c C-d")   'speedo-edit-delete)
 
 (provide 'speedo-edit)
 ;;; speedo-edit.el ends here
