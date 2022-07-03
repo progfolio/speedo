@@ -73,8 +73,8 @@ list elements."
     `(progn ,@(nreverse body))))
 
 (defmacro speedo-test-template* (template vars &rest bindings)
-  "Return TEMPLATEs with elements of BINDINGS destructured to VARS."
-  "For example: with VARS = (in out) BINIDNGS = (in odd-elements out even-elements)."
+  "Return TEMPLATEs with elements of BINDINGS destructured to VARS.
+  e.g.: with VARS = (in out) BINIDNGS = (in odd-element out even-element)."
   (declare (indent 1))
   (let ((unbound (% (length bindings) (length vars))))
     (unless (zerop unbound) (error "Unven binding list: %S" (last bindings unbound)))

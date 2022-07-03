@@ -40,7 +40,7 @@
 (defun speedo--plist-get* (plist &rest path)
   "Return PLIST value along key PATH.
 PATH is a list of keywords which are nested within one another.
-e.g. (plist-get* '(:one (:two (:three t))) :one :two :three) ;; t"
+e.g. (plist-get* \\='(:one (:two (:three t))) :one :two :three) ;; t"
   (unless (listp plist) (signal 'wrong-type-argument `(listp ,plist)))
   (while path
     (setq plist (plist-get plist (pop path))))
@@ -49,7 +49,7 @@ e.g. (plist-get* '(:one (:two (:three t))) :one :two :three) ;; t"
 (defun speedo--plist-put* (val plist &rest path)
   "Set VAL within a copy of PLIST along PATH.
 PATH is a list of keywords which are nested within one another.
-e.g. (plist-put nil '(:one (:two (:three t) :one :two :three
+e.g. (plist-put nil \\='(:one (:two (:three t) :one :two :three
 ;; (:one (:two (:three nil)))
 Note that missing keywords along path are added."
   (unless path (error "Attemtpted to put %S on empty PATH" val))
