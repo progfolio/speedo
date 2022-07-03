@@ -46,7 +46,6 @@
   "When non-nil, include ID column in review.")
 (defvar speedo-review-include-consistency-column t
   "When non-nil, include Consistency column in review.")
-(defvar speedo-review-mode-map (make-sparse-keymap) "Keymap for `speedo-review-mode'.")
 (defvar speedo-review-include-accumulative-times nil
   "When non-nil, segment durations are displayed relative to start of the run.
 Otherwise they are relative to the start of each segment.")

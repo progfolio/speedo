@@ -188,7 +188,6 @@ It must accept four arguments: hours, minutes, seconds, milliseconds.")
 (defvar speedo--timer-start nil "When the timer was started.")
 (defvar speedo--timer-object nil "Internal timer object. Used for cancelling timer.")
 (defvar speedo--ui-timer-object nil "Display timer object.")
-(defvar speedo-mode-map (make-sparse-keymap) "Keymap for speedo mode.")
 (defconst speedo--file-extension ".spd")
 
 (provide 'speedo-vars)
