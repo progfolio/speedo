@@ -26,7 +26,7 @@
 (require 'speedo)
 
 (defun speedo--compact-filter (segments)
-  "Filter SPLITS for compact mode."
+  "Filter SEGMENTS for compact mode."
   (let* ((segment-count (length (plist-get speedo--data :segments)))
          (limit (min (or speedo-compact-segment-limit 10) segment-count))
          (start (min
