@@ -1,6 +1,6 @@
 ;;; speedo.el --- Speedrun Timer  -*- lexical-binding: t; eval: (add-hook 'after-save-hook #'recompile nil 'local) -*-
 
-;; Copyright (C) 2021-2023 Nicholas Vollmer
+;; Copyright (C) 2021-2024 Nicholas Vollmer
 ;; Author: Nicholas Vollmer <progfolio@protonmail.com>
 ;; URL: https://github.com/progfolio/speedo
 ;; Created: March 26, 2021
