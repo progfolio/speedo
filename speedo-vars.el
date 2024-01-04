@@ -148,7 +148,7 @@ current segment's time to the target's time for that segement."
 (defcustom speedo-compact-segment-limit 10
   "Limit of segments to display in command `speedo-compact-mode'.
 Note this includes the last segment."
-  :type 'interger)
+  :type 'integer)
 
 ;;; Variables
 (defvar speedo--state ' "Keeps track of timer/ui state.
