@@ -65,7 +65,7 @@ list elements."
   (declare (indent 1))
   (let (body)
     (dolist (env bindings)
-      (unless (% (length env) 2) (error "Uneven binding list: %S" env))
+      (unless (zerop (% (length env) 2)) (error "Uneven binding list: %S" env))
       (let (e)
         (cl-loop for (var val) on env by #'cddr
                  do (push (cons var (eval `(quote ,val) e)) e))
