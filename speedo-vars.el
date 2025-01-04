@@ -60,7 +60,7 @@ FN is a function called with no arguments which returns an attempt.
 DESCRIPTION is either a string or a function which returns a string to display
 in the UI footer.
 `speedo-next-comparison' and `speedo-previous-comparsion' cycle these in order."
-  :type 'list
+  :type 'alist
   :group 'speedo)
 
 (defcustom speedo-confirm-evaluate t
