@@ -1,6 +1,6 @@
 ;;; speedo-compact.el --- compact split display minor mode  -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2021-2024 Nicholas Vollmer
+;; Copyright (C) 2021-2025 Nicholas Vollmer
 
 ;; Author:  Nicholas Vollmer
 ;; Keywords:

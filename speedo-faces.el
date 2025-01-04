@@ -1,6 +1,6 @@
 ;;; speedo-faces.el --- faces for speedo.el          -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2021-2024 Nicholas Vollmer
+;; Copyright (C) 2021-2025 Nicholas Vollmer
 
 ;; Author:  Nicholas Vollmer
 ;; Keywords: faces
