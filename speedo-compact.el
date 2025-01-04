@@ -38,12 +38,12 @@
 
 (defun speedo--compact-last-segment-separator ()
   "Insert `speedo-compact-separator'."
-  (when-let ((it speedo-compact-separator))
+  (when-let* ((it speedo-compact-separator))
     (with-current-buffer speedo-buffer
       (save-excursion
         (with-silent-modifications
           (goto-char (point-max))
-          (if-let ((last (text-property-search-backward 'tabulated-list-id)))
+          (if-let* ((last (text-property-search-backward 'tabulated-list-id)))
               (let ((len (car
                           (cl-sort (mapcar (lambda (s) (length (plist-get s :name)))
                                            (plist-get speedo--data :segments))

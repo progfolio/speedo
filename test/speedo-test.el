@@ -1,4 +1,4 @@
-;;; speedo-test.el --- test suite  -*- lexical-binding: t;  eval: (add-hook 'after-save-hook (lambda () (when-let ((dir (locate-dominating-file default-directory "makefile")) (default-directory dir)) (recompile))) nil 'local) -*-
+;;; speedo-test.el --- test suite  -*- lexical-binding: t;  eval: (add-hook 'after-save-hook (lambda () (when-let* ((dir (locate-dominating-file default-directory "makefile")) (default-directory dir)) (recompile))) nil 'local) -*-
 
 ;; Copyright (C) 2021-2025 Nicholas Vollmer
 

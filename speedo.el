@@ -34,7 +34,7 @@
   "Move point to segment assoicated with `speedo--segment-index'."
   (when (< speedo--segment-index (length (plist-get speedo--data :segments)))
     (goto-char (point-min))
-    (while (not (= (if-let ((id (tabulated-list-get-id))) id -100) speedo--segment-index))
+    (while (not (= (if-let* ((id (tabulated-list-get-id))) id -100) speedo--segment-index))
       (forward-line))))
 
 (defun speedo--plist-get* (plist &rest path)
@@ -173,7 +173,7 @@ MULTIPLE results are returned in a list, single results are not."
                        (or (plist-get attempt :alias)
                            (format-time-string "%Y-%m-%d %I:%M%p"
                                                (/ (plist-get attempt :start) 1000)))
-                       (if-let ((duration (speedo--format-ms
+                       (if-let* ((duration (speedo--format-ms
                                            (speedo--segments-duration
                                             (plist-get attempt :segments)))))
                            duration
@@ -333,7 +333,7 @@ the duration of remaining segments in each previous run.
 If ENV is non-nil, it is a speedo timer enviornment object used for calculation."
   (format "%.2f%%"
           (* 100
-             (if-let (speedo--current-attempt
+             (if-let* (speedo--current-attempt
                       (segments  (cl-subseq (plist-get speedo--current-attempt :segments)
                                             0 speedo--segment-index))
                       (current (or (plist-get env :duration)
@@ -377,7 +377,7 @@ If NOSAVE is non-nil, the computed result is not saved to `speedo--data'."
           (unless nosave
             (setq speedo--data (speedo--plist-put* index speedo--data :runs key)))
           found)
-      (if-let ((index (speedo--plist-get* speedo--data :runs key)))
+      (if-let* ((index (speedo--plist-get* speedo--data :runs key)))
           (nth index attempts)
         ;;calculate if no cache exists
         (speedo--run-by key computer attempts 'nocache)))))
@@ -432,7 +432,7 @@ IF NOSAVE is non-nil, do not cache the result."
           (delq nil
                 (mapcar (lambda (segment)
                           (cl-incf index)
-                          (when-let ((pb (speedo--segment-pb index)))
+                          (when-let* ((pb (speedo--segment-pb index)))
                             (plist-put segment :duration pb)))
                         (copy-tree (plist-get speedo--data :segments)))))))
 
@@ -456,7 +456,7 @@ If CACHE is non-nil, use the cache."
   (let ((target (or (rassoc fn speedo-comparison-targets)
                     (error "Unrecognized comparison target"))))
     (if cache
-        (if-let ((member (plist-member speedo--target-attempts fn)))
+        (if-let* ((member (plist-member speedo--target-attempts fn)))
             (setq speedo--target-attempt (cadr member)
                   speedo--comparison-target target)
           ;;calculate if the target has not been cached yet.
@@ -471,7 +471,7 @@ If CACHE is non-nil, use the cache."
   (declare (indent 1) (debug (symbolp  &rest form)))
   `(save-excursion
      (goto-char (point-min))
-     (when-let ((anchor (text-property-search-forward ',anchor)))
+     (when-let* ((anchor (text-property-search-forward ',anchor)))
        (put-text-property (prop-match-beginning anchor) (prop-match-end anchor)
                           'display
                           ,@body))))
@@ -506,7 +506,7 @@ If CACHE is non-nil, use the cache."
   "Display sum of completed segments plus best times for remaining segments.
 ENV is used to determine when we are being called."
   (unless env
-    (if-let (speedo--time
+    (if-let* (speedo--time
              (completed (delq nil (mapcar (lambda (it) (plist-get it :duration))
                                           (plist-get speedo--current-attempt :segments))))
              (segments (delq  nil (speedo--best-segments)))
@@ -526,7 +526,7 @@ ENV is non-nil when we are in the redisplay timer hook."
 The loss is displayed live in the comparison column of the table.
 If `speedo-previous-segment' is part of the footer, replace it there as well.
 Timer ENV is used to determine if segment is behind."
-  (when-let (((plist-get env :current-behind))
+  (when-let* (((plist-get env :current-behind))
              (target   (plist-get env :target-duration))
              (current  (plist-get env :duration))
              (relative (speedo--relative-time target current)))
@@ -537,7 +537,7 @@ Timer ENV is used to determine if segment is behind."
 
 (defun speedo--timer-env ()
   "Calculate environment passed to each FN in `speedo-display-functions'."
-  (when-let ((target-segments         (plist-get speedo--target-attempt :segments))
+  (when-let* ((target-segments         (plist-get speedo--target-attempt :segments))
              (target-index            (max 0 (min speedo--segment-index
                                                   (1- (length target-segments)))))
              (target-segment          (nth target-index target-segments))
@@ -633,7 +633,7 @@ Set `speedo-footer-display-functions'."
 (defun speedo-previous-segment (&optional env)
   "Display relative time of previous segment in the footer.
 Non-nil ENV signals that we are in the redisplay timer."
-  (when-let (((not env))
+  (when-let* (((not env))
              ((and speedo--current-attempt
                    speedo--target-attempt
                    ;; There is no previous for the first segment.
@@ -688,7 +688,7 @@ Non-nil ENV signals that we are in the redisplay timer."
   (save-excursion
     (with-silent-modifications
       (goto-char (point-min))
-      (when-let ((footer (text-property-search-forward 'speedo-footer)))
+      (when-let* ((footer (text-property-search-forward 'speedo-footer)))
         (delete-region (prop-match-beginning footer) (point-max)))
       (goto-char (point-max))
       (insert (speedo--footer)))))
@@ -828,13 +828,13 @@ Reset timers."
              (current-face '(:inherit (speedo-current-line speedo-comparison-line)))
              (best-segment
               (unless skipped
-                (when-let ((best (nth index speedo--best-segments))
+                (when-let* ((best (nth index speedo--best-segments))
                            (segment-duration
                             (plist-get (nth index attempt-segments) :duration)))
                   (< segment-duration best))))
              (comparison
               (let* ((s (or
-                         (when-let (((not skipped))
+                         (when-let* (((not skipped))
                                     (target-segments)
                                     (target-segment-duration)
                                     (speedo--current-attempt)
@@ -895,7 +895,7 @@ Reset timers."
   "Return string with game title and category."
   (propertize (format "%s %s"
                       (or (plist-get speedo--data :title) "")
-                      (or (when-let ((category (plist-get speedo--data :category)))
+                      (or (when-let* ((category (plist-get speedo--data :category)))
                             (replace-regexp-in-string
                              "%" "%%" category))
                           ""))
@@ -948,7 +948,7 @@ sacrificing performance at runtime."
                        (funcall
                         (if human #'speedo--ms-to-date #'speedo--date-to-ms)
                         (plist-get attempt :start))))
-      (when-let ((reset (plist-member attempt :reset)))
+      (when-let* ((reset (plist-member attempt :reset)))
         (setq attempt (plist-put attempt :reset (funcall fn (plist-get attempt :reset)))))
       (setq attempt
             (plist-put attempt :segments
@@ -1012,7 +1012,7 @@ Negative N cycles backward, positive forward."
 
 (defun speedo--load-file (file)
   "Load a splits FILE."
-  (if-let ((data (speedo--read-file file)))
+  (if-let* ((data (speedo--read-file file)))
       (prog1
           (setq speedo--segment-index -1
                 speedo--time nil

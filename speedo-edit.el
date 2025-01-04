@@ -80,7 +80,7 @@ Each function is passed the edited attempt."
    widget
    (string-join
     (mapcar (lambda (time)
-              (if-let ((valid (ignore-errors
+              (if-let* ((valid (ignore-errors
                                 (speedo--time-string-to-ms
                                  (replace-regexp-in-string "[^.0-:]*" "" time)))))
                   (speedo--format-ms valid)
@@ -186,7 +186,7 @@ Each function is passed the edited attempt."
                                              'read-only t
                                              'segment-name t))
                                 " %v ")
-                       (if-let ((duration (plist-get segment :duration)))
+                       (if-let* ((duration (plist-get segment :duration)))
                            (speedo--format-ms (setq total (+ total duration)))
                          speedo-edit-field-placeholder))))
     (widget-insert "\n")
@@ -199,7 +199,7 @@ Each function is passed the edited attempt."
     (widget-create 'speedo-field
                    :type 'tags
                    :format "Tags: %v "
-                   (if-let ((tags (plist-get attempt :tags)))
+                   (if-let* ((tags (plist-get attempt :tags)))
                        (string-join tags ", ")
                      speedo-edit-field-placeholder))
     (widget-insert "\n")
@@ -257,7 +257,7 @@ Else append NEW to DATA.
 Return DATA."
   (setq data (copy-tree data))
   (let ((attempts (plist-get data :attempts)))
-    (if-let ((index (cl-position target attempts :test #'equal)))
+    (if-let* ((index (cl-position target attempts :test #'equal)))
         (setf (nth index (plist-get data :attempts)) new)
       (setq data (plist-put data :attempts
                             (append attempts (list new))))))
@@ -276,7 +276,7 @@ Return DATA."
       (while not-end
         (end-of-line)
         ;;@DECOMPOSE: logic in speedo.el which creates a template attempt?
-        (when-let ((w (widget-at (point)))
+        (when-let* ((w (widget-at (point)))
                    (type (widget-get w :type))
                    (val (progn (save-excursion (widget-field-activate (point)))
                                (string-trim (widget-value w)))))
@@ -298,7 +298,7 @@ Return DATA."
                                                (split-string val "," 'omit-nulls "[[:space:]]")))
                              (total 0))
                          (dolist (segment segments)
-                           (when-let ((duration (plist-get segment :duration))
+                           (when-let* ((duration (plist-get segment :duration))
                                       (mistakes
                                        (progn
                                          (setq total (+ total duration))
@@ -319,7 +319,7 @@ Return DATA."
 (defun speedo-edit-abort ()
   "Abort the current edit."
   (interactive)
-  (when-let ((buffer (get-buffer speedo-edit-buffer))
+  (when-let* ((buffer (get-buffer speedo-edit-buffer))
              ((buffer-live-p buffer))
              (window (get-buffer-window buffer t)))
     (quit-window 'kill window))

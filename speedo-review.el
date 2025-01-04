@@ -93,17 +93,17 @@ Returns a plist of form:
       (let ((mistakes (plist-get row :mistakes)))
         (setf row (plist-put row :average-mistakes (/ (cl-reduce #'+ mistakes)
                                                       (length mistakes)))))
-      (when-let ((durations (plist-get row :durations))
+      (when-let* ((durations (plist-get row :durations))
                  (full-set-p (not (member nil durations))))
         (setf row (plist-put row :average-duration
                              (/ (cl-reduce #'+ durations)
                                 (length durations)))))
-      (when-let ((relatives (plist-get row :relatives))
+      (when-let* ((relatives (plist-get row :relatives))
                  (full-set-p (not (member nil relatives))))
         (setf row (plist-put row :average-relative
                              (/ (cl-reduce #'+ relatives)
                                 (length relatives)))))
-      (when-let ((average-relative (plist-get row :average-relative)))
+      (when-let* ((average-relative (plist-get row :average-relative)))
         ;;compute mean absolute deviation to measure consistency
         (setf row (plist-put row :consistency
                              (let ((deviations
@@ -127,7 +127,7 @@ Returns a plist of form:
   "Return a list of average times for each ROW in DATA by ID."
   (when speedo-review-include-average-column
     (list
-     (if-let ((average-duration (plist-get row :average-duration)))
+     (if-let* ((average-duration (plist-get row :average-duration)))
          (speedo--format-ms
           (if speedo-review-include-accumulative-times
               (cl-reduce
@@ -138,7 +138,7 @@ Returns a plist of form:
             average-duration))
        speedo-text-place-holder)
      (when speedo-review-include-relative-times
-       (when-let ((average-relative (plist-get row :average-relative)))
+       (when-let* ((average-relative (plist-get row :average-relative)))
          (speedo--relative-time
           (if speedo-review-include-accumulative-times
               (cl-reduce
@@ -148,7 +148,7 @@ Returns a plist of form:
             average-relative)
           0)))
      (when speedo-review-include-mistakes
-       (when-let ((average-mistakes (plist-get row :average-mistakes)))
+       (when-let* ((average-mistakes (plist-get row :average-mistakes)))
          (let ((basis (or (car (plist-get row :mistakes)) 0)))
            (propertize
             (number-to-string average-mistakes)
@@ -165,7 +165,7 @@ Returns a plist of form:
          (relatives (plist-get row :relatives)))
     (dotimes (i (length durations))
       (push (list
-             (if-let ((duration (nth i durations))
+             (if-let* ((duration (nth i durations))
                       (time-string (speedo--format-ms
                                     (if speedo-review-include-accumulative-times
                                         (speedo--segments-duration
@@ -184,7 +184,7 @@ Returns a plist of form:
                speedo-text-place-holder)
              (when (and speedo-review-include-relative-times
                         (not (zerop i)))
-               (when-let ((relative (nth i relatives)))
+               (when-let* ((relative (nth i relatives)))
                  (speedo--relative-time
                   (if speedo-review-include-accumulative-times
                       (cl-reduce #'+
@@ -194,7 +194,7 @@ Returns a plist of form:
                     relative)
                   0)))
              (when speedo-review-include-mistakes
-               (when-let ((mistakes (plist-get row :mistakes))
+               (when-let* ((mistakes (plist-get row :mistakes))
                           (count (nth i mistakes))
                           (basis (car mistakes)))
                  (speedo--colorize basis count (number-to-string count)))))
@@ -222,7 +222,7 @@ Returns a plist of form:
                 (push (nreverse acc) v))))))
     (when  speedo-review-include-average-column
       (dolist (key keys)
-        (when-let ((vals (plist-get columns key)))
+        (when-let* ((vals (plist-get columns key)))
           (setq columns
                 (plist-put columns key
                            (append vals
@@ -341,7 +341,7 @@ Returns a plist of form:
                                    (when averages (list averages))))
                     (consistency
                      (when speedo-review-include-consistency-column
-                       (if-let ((consistency (plist-get r :consistency)))
+                       (if-let* ((consistency (plist-get r :consistency)))
                            (number-to-string consistency)
                          speedo-text-place-holder))))
                (list id
@@ -605,7 +605,7 @@ HEADER is displayed in review buffer."
 
 (defun speedo-review--sort-col (name)
   "Toggle sorting of column with NAME."
-  (if-let ((nth (cl-position name
+  (if-let* ((nth (cl-position name
                              (cl-coerce tabulated-list-format 'list)
                              :test #'string=
                              :key #'car)))
